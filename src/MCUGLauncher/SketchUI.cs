@@ -31,8 +31,8 @@ public partial class MainWindow
         launch.Children.Remove(oldButtons);
         var row = new Grid(); row.ColumnDefinitions.Add(new()); row.ColumnDefinitions.Add(new() { Width = new GridLength(40) }); row.RowDefinitions.Add(new());row.RowDefinitions.Add(new());row.Margin=new Thickness(0,6,0,0);
         launch.Children.Remove(LaunchGameButton); Grid.SetRowSpan(LaunchGameButton,2); row.Children.Add(LaunchGameButton);
-        var choose = ActionButton(">", (_, _) => ToggleSketchVersions()); sketchToggle=choose; choose.ToolTip = "展开版本列表"; choose.FontSize = 18; choose.Margin = new Thickness(5,0,0,3); Grid.SetColumn(choose,1); row.Children.Add(choose);
-        var manage = ActionButton("⚙", (_, _) => { try { OpenSketchManager(Selected()); } catch(Exception ex) { InlineMessageBox.Show(ex.Message); } }); manage.ToolTip = "管理当前版本"; manage.Margin = new Thickness(5,3,0,0); Grid.SetColumn(manage,1);Grid.SetRow(manage,1); row.Children.Add(manage);
+        var choose = ActionButton(">", (_, _) => ToggleSketchVersions()); sketchToggle=choose; choose.ToolTip = "展开版本列表"; choose.FontSize = 18; choose.Padding=new Thickness(0);choose.HorizontalContentAlignment=HorizontalAlignment.Center;choose.VerticalContentAlignment=VerticalAlignment.Center; choose.Margin = new Thickness(5,0,0,3); Grid.SetColumn(choose,1); row.Children.Add(choose);
+        var manage = ActionButton("⚙", (_, _) => { try { OpenSketchManager(Selected()); } catch(Exception ex) { InlineMessageBox.Show(ex.Message); } }); manage.ToolTip = "管理当前版本";manage.FontSize=16;manage.Padding=new Thickness(0);manage.HorizontalContentAlignment=HorizontalAlignment.Center;manage.VerticalContentAlignment=VerticalAlignment.Center; manage.Margin = new Thickness(5,3,0,0); Grid.SetColumn(manage,1);Grid.SetRow(manage,1); row.Children.Add(manage);
         launch.Children.Insert(0,row);
         LaunchGameButton.FontSize = 15;
         if(sketchWelcome!=null)sketchWelcome.Visibility=Visibility.Collapsed;

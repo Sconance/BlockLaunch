@@ -106,6 +106,8 @@ static class Program
             Call("RefreshInstanceViews");
             var selector=(ComboBox)Field("Versions");selector.ItemsSource=new[]{new VersionRow("1.21.1","长版本名兼容测试 · Minecraft 1.21.1 Fabric 生存建筑整合包","release")};selector.SelectedIndex=0;Call("ShowSketchVersions");
             Capture("modern-home-expanded.png");Capture("modern-home-small.png",780,540);
+            var sideButtons=((Grid)((Button)Field("LaunchGameButton")).Parent).Children.OfType<Button>().Where(b=>b!=(Button)Field("LaunchGameButton")).ToList();
+            foreach(var button in sideButtons){var glyph=new FormattedText(button.Content.ToString()!,System.Globalization.CultureInfo.CurrentCulture,FlowDirection.LeftToRight,new Typeface(button.FontFamily,button.FontStyle,button.FontWeight,button.FontStretch),button.FontSize,Brushes.Black,1);Check(button.Padding==new Thickness(0) && button.ActualWidth>=glyph.WidthIncludingTrailingWhitespace+8 && button.ActualHeight>=glyph.Height,"side action glyph fits compact button: "+button.ToolTip);}
             Call("ApplyResponsiveLayout",1920.0,1080.0);Capture("modern-home-maximized.png",1920,1080);
             Check(Math.Abs(((ScaleTransform)((Grid)window.Content).Children.OfType<FrameworkElement>().First().LayoutTransform).ScaleX-1.4)<0.001,"large window scales content within bounded readable range");
             Check(Math.Abs(WindowChrome.GetWindowChrome(window)!.CaptionHeight-67.2)<0.01,"native caption follows visual scale for drag-to-restore");
