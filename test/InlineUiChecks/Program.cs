@@ -41,7 +41,7 @@ static class Program
         {
             Check(((ComboBox)Field("AccountMode")).SelectedIndex==2,"preferred MUA mode survives missing cache without offline fallback");((ComboBox)Field("AccountMode")).SelectedIndex=0;
             Check(window.WindowStyle==WindowStyle.None && WindowChrome.GetWindowChrome(window)?.ResizeBorderThickness.Left==6,"custom integrated caption retains resize border");
-            Check(typeof(MainWindow).Assembly.GetName().Name == "MCUGLauncher" && typeof(MainWindow).Assembly.GetName().Version!.ToString() == "0.19.0.0", "final assembly name and version");
+            Check(typeof(MainWindow).Assembly.GetName().Name == "MCUGLauncher" && typeof(MainWindow).Assembly.GetName().Version!.ToString() == "0.19.1.0", "final assembly name and version");
             Check(window.Title.StartsWith("MCUG Launcher") && ((SolidColorBrush)app.Resources["AccentBrush"]).Color==Color.FromRgb(0,109,184),"new brand uses Wuhan CUG blue");
             Call("RefreshInstanceViews"); var search=(TextBox)Field("instanceQuery");var versions=(ListBox)Field("instanceList");
             search.Text="no-such-installed-version";Check(versions.Items.Count==0,"installed version search hides unmatched entries");
@@ -119,13 +119,39 @@ static class Program
                 var categories=Walk(page).OfType<RadioButton>().Where(r=>r.GroupName=="SketchCategories").ToList();
                 Check(categories.Count==7,"seven sketch content categories available");
                 var versionList=Walk(page).OfType<ListBox>().First();Check(!ScrollViewer.GetCanContentScroll(versionList),"manager version list scrolls in pixels");
+                Check(Walk(page).OfType<ComboBox>().Single().SelectedItem?.ToString()==game,"manager exposes current directory dropdown");
+                Check(((Grid)Field("inlineHost")).RowDefinitions[0].Height.Value==8 && ((Button)Field("managerCaptionBack")).Visibility==Visibility.Visible,"manager title moves into caption without duplicate row");
+                Check(versionList.Resources[typeof(System.Windows.Controls.Primitives.ScrollBar)] is Style slim && slim.Setters.OfType<Setter>().Any(s=>s.Property==FrameworkElement.WidthProperty && Equals(s.Value,8.0)),"manager uses narrow scrollbar");
                 var header=(DockPanel)((Grid)window.Content).Children[0];Check(header.Children.OfType<StackPanel>().All(p=>p.IsEnabled),"top navigation remains enabled in content manager");
                 foreach(var category in categories){category.IsChecked=true;Check(Pages().Count==1,"category navigation retains one inline page");}
-                categories[0].IsChecked=true;Capture("v0181-sketch-manager.png");page.Close();return true;
+                categories[0].IsChecked=true;Capture("v0181-sketch-manager.png");Capture("v0191-manager-small.png",780,540);
+                var scroll=(ScrollViewer)versionList.Template.FindName("PART_ScrollViewer",versionList);var scrollbar=(System.Windows.Controls.Primitives.ScrollBar)scroll.Template.FindName("PART_VerticalScrollBar",scroll);
+                Check(scrollbar.ActualWidth==8 && scroll.ScrollableHeight>0,$"real manager scroll template reserves eight pixels: width={scrollbar.ActualWidth}, range={scroll.ScrollableHeight}, viewport={scroll.ViewportHeight}");scroll.ScrollToEnd();scroll.UpdateLayout();Check(scroll.VerticalOffset>0,"manager scroll reaches lower installed versions");scroll.ScrollToTop();
+                preferences.DarkMode=true;Call("ThemeWindow",window);Capture("v0191-manager-dark.png");preferences.DarkMode=false;Call("ThemeWindow",window);
+                page.Close();return true;
             });
             Drive(()=>Call("OpenSketchManager","1.21.1"),page=>{var home=(RadioButton)Field("HomeNav");home.RaiseEvent(new System.Windows.Input.MouseButtonEventArgs(System.Windows.Input.Mouse.PrimaryDevice,0,System.Windows.Input.MouseButton.Left){RoutedEvent=UIElement.PreviewMouseDownEvent});Check(Pages().Count==0 && ((TabControl)Field("MainTabs")).SelectedIndex==0,"header navigation exits content manager without Back");return true;});
+            var emptyRoot=Path.Combine(root,"empty-minecraft");Directory.CreateDirectory(emptyRoot);preferences.GameRoots.Add(emptyRoot);
+            var originalHttp=(System.Net.Http.HttpClient)Field("http");using var offlineHttp=new System.Net.Http.HttpClient(new OfflineDirectoryHandler());typeof(MainWindow).GetField("http",flags)!.SetValue(window,offlineHttp);
+            var rootStage=0;
+            Drive(()=>Call("OpenSketchManager","1.21.1"),page=>{
+                var directories=Walk(page).OfType<ComboBox>().Single();var versions=Walk(page).OfType<ListBox>().First();
+                if(rootStage==0){rootStage=1;directories.SelectedItem=emptyRoot;return false;}
+                if((bool)Field("busy"))return false;
+                if(rootStage==1){Check(preferences.Root==emptyRoot && versions.Items.Count==0 && !Buttons(page).Any(b=>Equals(b.Content,"打开文件夹")),"switch to empty directory clears stale versions and content actions");rootStage=2;directories.SelectedItem=game;return false;}
+                Check(preferences.Root==game && versions.Items.Count>0 && directories.ToolTip?.ToString()==game,"directory switch restores installed versions and full path");page.Close();return true;
+            });
+            typeof(MainWindow).GetField("http",flags)!.SetValue(window,originalHttp);Call("SetupLauncher");
+            Check(((Button)Field("managerCaptionBack")).Visibility==Visibility.Collapsed && ((DockPanel)((Grid)window.Content).Children[0]).Children.OfType<TextBlock>().First().Text=="MCUG Launcher","leaving manager restores brand caption");
             Drive(()=>Call("OpenVersionSection","1.21.1","导出"),page=>{Check(Walk(page).OfType<TextBlock>().Any(t=>t.Text=="导出启动脚本"),"export action opens export section directly");page.Close();return true;});
-            var currentChooser=(Border)Field("sketchVersions");var javaFilter=Walk(currentChooser).OfType<ComboBox>().Single(c=>c.ToolTip?.ToString()?.Contains("Java 大版本")==true);javaFilter.SelectedItem=25;Check(!Walk(currentChooser).OfType<Expander>().Any(),"instance Java filter excludes incompatible major versions");javaFilter.SelectedItem=21;Check(Walk(currentChooser).OfType<Expander>().Any(),"instance Java filter retains compatible major versions");javaFilter.SelectedItem=0;
+            var currentChooser=(Border)Field("sketchVersions");
+            Check(!Walk(currentChooser).OfType<ComboBox>().Any(c=>c.ToolTip?.ToString()?.Contains("Java 大版本")==true),"home removes Java filter");
+            var homeSearch=Walk(currentChooser).OfType<TextBox>().Single();
+            var prompt=Walk(currentChooser).OfType<TextBlock>().Single(t=>t.Text=="点此处搜索");
+            Check(prompt.Visibility==Visibility.Visible && !Walk(currentChooser).OfType<TextBlock>().Any(t=>t.Text=="⌕"),"home search uses watermark without magnifier");
+            homeSearch.Text="fixture";Check(prompt.Visibility==Visibility.Collapsed,"search watermark hides while typing");homeSearch.Clear();
+            var launchGrid=(Grid)((Button)Field("LaunchGameButton")).Parent;
+            Check(Grid.GetRowSpan((Button)Field("LaunchGameButton"))==2 && launchGrid.ColumnDefinitions.Count==2 && Grid.GetRow(launchGrid.Children.OfType<Button>().Single(b=>b.ToolTip?.ToString()=="管理当前版本"))==1,"launch stays wide with vertically stacked side actions");
             var prefs183=(Preferences)Field("prefs");var imagePath=Path.Combine(root,"background.png");var backgroundBitmap=BitmapSource.Create(2,2,96,96,PixelFormats.Bgra32,null,new byte[]{0,100,200,255,0,100,200,255,0,100,200,255,0,100,200,255},8);var backgroundEncoder=new PngBitmapEncoder();backgroundEncoder.Frames.Add(BitmapFrame.Create(backgroundBitmap));using(var output=File.Create(imagePath))backgroundEncoder.Save(output);
             prefs183.BackgroundPath=imagePath;prefs183.BackgroundFit="完整显示";prefs183.BackgroundOpacity=0.35;Call("ApplyBackground");var imageBrush=(ImageBrush)((Grid)window.Content).Background;Check(imageBrush.Stretch==Stretch.Uniform&&imageBrush.Opacity==0.35,"local background applies fill choice and opacity");
             prefs183.DarkMode=true;Call("ThemeWindow",window);Check(((Grid)window.Content).Background is ImageBrush&&((SolidColorBrush)window.Background).Color.R<50,"custom background survives dark-mode change over a dark solid base");prefs183.DarkMode=false;prefs183.BackgroundPath="";Call("ThemeWindow",window);
@@ -141,5 +167,9 @@ static class Program
     }
     static IEnumerable<DependencyObject> Walk(DependencyObject parent){foreach(var child in LogicalTreeHelper.GetChildren(parent).OfType<DependencyObject>()){yield return child;foreach(var nested in Walk(child))yield return nested;}}
     static IEnumerable<Button> Buttons(DependencyObject parent)=>Walk(parent).OfType<Button>();
+}
+sealed class OfflineDirectoryHandler : System.Net.Http.HttpMessageHandler
+{
+    protected override Task<System.Net.Http.HttpResponseMessage> SendAsync(System.Net.Http.HttpRequestMessage request,CancellationToken token) => Task.FromException<System.Net.Http.HttpResponseMessage>(new System.Net.Http.HttpRequestException("Offline directory switch fixture"));
 }
 

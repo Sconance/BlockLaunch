@@ -10,6 +10,7 @@ public partial class MainWindow
     Grid? inlineHost;
     ContentControl? inlineContent;
     TextBlock? inlineTitle;
+    Button? managerCaptionBack;
     UIElement? underlyingPage;
     internal IReadOnlyList<InlineDialog> InlinePages => inlinePages;
     void BuildInlineHost()
@@ -21,6 +22,10 @@ public partial class MainWindow
         var back = new Button { Content = "‹  返回", MinWidth = 82, Margin = new Thickness(0,7,14,7), Padding = new Thickness(10,5,10,5) };
         back.Click += (_,_) => inlinePages.LastOrDefault()?.Close(); heading.Children.Add(back);
         inlineTitle = new TextBlock { FontSize = 19, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center }; heading.Children.Add(inlineTitle); inlineHost.Children.Add(heading);
+        managerCaptionBack=new Button {Content="‹",ToolTip="返回启动页",Width=32,MinWidth=0,FontSize=23,Padding=new Thickness(0),Margin=new Thickness(8,5,0,5),Visibility=Visibility.Collapsed};
+        managerCaptionBack.Click+=(_,_)=>inlinePages.LastOrDefault()?.Close();
+        System.Windows.Shell.WindowChrome.SetIsHitTestVisibleInChrome(managerCaptionBack,true);
+        ((DockPanel)root.Children[0]).Children.Insert(0,managerCaptionBack);
         inlineContent = new ContentControl { HorizontalContentAlignment = HorizontalAlignment.Stretch, VerticalContentAlignment = VerticalAlignment.Stretch };
         Grid.SetRow(inlineContent,1); inlineHost.Children.Add(inlineContent); Grid.SetRow(inlineHost,1); root.Children.Add(inlineHost);
         PreviewKeyDown += (_,e) => { if (e.Key==Key.Escape && inlinePages.Count>0) { e.Handled=true; inlinePages[^1].Close(); } };
@@ -64,6 +69,13 @@ public partial class MainWindow
     void RenderInline()
     {
         var current = inlinePages.LastOrDefault();
+        var manager=current!=null && Equals(current.Tag,"SketchManager");
+        inlineHost!.RowDefinitions[0].Height=new GridLength(manager?8:54);
+        inlineHost.Children[0].Visibility=manager?Visibility.Collapsed:Visibility.Visible;
+        managerCaptionBack!.Visibility=manager?Visibility.Visible:Visibility.Collapsed;
+        var caption=(DockPanel)((Grid)Content).Children[0];
+        foreach(var logo in caption.Children.OfType<Image>())logo.Visibility=manager?Visibility.Collapsed:Visibility.Visible;
+        if(caption.Children.OfType<TextBlock>().FirstOrDefault() is {} brand)brand.Text=manager?"版本内容管理":Brand.Name;
         inlineContent!.Content = current; inlineHost!.Visibility = current == null ? Visibility.Collapsed : Visibility.Visible;
         if (underlyingPage != null) underlyingPage.Visibility = current == null ? Visibility.Visible : Visibility.Collapsed;
         // Keep the caption controls available. Leaving a modal editor uses its explicit Back action.

@@ -45,7 +45,7 @@ public partial class MainWindow : Window
         GameRoot.Text = prefs.Root; JavaPath.Text = prefs.Java; PlayerName.Text = prefs.Player;
         Memory.Text = prefs.Ram.ToString(); GameWidth.Text = prefs.Width.ToString(); GameHeight.Text = prefs.Height.ToString();
         prefs.Network ??= new(); runtimeNetwork = JsonSerializer.Deserialize<NetworkSettings>(JsonSerializer.Serialize(prefs.Network))!; http.Dispose(); http = NetworkPolicyHandler.Create(runtimeNetwork);
-        http.DefaultRequestHeaders.UserAgent.ParseAdd("MCUGLauncher/0.19.0 (Windows-desktop-launcher)");
+        http.DefaultRequestHeaders.UserAgent.ParseAdd("MCUGLauncher/0.19.1 (Windows-desktop-launcher)");
         SetupLauncher();
         BuildFeaturePages(); ApplyPersonalization(); BuildAccountUI(); BuildDiagnosticsUI(); BuildCompactShell(); BuildHomeAccountPanel(); BuildMiniDownloads(); BuildExperienceUI(); BuildInlineHost(); BuildWindowChrome(); BuildKeyboardNavigation(); BuildSketchUI(); BuildModernUI();
         Loaded += async (_, _) =>

@@ -2,6 +2,13 @@
 
 近期发布摘要如下，完整历史见 [Releases](https://github.com/Sconance/MCUGLauncher/releases)。源码从 0.18.3 基线提交到主分支，未改写旧标签或重建历史提交。
 
+## [0.19.1](https://github.com/Sconance/MCUGLauncher/releases/tag/v0.19.1)
+
+- 启动页移除 Java 筛选与搜索图标，新增搜索占位提示。
+- 大启动按钮搭配纵向展开、设置按钮。
+- 版本内容管理增加目录切换，标题整合到顶栏，列表和滚动条更紧凑。
+- 强化导入区域分隔，修复内嵌页面切换深色主题时的背景。
+
 ## [0.19.0](https://github.com/Sconance/MCUGLauncher/releases/tag/v0.19.0)
 
 - 最终名称确定为 MCUG Launcher，统一界面、程序元数据、仓库与文档。

@@ -53,7 +53,7 @@ public partial class MainWindow
                 AccountStatus.Margin=new Thickness(0,4,0,9);AccountStatus.MaxWidth=196;
                 foreach(var chip in new[]{microsoftChip,offlineChip,muaChip})if(chip!=null){chip.FontSize=11;chip.Margin=new Thickness(0);}
             }
-            LaunchGameButton.Padding=new Thickness(10,9,10,9);LaunchGameButton.MinHeight=52;
+            LaunchGameButton.Padding=new Thickness(10,9,10,9);LaunchGameButton.MinHeight=70;LaunchGameButton.Margin=new Thickness(0);
             homeSelectedLabel.MaxWidth=125;homeSelectedLabel.TextTrimming=TextTrimming.CharacterEllipsis;homeSelectedLabel.TextWrapping=TextWrapping.NoWrap;
             homeSelectedLabel.ToolTip=Versions.SelectedItem is VersionRow selected?selected.Label:"尚未选择版本";
         }

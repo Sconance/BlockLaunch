@@ -37,7 +37,7 @@ public sealed class MuaAccountService : IDisposable
     {
         storage=new(Path.Combine(directory,"mua-account.bin"));ownsHttp=client==null;
         http=client??new HttpClient(new HttpClientHandler{AllowAutoRedirect=false}){Timeout=TimeSpan.FromSeconds(25)};
-        if(http.DefaultRequestHeaders.UserAgent.Count==0)http.DefaultRequestHeaders.UserAgent.ParseAdd("MCUGLauncher/0.19.0");
+        if(http.DefaultRequestHeaders.UserAgent.Count==0)http.DefaultRequestHeaders.UserAgent.ParseAdd("MCUGLauncher/0.19.1");
     }
     public MuaCredential? Read()
     {

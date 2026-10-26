@@ -36,6 +36,7 @@ public partial class MainWindow
             }
         }
         var original=themeOriginals.GetValue(window,_=>new(){Background=window.Background}); window.Background=dark ? background : original.Background;
+        if(inlineHost!=null)inlineHost.Background=window.Background;
         ApplyModernChrome();ApplyBackground();
     }
     void ConfigureUtilityWindow(Window window)

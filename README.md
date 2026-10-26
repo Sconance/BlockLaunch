@@ -9,6 +9,8 @@ MCUG Launcher 提供游戏启动、分类下载、账号登录和实例内容管
 
 ![启动与版本列表](docs/images/home.png)
 
+![版本内容管理](docs/images/manager.png)
+
 <details><summary>Java 管理与个性化</summary>
 
 ![Java 管理](docs/images/java.png)
@@ -41,7 +43,7 @@ MCUG Launcher 提供游戏启动、分类下载、账号登录和实例内容管
 
 ## 源码与构建
 
-当前版本为 **0.19.0**，最终产品名确定为 **MCUG Launcher**。使用 Windows x64 与 .NET 8 SDK：
+当前版本为 **0.19.1**，最终产品名确定为 **MCUG Launcher**。使用 Windows x64 与 .NET 8 SDK：
 
 ```powershell
 git clone https://github.com/Sconance/MCUGLauncher.git
@@ -65,6 +67,15 @@ docs/      使用、构建、历史测试记录与截图
 请在 [Issues](https://github.com/Sconance/MCUGLauncher/issues) 提供软件版本、系统版本、复现步骤和脱敏日志。不要上传密码、Token、账号缓存或私人存档。参阅 [贡献说明](CONTRIBUTING.md)。
 
 ## 近期更新
+
+### [0.19.1](https://github.com/Sconance/MCUGLauncher/releases/tag/v0.19.1)
+
+- 启动页移除 Java 筛选与搜索图标，新增搜索占位提示。
+- 大启动按钮搭配纵向展开、设置按钮。
+- 版本内容管理增加目录切换，标题整合到顶栏，列表和滚动条更紧凑。
+- 强化导入区域分隔，修复内嵌页面切换深色主题时的背景。
+
+
 
 ### [0.19.0](https://github.com/Sconance/MCUGLauncher/releases/tag/v0.19.0)
 
