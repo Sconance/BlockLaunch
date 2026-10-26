@@ -1,11 +1,11 @@
 # MCUG Launch
 
-MCUG Launch 是面向 Windows 的 Minecraft Java 版启动器，采用蓝白配色与 MCUG 徽标，提供游戏启动、分类下载和实例内容管理。项目原名 BlockLaunch，现有仓库地址继续用于发布和历史版本归档。
+MCUG Launch 是面向 Windows 的 Minecraft Java 版启动器，采用蓝白配色与 MCUG 徽标，提供游戏启动、分类下载和实例内容管理。项目原名 BlockLaunch，现已统一更名为 MCUG Launch。此仓库用于软件发布和历史版本归档。
 
 ## 下载与运行
 
-- [下载最新版本](https://github.com/Sconance/BlockLaunch/releases/latest)
-- [查看更新记录与历史版本](https://github.com/Sconance/BlockLaunch/releases)
+- [下载最新版本](https://github.com/Sconance/MCUGLaunch/releases/latest)
+- [查看更新记录与历史版本](https://github.com/Sconance/MCUGLaunch/releases)
 
 在发布页的 Assets 中下载 `MCUGLaunch-版本号-Windows-x64.exe`，直接运行即可，无需解压。当前版本为 Windows x64 单文件程序；Minecraft 本身仍需要合适版本的 Java，启动器提供 Java 扫描、选择与自动管理功能。内嵌微软授权页面需要 WebView2 Runtime。
 
