@@ -37,7 +37,7 @@ MCUG Launcher 提供游戏启动、分类下载、账号登录和实例内容管
 
 ## 下载与运行
 
-在 [Releases](https://github.com/Sconance/MCUGLauncher/releases/latest) 下载 Windows-x64.exe，直接运行。游戏需匹配版本的 Java；内嵌微软授权页面需要 WebView2 Runtime。
+在 [Releases](https://github.com/Sconance/MCUGLauncher/releases/latest) 下载对应 EXE，直接运行。完整版文件名保持 Windows-x64.exe，内置 .NET 运行库；精简版文件名以 Windows-x64-Lite.exe 结尾，需要电脑安装 .NET 8 Desktop Runtime x64。游戏需匹配版本的 Java；内嵌微软授权页面需要 WebView2 Runtime。
 
 升级前关闭启动器，再替换 EXE，保留原有配置和游戏目录。删除版本前检查确认框，重要存档先备份。
 

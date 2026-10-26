@@ -77,3 +77,7 @@ python scripts/check-layout.py
 图标与复制资源是否存在，并检查旧路径残留；不会编译或运行游戏。CI 在构建前执行此校验。
 
 `docs/TESTING.md` 是历史测试记录，不表示目录迁移后重新运行了全部检查。
+
+## 双版本发布
+
+scripts/build.ps1 -Publish 同时生成完整版和 Lite 版。artifacts/release 中包含 MCUGLauncher-版本号-Windows-x64.exe 与 MCUGLauncher-版本号-Windows-x64-Lite.exe。Lite 不内置 .NET，要求 .NET 8 Desktop Runtime x64；两版均需要 WebView2 才能使用内嵌微软授权。后续 Release 同时附带两个程序，完整版名称保持不变。
