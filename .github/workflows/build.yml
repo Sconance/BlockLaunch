@@ -14,5 +14,7 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.x
+      - name: Validate repository layout
+        run: python scripts/check-layout.py
       - name: Build launcher
-        run: dotnet build BlockLaunch/BlockLaunch.csproj -c Release
+        run: ./scripts/build.ps1
