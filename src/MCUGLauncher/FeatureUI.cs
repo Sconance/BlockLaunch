@@ -71,7 +71,7 @@ public partial class MainWindow
 
 
         AllowDrop = true; PreviewDrop += HandleFileDrop;
-        PreviewDragOver += (_, e) => { if (e.Data.GetDataPresent(DataFormats.FileDrop)) { e.Effects = busy ? DragDropEffects.None : DragDropEffects.Copy; e.Handled = true; } };
+        BuildDropFeedback();
     }
     async Task HandleScriptLaunch()
     {

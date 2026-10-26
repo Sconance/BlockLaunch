@@ -44,16 +44,16 @@ public partial class MainWindow
     }
     void AccountManagementClick(object s, RoutedEventArgs e)
     {
-        if (busy) return;
+        if (busy && !DownloadInProgress) return;
         var body = new StackPanel(); body.Children.Add(Heading("微软正版账号"));
         body.Children.Add(Hint(savedAccount == null ? "没有可用的已保存账号。" : "玩家：" + savedAccount.Username + "\nUUID：" + savedAccount.Uuid));
         body.Children.Add(Hint("凭据使用 Windows DPAPI 加密，限定当前 Windows 用户解密。每次正版启动前会检查 / 刷新会话。此版本保存一个正版账号，重新登录成功后替换。"));
         var dialog = FeatureDialog("正版账号管理", body);
-        body.Children.Add(ActionButton("微软登录 / 切换账号", async (_, _) => { dialog.Close(); await Run(Login, "微软正版登录"); }));
-        body.Children.Add(ActionButton("验证 / 刷新已保存账号", async (_, _) => { dialog.Close(); await Run(() => MicrosoftLogin(false), "刷新正版登录"); }));
+        body.Children.Add(ActionButton("微软登录 / 切换账号", async (_, _) => { dialog.Close(); await RunAccountAction(Login, "微软正版登录"); }));
+        body.Children.Add(ActionButton("验证 / 刷新已保存账号", async (_, _) => { dialog.Close(); await RunAccountAction(() => MicrosoftLogin(false), "刷新正版登录"); }));
         body.Children.Add(ActionButton("退出并清除本地账号", async (_, _) =>
         {
-            dialog.Close(); await Run(() =>
+            dialog.Close(); await RunAccountAction(() =>
             {
                 RequireStopped(); accounts.Forget(); online = null; savedAccount = null; AccountMode.SelectedIndex = 0; prefs.PreferMicrosoft = false; settings.Save(prefs); UpdateAccountBadge();
                 Log("已清除启动器本地账号。微软浏览器的单点登录状态未清除，重新登录可在官方页面切换账号。"); return Task.CompletedTask;

@@ -83,7 +83,7 @@ public partial class MainWindow
                     var play=ActionButton("▷",async(_,_)=>{if(busy)return; Versions.SelectedValue=item.Key; await Run(Launch);}); play.ToolTip="启动此版本"; actions.Children.Add(play);
                     var settingsButton=ActionButton("⚙",(_,_)=>OpenSketchManager(item.Key)); settingsButton.ToolTip="管理此版本"; actions.Children.Add(settingsButton); line.Children.Add(actions);
                     var label=new StackPanel {HorizontalAlignment=HorizontalAlignment.Stretch}; label.Children.Add(new TextBlock {Text=item.Name,FontSize=13,FontWeight=FontWeights.SemiBold,TextTrimming=TextTrimming.CharacterEllipsis,ToolTip=item.Name}); label.Children.Add(new TextBlock {Text=item.Detail,FontSize=11,Foreground=Brushes.SlateGray,Margin=new Thickness(0,3,0,0),TextTrimming=TextTrimming.CharacterEllipsis,ToolTip=item.Detail});
-                    var select=ActionButton("",(_,_)=>{if(busy)return; Versions.SelectedValue=item.Key; UpdateHomeLaunchLabel(); RenderGroups();}); select.ContentTemplate=null; select.Content=label; select.HorizontalContentAlignment=HorizontalAlignment.Stretch; select.ToolTip=item.Name+"\n"+item.Detail; select.Padding=new Thickness(12,7,12,7);
+                    var select=ActionButton("",(_,_)=>{if(busy&&!DownloadInProgress)return; Versions.SelectedValue=item.Key; UpdateHomeLaunchLabel(); RenderGroups();}); select.ContentTemplate=null; select.Content=label; select.HorizontalContentAlignment=HorizontalAlignment.Stretch; select.ToolTip=item.Name+"\n"+item.Detail; select.Padding=new Thickness(12,7,12,7);
                     select.Template=(ControlTemplate)System.Windows.Markup.XamlReader.Parse("<ControlTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' TargetType='Button'><Border Background='{TemplateBinding Background}' CornerRadius='8' Padding='{TemplateBinding Padding}' BorderThickness='2,0,0,0' BorderBrush='{TemplateBinding BorderBrush}'><ContentPresenter HorizontalAlignment='Stretch' VerticalAlignment='Center'/></Border><ControlTemplate.Triggers><Trigger Property='IsMouseOver' Value='True'><Setter Property='Opacity' Value='0.8'/></Trigger></ControlTemplate.Triggers></ControlTemplate>");
                     select.BorderBrush=Brushes.Transparent;
                     if(Versions.SelectedValue as string==item.Key) select.SetResourceReference(Control.BackgroundProperty,"ThemeSelectedBrush");
@@ -100,7 +100,7 @@ public partial class MainWindow
     }
     void OpenSketchManager(string initialKey)
     {
-        if(busy)return;
+        if(busy&&!DownloadInProgress)return;
         RefreshInstanceViews();
         var page=new InlineDialog {Owner=this,Title="版本内容管理",Tag="SketchManager"};
         var layout=new Grid(); layout.ColumnDefinitions.Add(new(){Width=new GridLength(224)}); layout.ColumnDefinitions.Add(new(){Width=new GridLength(110)}); layout.ColumnDefinitions.Add(new()); page.Content=layout;
@@ -138,7 +138,7 @@ public partial class MainWindow
         void Render()
         {
             bar.Children.Clear();files.ItemsSource=null; preview.Source=null; info.Text="选择内容查看详情。";
-            if(list.SelectedItem is not InstanceView selected)return; current=selected.Key;
+            if(list.SelectedItem is not InstanceView selected)return; current=selected.Key;sketchManagerKey=current;
             var actions=new WrapPanel(); actions.Children.Add(ActionButton("版本设置",(_,_)=>OpenVersionSettings(current))); actions.Children.Add(ActionButton("导出",(_,_)=>OpenVersionSection(current,"导出"))); actions.Children.Add(ActionButton("删除版本",(_,_)=>{page.Close();UninstallInstance(current);})); bar.Children.Add(Heading(selected.Name)); bar.Children.Add(actions);
             directory=Path.Combine(DataRoot(),category switch {"存档"=>"saves","模组"=>"mods","资源包"=>"resourcepacks","光影"=>"shaderpacks","截图"=>"screenshots","蓝图"=>"schematics",_=>""});
             var folder=ActionButton("打开文件夹",(_,_)=>{try{OpenFolder(directory);}catch(Exception ex){InlineMessageBox.Show(ex.Message);}});bar.Children.Add(folder);
@@ -149,6 +149,7 @@ public partial class MainWindow
             if(category=="模组")bar.Children.Add(ActionButton("启用、禁用与更新",(_,_)=>OpenVersionSection(current,"Mod 管理")));
         }
         void SafeRender() {try{Render();}catch(Exception ex){files.ItemsSource=null;preview.Source=null;info.Text="无法读取此分类："+ex.Message;}}
+        refreshSketchManager=SafeRender;
         foreach(var name in new[]{"存档","模组","资源包","光影","服务器","截图","蓝图"}) {var nav=new RadioButton {Content=name,GroupName="SketchCategories",Style=VersionMenuStyle(),Margin=new Thickness(0,4,0,4)};nav.Checked+=(_,_)=>{category=name;SafeRender();};categories.Children.Add(nav);}
         files.SelectionChanged+=(_,_)=>{preview.Source=null;if(files.SelectedItem is not FileSystemInfo entry)return;info.Text=entry.Name+"\n修改时间："+entry.LastWriteTime.ToString("yyyy-MM-dd HH:mm");if(category=="截图" && entry is FileInfo file && file.Length<20*1024*1024 && new[]{".png",".jpg",".jpeg"}.Contains(file.Extension.ToLowerInvariant())) {try{var bitmap=new BitmapImage();bitmap.BeginInit();bitmap.UriSource=new Uri(file.FullName);bitmap.DecodePixelWidth=900;bitmap.CacheOption=BitmapCacheOption.OnLoad;bitmap.EndInit();preview.Source=bitmap;}catch{info.Text+="\n此图片暂时无法预览。";}}};
         list.SelectionChanged+=(_,_)=>SafeRender();list.SelectedItem=list.Items.Cast<InstanceView>().FirstOrDefault(i=>i.Key==initialKey); ((RadioButton)categories.Children[0]).IsChecked=true;
@@ -166,7 +167,7 @@ public partial class MainWindow
             }
             finally {directories.IsEnabled=true;list.IsEnabled=true;categories.IsEnabled=true;bar.IsEnabled=true;}
         };
-        page.Closed+=(_,_)=>{RefreshInstanceViews();ShowSketchVersions();}; page.ShowDialog();
+        page.Closed+=(_,_)=>{sketchManagerKey=null;refreshSketchManager=null;RefreshInstanceViews();ShowSketchVersions();}; page.ShowDialog();
     }
     static Style CompactVersionScrollStyle() => (Style)System.Windows.Markup.XamlReader.Parse("""
     <Style xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" TargetType="ScrollBar">

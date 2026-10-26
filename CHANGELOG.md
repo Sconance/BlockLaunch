@@ -2,6 +2,12 @@
 
 近期发布摘要如下，完整历史见 [Releases](https://github.com/Sconance/MCUGLauncher/releases)。源码从 0.18.3 基线提交到主分支，未改写旧标签或重建历史提交。
 
+## [0.19.2](https://github.com/Sconance/MCUGLauncher/releases/tag/v0.19.2)
+
+- 拖入文件显示导入提示；整合包先确认名称和目标目录，其他资源导入管理页当前实例。
+- 顶栏下载进度、任务栏进度与内嵌下载列表，支持暂停、继续、取消和失败重试。
+- 下载期间保留账号切换和版本浏览；认证操作先提示暂停下载，安装与启动仍保持互斥。
+
 ## [0.19.1](https://github.com/Sconance/MCUGLauncher/releases/tag/v0.19.1)
 
 - 修订：修复启动按钮右侧展开与设置图标被公共按钮内边距遮挡的问题。

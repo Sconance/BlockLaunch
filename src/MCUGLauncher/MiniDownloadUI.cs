@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -23,21 +23,25 @@ public partial class MainWindow
     void BuildMiniDownloads()
     {
         var root = (Grid)Content;
-        root.RowDefinitions.Add(new() { Height = GridLength.Auto });
-        var content = new Grid(); content.ColumnDefinitions.Add(new()); content.ColumnDefinitions.Add(new() { Width = GridLength.Auto });
+
+        var content = new Grid(); content.ColumnDefinitions.Add(new()); content.ColumnDefinitions.Add(new() { Width = GridLength.Auto });content.ColumnDefinitions.Add(new(){Width=GridLength.Auto});content.ColumnDefinitions.Add(new(){Width=GridLength.Auto});
         var text = new Grid(); text.ColumnDefinitions.Add(new()); text.ColumnDefinitions.Add(new());
         text.Children.Add(miniDownloadLabel); Grid.SetColumn(miniDownloadSpeed, 1); text.Children.Add(miniDownloadSpeed);
         var stack = new StackPanel(); stack.Children.Add(text); stack.Children.Add(miniDownloadProgress); content.Children.Add(stack);
         Grid.SetColumn(miniDownloadToggle, 1); content.Children.Add(miniDownloadToggle);
-        miniDownload = new Border { Width = 280, Padding = new Thickness(10, 7, 10, 7), Margin = new Thickness(0, 0, 16, 8), CornerRadius = new CornerRadius(6), Background = Brushes.White, HorizontalAlignment = HorizontalAlignment.Right, Visibility = Visibility.Collapsed, Child = content, Cursor = Cursors.Hand };
-        Grid.SetRow(miniDownload, root.RowDefinitions.Count - 1); root.Children.Add(miniDownload);
+        miniDownload = new Border { Width = 260, Padding = new Thickness(5, 3, 5, 3), Margin = new Thickness(0, 3, 142, 3), CornerRadius = new CornerRadius(6), Background = Brushes.White, HorizontalAlignment = HorizontalAlignment.Right, Visibility = Visibility.Collapsed, Child = content, Cursor = Cursors.Hand };
+        Grid.SetRow(miniDownload,0);Panel.SetZIndex(miniDownload,20);System.Windows.Shell.WindowChrome.SetIsHitTestVisibleInChrome(miniDownload,true); root.Children.Add(miniDownload);
+        void Fit(){var scale=Math.Clamp(Math.Min(ActualWidth/1060.0,ActualHeight/740.0),1,1.4);miniDownload.Width=Math.Clamp(ActualWidth/scale-720,150,260);miniDownload.Margin=new Thickness(0,3,136,3);miniDownloadLabel.Visibility=miniDownload.Width<220?Visibility.Collapsed:Visibility.Visible;text.ColumnDefinitions[0].Width=miniDownload.Width<220?new GridLength(0):new GridLength(1,GridUnitType.Star);} SizeChanged+=(_,_)=>Fit();Fit();
+        miniDownloadToggle.Padding=new Thickness(0);miniDownloadToggle.MinHeight=24;miniDownloadToggle.FontSize=10;miniDownloadToggle.Width=30;miniDownloadToggle.Opacity=1;
+        var cancel=ActionButton("×",(_,e)=>{e.Handled=true;CancelMiniDownload();});cancel.Padding=new Thickness(0);cancel.MinHeight=24;cancel.Width=22;cancel.Margin=new Thickness(2,0,0,0);cancel.ToolTip="取消当前下载";Grid.SetColumn(cancel,2);content.Children.Add(cancel);
+        var tasks=ActionButton("⌄",(_,e)=>{e.Handled=true;OpenDownloadTasks();});tasks.Padding=new Thickness(0);tasks.MinHeight=24;tasks.Width=22;tasks.Margin=new Thickness(2,0,0,0);tasks.ToolTip="打开下载任务列表";Grid.SetColumn(tasks,3);content.Children.Add(tasks);
         AutomationProperties.SetName(miniDownload, "下载进度");
         miniDownload.MouseEnter += (_, _) => miniDownloadToggle.Opacity = 1;
-        miniDownload.MouseLeave += (_, _) => { if (!miniDownloadToggle.IsKeyboardFocusWithin) miniDownloadToggle.Opacity = 0; };
+        miniDownload.MouseLeave += (_, _) => { if (!miniDownloadToggle.IsKeyboardFocusWithin) miniDownloadToggle.Opacity = 1; };
         miniDownloadToggle.GotKeyboardFocus += (_, _) => miniDownloadToggle.Opacity = 1;
-        miniDownloadToggle.LostKeyboardFocus += (_, _) => { if (!miniDownload.IsMouseOver) miniDownloadToggle.Opacity = 0; };
+        miniDownloadToggle.LostKeyboardFocus += (_, _) => { if (!miniDownload.IsMouseOver) miniDownloadToggle.Opacity = 1; };
         miniDownloadToggle.Click += (_, e) => { e.Handled = true; ToggleMiniDownload(); };
-        miniDownload.MouseLeftButtonUp += (_, e) => { if (miniDownloadToggle.IsMouseOver) return; e.Handled = true; ToggleMiniDownload(); };
+        miniDownload.MouseLeftButtonUp += (_, e) => { if (miniDownloadToggle.IsMouseOver) return; e.Handled = true; OpenDownloadTasks(); };
         miniDownloadTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(250), DispatcherPriority.Background, (_, _) => RefreshMiniDownloads(), Dispatcher);
         miniDownloadTimer.Start(); Closed += (_, _) => miniDownloadTimer.Stop(); RefreshMiniDownloads(true);
     }
@@ -56,6 +60,7 @@ public partial class MainWindow
         if (reload) miniRecords = operations.History().ToList();
         var record = MiniDownloadRecord();
         miniDownload.Visibility = record == null ? Visibility.Collapsed : Visibility.Visible;
+        UpdateTaskbarDownload(record);RefreshDownloadTasks();
         if (record == null) { sampledDownloadId = ""; return; }
         if(record.State==OperationState.Failed)
         {
@@ -64,7 +69,7 @@ public partial class MainWindow
             miniDownload.ToolTip=record.Name+"\n"+record.Message+"\n点击重试；任务与恢复页可查看记录。";
             AutomationProperties.SetName(miniDownloadToggle,"重试失败下载");return;
         }
-        miniDownloadToggle.Opacity=miniDownload.IsMouseOver||miniDownloadToggle.IsKeyboardFocusWithin?1:0;
+        miniDownloadToggle.Opacity=1;
         var active = operations.Current;
         var tick = System.Diagnostics.Stopwatch.GetTimestamp();
         var bytes = active?.Record.Id == record.Id ? active.TransferredBytes : 0;
@@ -76,7 +81,7 @@ public partial class MainWindow
         var running = active?.Record.Id == record.Id && record.State == OperationState.Running;
         var percent = record.Percent is { } p ? Math.Clamp(p, 0, 100) : (double?)null;
         miniDownloadLabel.Text = (pausing ? "正在暂停" : paused ? "下载已暂停" : running ? "下载" : "等待下载") + (percent.HasValue ? $" {percent:0}%" : "");
-        miniDownloadSpeed.Text = running && !paused ? FormatDownloadSpeed(sampledSpeed) : "—";
+        miniDownloadSpeed.Text = running && !paused ? sampledSpeed>0?FormatDownloadSpeed(sampledSpeed):"准备 / 校验" : "—";
         miniDownloadProgress.IsIndeterminate = running && !paused && percent == null;
         miniDownloadProgress.Value = percent ?? 0;
         miniDownloadToggle.Content = paused ? "继续" : "暂停";

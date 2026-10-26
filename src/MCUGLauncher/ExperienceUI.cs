@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 using System.Windows;
@@ -12,6 +12,7 @@ public partial class MainWindow
     string SaveBackupRoot => Path.Combine(settingsDir,"world-backups");
     void BuildExperienceUI()
     {
+        var downloadTasks=new MenuItem{Header="下载任务"};downloadTasks.Click+=(_,_)=>OpenDownloadTasks();moreMenu.Items.Add(downloadTasks);
         var tools=new MenuItem { Header="Java 管理" }; tools.Click+=(_,_)=>OpenJavaManager(prefs.Root,Versions.SelectedValue as string ?? "",path=>{ if(busy) throw new IOException("请等待任务完成再更改 Java。"); prefs.Java=path; prefs.Launch.Java=path; JavaPath.Text=path; settings.Save(prefs); }); moreMenu.Items.Add(tools);
         var backups=new MenuItem { Header="存档保护与恢复" }; backups.Click+=(_,_)=>OpenSaveProtection(); moreMenu.Items.Add(backups);
         var servers=new MenuItem { Header="服务器收藏" }; servers.Click+=(_,_)=>OpenServers(); moreMenu.Items.Add(servers);

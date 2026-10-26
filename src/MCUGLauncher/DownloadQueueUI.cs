@@ -26,8 +26,10 @@ public partial class MainWindow
     {
         var root = prefs.Root; var java = prefs.Java; var optional = PackOptional.IsChecked == true;
         var overview = await Task.Run(() => PackService.ReadOverview(file));
+        var displayName=ConfirmPackImport(overview,root);
+        if(displayName==null)return;
         var hash = await Task.Run(() => ContentTransaction.Hash(file));
-        operations.Enqueue("导入整合包 · " + overview.Name+" · "+overview.Requirements.Minecraft+" / "+overview.Requirements.Loader, root, file, new() { Kind = "import", File = file, SourceHash = hash, Java = java, Optional = optional });
+        operations.Enqueue("导入整合包 · " + displayName+" · "+overview.Requirements.Minecraft+" / "+overview.Requirements.Loader, root, file, new() { Kind = "import", File = file, SourceHash = hash, Java = java, Optional = optional,PackDisplayName=displayName });
         RefreshOperations(); Status.Text = overview.Format+" 整合包已识别并加入下载队列";
     }
     async Task PumpDownloads()
@@ -83,7 +85,7 @@ public partial class MainWindow
                     await packs.Download(asset.Url, file, asset.Hashes.GetValueOrDefault("sha512") ?? "", text => context.Report(text));
                 }
                 var result = await packs.Import(file, root, InstallGame, request.Optional, text => context.Report(text), request.PackInstance);
-                installed = result.InstanceId; new InstanceCatalog(root).GetOrCreate(installed); break;
+                installed = result.InstanceId;var catalog=new InstanceCatalog(root);var descriptor=catalog.GetOrCreate(installed);if(request.PackDisplayName.Length>0){descriptor.DisplayName=request.PackDisplayName;catalog.Save(descriptor);} break;
             case "content":
                 var service = new ContentService(http, token);
                 var plan = request.PreparedPlan ?? await service.Resolve(request.Content ?? throw new IOException("任务缺少资源版本。"), request.GameVersion, request.Loader);

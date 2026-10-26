@@ -81,8 +81,21 @@ public partial class MainWindow
     }
     async void HandleFileDrop(object sender, DragEventArgs e)
     {
+        if(dropFeedback!=null)dropFeedback.Visibility=Visibility.Collapsed;
         if (busy || !e.Data.GetDataPresent(DataFormats.FileDrop)) return;
         e.Handled = true; var files = (string[])e.Data.GetData(DataFormats.FileDrop);
+        await ImportDroppedFiles(files);
+    }
+    async Task ImportDroppedFiles(string[] files)
+    {
+        if(busy || files.Length==0)return;
+        // Pack confirmation must happen before a busy operation is started.
+        try
+        {
+            if(files.Length==1 && await Task.Run(()=>LocalImportClassifier.Identify(files[0]))==LocalImportKind.Modpack){await QueuePackImport(files[0]);return;}
+        }
+        catch(Exception ex){InlineMessageBox.Show(ex.Message,"无法导入");return;}
+        string targetDirectory;try{targetDirectory=DropTargetDirectory();}catch(Exception ex){InlineMessageBox.Show(ex.Message,"请选择目标实例");return;}
         await Run(async () =>
         {
             RequireStopped();
@@ -93,7 +106,7 @@ public partial class MainWindow
                 if (planned.Count != 1) throw new IOException("整合包请单独拖入，其他资源请分开导入。");
                 await QueuePackImport(planned[0].File); return;
             }
-            var destination = Instance();
+            var destination = targetDirectory;
             string? dataWorld = null;
             if (planned.Any(p => p.Kind == LocalImportKind.DataPack))
             {
@@ -115,6 +128,7 @@ public partial class MainWindow
                 Log($"拖拽导入 {child}：新增 {count} 项，同名项目保留原文件。");
             }
             RefreshLocalContent();
+            refreshSketchManager?.Invoke();
         }, "拖拽导入文件");
     }
 }

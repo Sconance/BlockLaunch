@@ -11,6 +11,13 @@ MCUG Launcher 提供游戏启动、分类下载、账号登录和实例内容管
 
 ![版本内容管理](docs/images/manager.png)
 
+<details><summary>下载任务与整合包确认</summary>
+
+![下载任务](docs/images/download-tasks.png)
+![整合包导入](docs/images/pack-import.png)
+
+</details>
+
 <details><summary>Java 管理与个性化</summary>
 
 ![Java 管理](docs/images/java.png)
@@ -43,7 +50,7 @@ MCUG Launcher 提供游戏启动、分类下载、账号登录和实例内容管
 
 ## 源码与构建
 
-当前版本为 **0.19.1**，最终产品名确定为 **MCUG Launcher**。使用 Windows x64 与 .NET 8 SDK：
+当前版本为 **0.19.2**，最终产品名确定为 **MCUG Launcher**。使用 Windows x64 与 .NET 8 SDK：
 
 ```powershell
 git clone https://github.com/Sconance/MCUGLauncher.git
@@ -67,6 +74,14 @@ docs/      使用、构建、历史测试记录与截图
 请在 [Issues](https://github.com/Sconance/MCUGLauncher/issues) 提供软件版本、系统版本、复现步骤和脱敏日志。不要上传密码、Token、账号缓存或私人存档。参阅 [贡献说明](CONTRIBUTING.md)。
 
 ## 近期更新
+
+### [0.19.2](https://github.com/Sconance/MCUGLauncher/releases/tag/v0.19.2)
+
+- 拖入文件显示导入提示；整合包先确认名称和目标目录，其他资源导入管理页当前实例。
+- 顶栏下载进度、任务栏进度与内嵌下载列表，支持暂停、继续、取消和失败重试。
+- 下载期间保留账号切换和版本浏览；认证操作先提示暂停下载，安装与启动仍保持互斥。
+
+
 
 ### [0.19.1](https://github.com/Sconance/MCUGLauncher/releases/tag/v0.19.1)
 

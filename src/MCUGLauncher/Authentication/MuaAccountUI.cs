@@ -59,14 +59,14 @@ public partial class MainWindow
     }
     void MuaManagementClick(object sender,RoutedEventArgs args)
     {
-        if(busy)return;var body=new StackPanel();body.Children.Add(Heading("MUA 账号"));
+        if(busy && !DownloadInProgress)return;var body=new StackPanel();body.Children.Add(Heading("MUA 账号"));
         body.Children.Add(Hint(muaAccount==null?"尚未登录 MUA。":"角色："+muaAccount.Profile.Name+"\nUUID："+muaAccount.Profile.Id));body.Children.Add(Hint(MuaAccountService.Api));
         var dialog=FeatureDialog("MUA 账号设置",body);
-        body.Children.Add(ActionButton("登录 / 更换 MUA 账号",async(_,_)=>{dialog.Close();await Run(async()=>{await MuaLogin();},"MUA 登录");}));
-        body.Children.Add(ActionButton("验证并刷新会话",async(_,_)=>{dialog.Close();await Run(()=>EnsureMuaLogin(true),"刷新 MUA 会话");}));
+        body.Children.Add(ActionButton("登录 / 更换 MUA 账号",async(_,_)=>{dialog.Close();await RunAccountAction(async()=>{await MuaLogin();},"MUA 登录");}));
+        body.Children.Add(ActionButton("验证并刷新会话",async(_,_)=>{dialog.Close();await RunAccountAction(()=>EnsureMuaLogin(true),"刷新 MUA 会话");}));
         body.Children.Add(ActionButton("退出并清除 MUA 登录",async(_,_)=>
         {
-            dialog.Close();await Run(async()=>{RequireStopped();var revoked=await muaAccounts.Forget(CurrentToken);muaAccount=null;muaValidated=false;prefs.PreferMua=false;AccountMode.SelectedIndex=0;settings.Save(prefs);UpdateAccountBadge();Log(revoked?"已退出 MUA 并撤销当前会话。":"已清除本地 MUA 登录，认证站撤销未确认；可在 MUA 用户中心管理会话。");},"退出 MUA");
+            dialog.Close();await RunAccountAction(async()=>{RequireStopped();var revoked=await muaAccounts.Forget(CurrentToken);muaAccount=null;muaValidated=false;prefs.PreferMua=false;AccountMode.SelectedIndex=0;settings.Save(prefs);UpdateAccountBadge();Log(revoked?"已退出 MUA 并撤销当前会话。":"已清除本地 MUA 登录，认证站撤销未确认；可在 MUA 用户中心管理会话。");},"退出 MUA");
         }));
         body.Children.Add(ActionButton("MUA 用户中心 ↗",(_,_)=>System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://skin.mualliance.ltd/user"){UseShellExecute=true})));
         dialog.ShowDialog();

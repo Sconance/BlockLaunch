@@ -45,7 +45,7 @@ public partial class MainWindow : Window
         GameRoot.Text = prefs.Root; JavaPath.Text = prefs.Java; PlayerName.Text = prefs.Player;
         Memory.Text = prefs.Ram.ToString(); GameWidth.Text = prefs.Width.ToString(); GameHeight.Text = prefs.Height.ToString();
         prefs.Network ??= new(); runtimeNetwork = JsonSerializer.Deserialize<NetworkSettings>(JsonSerializer.Serialize(prefs.Network))!; http.Dispose(); http = NetworkPolicyHandler.Create(runtimeNetwork);
-        http.DefaultRequestHeaders.UserAgent.ParseAdd("MCUGLauncher/0.19.1 (Windows-desktop-launcher)");
+        http.DefaultRequestHeaders.UserAgent.ParseAdd("MCUGLauncher/0.19.2 (Windows-desktop-launcher)");
         SetupLauncher();
         BuildFeaturePages(); ApplyPersonalization(); BuildAccountUI(); BuildDiagnosticsUI(); BuildCompactShell(); BuildHomeAccountPanel(); BuildMiniDownloads(); BuildExperienceUI(); BuildInlineHost(); BuildWindowChrome(); BuildKeyboardNavigation(); BuildSketchUI(); BuildModernUI();
         Loaded += async (_, _) =>
@@ -92,8 +92,9 @@ public partial class MainWindow : Window
     void SetInputs(bool enabled)
     {
         LaunchGameButton.IsEnabled = enabled && Versions.SelectedItem != null; StopGameButton.Visibility = game is { HasExited: false } ? Visibility.Visible : Visibility.Collapsed;
-        Versions.IsEnabled = enabled; Snapshots.IsEnabled = enabled; AccountMode.IsEnabled = enabled;
-        PlayerName.IsEnabled = enabled; GameRoot.IsEnabled = enabled; JavaPath.IsEnabled = enabled;
+        LaunchGameButton.ToolTip=DownloadInProgress?"请先暂停下载，再启动游戏，避免安装文件与游戏进程同时使用。":"启动当前选择的已安装版本";System.Windows.Controls.ToolTipService.SetShowOnDisabled(LaunchGameButton,true);
+        Versions.IsEnabled = enabled || DownloadInProgress; Snapshots.IsEnabled = enabled; AccountMode.IsEnabled = enabled || DownloadInProgress;
+        PlayerName.IsEnabled = enabled || DownloadInProgress; GameRoot.IsEnabled = enabled; JavaPath.IsEnabled = enabled;
         Memory.IsEnabled = enabled; GameWidth.IsEnabled = enabled; GameHeight.IsEnabled = enabled;
         var browse = enabled || operations.Current?.Record.Download != null;
         SearchQuery.IsEnabled = browse; ContentType.IsEnabled = browse; SearchResults.IsEnabled = browse;

@@ -14,6 +14,7 @@ public sealed class DownloadRequest
     public string File { get; set; } = "";
     public string SourceHash { get; set; } = "";
     public string PackInstance { get; set; } = "pack-" + Guid.NewGuid().ToString("N")[..12];
+    public string PackDisplayName { get; set; } = "";
     public string GameVersion { get; set; } = "";
     public bool Optional { get; set; }
     public ContentVersion? Content { get; set; }

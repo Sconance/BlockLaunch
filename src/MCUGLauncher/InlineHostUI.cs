@@ -32,7 +32,7 @@ public partial class MainWindow
         Closing += (_,_) => { foreach(var page in inlinePages.ToList().AsEnumerable().Reverse()) page.ForceClose(); };
         ((DockPanel)root.Children[0]).PreviewMouseDown += (_,e) =>
         {
-            if(inlinePages.Count!=1 || !Equals(inlinePages[0].Tag,"SketchManager"))return;
+            if(inlinePages.Count!=1 || !(Equals(inlinePages[0].Tag,"SketchManager")||Equals(inlinePages[0].Tag,"DownloadTasks")))return;
             DependencyObject? node=e.OriginalSource as DependencyObject;
             while(node!=null && node is not RadioButton && node is not MenuItem)
                 node=node is Visual ? VisualTreeHelper.GetParent(node) : LogicalTreeHelper.GetParent(node);
@@ -79,7 +79,7 @@ public partial class MainWindow
         inlineContent!.Content = current; inlineHost!.Visibility = current == null ? Visibility.Collapsed : Visibility.Visible;
         if (underlyingPage != null) underlyingPage.Visibility = current == null ? Visibility.Visible : Visibility.Collapsed;
         // Keep the caption controls available. Leaving a modal editor uses its explicit Back action.
-        foreach(var item in ((DockPanel)((Grid)Content).Children[0]).Children.OfType<StackPanel>().Where(item=>!Equals(item.Tag,"WindowControls"))) item.IsEnabled = current == null || (inlinePages.Count==1 && Equals(current.Tag,"SketchManager"));
+        foreach(var item in ((DockPanel)((Grid)Content).Children[0]).Children.OfType<StackPanel>().Where(item=>!Equals(item.Tag,"WindowControls"))) item.IsEnabled = current == null || (inlinePages.Count==1 && (Equals(current.Tag,"SketchManager")||Equals(current.Tag,"DownloadTasks")));
         if (current != null) { inlineTitle!.Text=current.Title; inlineHost.Background=Background; Dispatcher.BeginInvoke(()=> { ThemeWindow(this); current.Focus(); }); }
     }
     void ShowStartupProblem(string message)

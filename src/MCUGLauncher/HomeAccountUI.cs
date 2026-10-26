@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -29,9 +29,9 @@ public partial class MainWindow
         AvatarPlayerName.FontSize=20;AvatarPlayerName.MaxWidth=220;AvatarPlayerName.TextTrimming=TextTrimming.CharacterEllipsis;identity.Children.Add(AvatarPlayerName);
         AccountStatus.FontSize=11;AccountStatus.TextWrapping=TextWrapping.Wrap;AccountStatus.MaxWidth=220;AccountStatus.TextAlignment=TextAlignment.Center;AccountStatus.Margin=new Thickness(0,7,0,14);identity.Children.Add(AccountStatus);
         offlineIdentity=new StackPanel();offlineIdentity.Children.Add(new TextBlock {Text="离线角色名",FontSize=11,Foreground=Brushes.SlateGray}); PlayerName.ToolTip="离线模式使用的游戏名称：3–16 位英文字母、数字或下划线";offlineIdentity.Children.Add(PlayerName);offlineIdentity.Children.Add(new TextBlock {Text="仅用于离线游戏，不影响正版角色。",FontSize=10,Foreground=Brushes.SlateGray,TextWrapping=TextWrapping.Wrap});identity.Children.Add(offlineIdentity);
-        microsoftIdentity=new StackPanel();microsoftSignIn=ActionButton("登录微软账号",async(_,_)=>await Run(Login,"微软正版登录"));microsoftIdentity.Children.Add(microsoftSignIn);
+        microsoftIdentity=new StackPanel();microsoftSignIn=ActionButton("登录微软账号",async(_,_)=>await RunAccountAction(Login,"微软正版登录"));microsoftIdentity.Children.Add(microsoftSignIn);
         var manage=ActionButton("账号设置",AccountManagementClick);manage.Background=Brushes.Transparent;manage.FontSize=11;microsoftIdentity.Children.Add(manage);identity.Children.Add(microsoftIdentity);
-        muaIdentity=new StackPanel();muaSignIn=ActionButton("登录 MUA 账号",async(_,_)=>await Run(async()=>{await MuaLogin();},"MUA 登录"));muaIdentity.Children.Add(muaSignIn);muaIdentity.Children.Add(ActionButton("MUA 账号设置",MuaManagementClick));identity.Children.Add(muaIdentity);
+        muaIdentity=new StackPanel();muaSignIn=ActionButton("登录 MUA 账号",async(_,_)=>await RunAccountAction(async()=>{await MuaLogin();},"MUA 登录"));muaIdentity.Children.Add(muaSignIn);muaIdentity.Children.Add(ActionButton("MUA 账号设置",MuaManagementClick));identity.Children.Add(muaIdentity);
         var home=(Grid)((TabItem)MainTabs.Items[0]).Content;
         var banner=home.Children.OfType<Border>().FirstOrDefault(b=>b!=card && Grid.GetColumn(b)==2);
         if(banner!=null && !File.Exists(prefs.BackgroundPath))

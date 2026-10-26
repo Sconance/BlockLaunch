@@ -2,7 +2,7 @@
   <PropertyGroup>
     <OutputType>WinExe</OutputType><TargetFramework>net8.0-windows</TargetFramework>
     <UseWPF>true</UseWPF><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable>
-    <AssemblyName>MCUGLauncher</AssemblyName><RootNamespace>BlockLaunch</RootNamespace><Version>0.19.1</Version><Product>MCUG Launcher</Product><Title>MCUG Launcher</Title>
+    <AssemblyName>MCUGLauncher</AssemblyName><RootNamespace>BlockLaunch</RootNamespace><Version>0.19.2</Version><Product>MCUG Launcher</Product><Title>MCUG Launcher</Title>
     <PublishSingleFile>true</PublishSingleFile><SelfContained>true</SelfContained>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
