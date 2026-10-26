@@ -12,7 +12,7 @@ public static class Program
         var source = System.Xml.Linq.XDocument.Load(Path.Combine(AppContext.BaseDirectory, "Fixtures", "LauncherApp.xaml")); var ns = source.Root!.Name.Namespace;
         var dictionary = new System.Xml.Linq.XElement(ns + "ResourceDictionary", new System.Xml.Linq.XAttribute(System.Xml.Linq.XNamespace.Xmlns + "x", "http://schemas.microsoft.com/winfx/2006/xaml"), source.Root.Element(ns + "Application.Resources")!.Nodes());
         var app = new Application { Resources = (ResourceDictionary)System.Windows.Markup.XamlReader.Parse(dictionary.ToString()) };
-        app.Run(new MainWindow(root) { Title = "MCUG Launch · 窗口还原隔离验收" });
+        app.Run(new MainWindow(root) { Title = "MCUG Launcher · 窗口还原隔离验收" });
     }
 }
 

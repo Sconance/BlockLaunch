@@ -41,7 +41,7 @@ public partial class MainWindow
         var heading=(Grid)((StackPanel)PageTitle.Parent).Parent;
         heading.Visibility=Visibility.Collapsed;
         var header=(DockPanel)((Grid)Content).Children[0];
-        var logo=new BitmapImage(new Uri("pack://application:,,,/MCUGLaunch;component/Assets/MCUGLogo.png"));Icon=logo;
+        var logo=new BitmapImage(new Uri("pack://application:,,,/MCUGLauncher;component/Assets/MCUGLogo.png"));Icon=logo;
         header.Children.Insert(0,new Image {Source=logo,Width=30,Height=30,Margin=new Thickness(12,6,0,6)});
         if(header.Children.OfType<TextBlock>().FirstOrDefault() is TextBlock brand){brand.Width=160;brand.Margin=new Thickness(8,0,0,0);}
         var greeting=new TextBlock {Text="选择版本，开始游戏。",Foreground=Brushes.White,FontSize=11,VerticalAlignment=VerticalAlignment.Center,Margin=new Thickness(14,0,8,0)};

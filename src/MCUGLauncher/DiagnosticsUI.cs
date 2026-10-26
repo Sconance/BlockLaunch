@@ -107,7 +107,7 @@ public partial class MainWindow
         var dialog = FeatureDialog("反馈包预览（仅保存到本机）", body);
         body.Children.Add(ActionButton("选择位置并导出这些文本", async (_, _) =>
         {
-            var picker = new SaveFileDialog { Filter = "反馈 ZIP|*.zip", FileName = "MCUGLaunch-Feedback-" + DateTime.Now.ToString("yyyyMMdd-HHmmss") + ".zip" };
+            var picker = new SaveFileDialog { Filter = "反馈 ZIP|*.zip", FileName = "MCUGLauncher-Feedback-" + DateTime.Now.ToString("yyyyMMdd-HHmmss") + ".zip" };
             if (picker.ShowDialog(dialog) != true) return;
             var frozen = documents.ToArray(); dialog.Close();
             await Run(async () => { await Task.Run(() => Diagnostics.Export(frozen, picker.FileName, CurrentToken), CurrentToken); Log("反馈包已保存到本机：" + picker.FileName + "；未自动上传。"); }, "导出反馈快照");

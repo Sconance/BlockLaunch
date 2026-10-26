@@ -14,7 +14,7 @@ using XboxAuthNet.Game.SessionStorages;
 if (args.Contains("--avatar") || args.Contains("--avatar-live")) { AvatarChecks.Run(args.Contains("--avatar-live")); return; }
 if (args.Contains("--status") || args.Contains("--live"))
 {
-    using var liveHttp = new HttpClient(); liveHttp.DefaultRequestHeaders.UserAgent.ParseAdd("BlockLaunch/0.5.1 (account-verification)");
+    using var liveHttp = new HttpClient(); liveHttp.DefaultRequestHeaders.UserAgent.ParseAdd("MCUGLauncher/0.5.1 (account-verification)");
     var liveService = new MicrosoftAccountService(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BlockLaunch", "accounts"), liveHttp);
     Console.WriteLine("SAVED_MICROSOFT_ACCOUNT=" + (liveService.ReadSavedAccount() != null));
     if (args.Contains("--live"))

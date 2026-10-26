@@ -1,4 +1,4 @@
-﻿using BlockLaunch;
+using BlockLaunch;
 using System.IO;
 using System.Reflection;
 using System.Windows;
@@ -41,7 +41,8 @@ static class Program
         {
             Check(((ComboBox)Field("AccountMode")).SelectedIndex==2,"preferred MUA mode survives missing cache without offline fallback");((ComboBox)Field("AccountMode")).SelectedIndex=0;
             Check(window.WindowStyle==WindowStyle.None && WindowChrome.GetWindowChrome(window)?.ResizeBorderThickness.Left==6,"custom integrated caption retains resize border");
-            Check(window.Title.StartsWith("MCUG Launch") && ((SolidColorBrush)app.Resources["AccentBrush"]).Color==Color.FromRgb(0,109,184),"new brand uses Wuhan CUG blue");
+            Check(typeof(MainWindow).Assembly.GetName().Name == "MCUGLauncher" && typeof(MainWindow).Assembly.GetName().Version!.ToString() == "0.19.0.0", "final assembly name and version");
+            Check(window.Title.StartsWith("MCUG Launcher") && ((SolidColorBrush)app.Resources["AccentBrush"]).Color==Color.FromRgb(0,109,184),"new brand uses Wuhan CUG blue");
             Call("RefreshInstanceViews"); var search=(TextBox)Field("instanceQuery");var versions=(ListBox)Field("instanceList");
             search.Text="no-such-installed-version";Check(versions.Items.Count==0,"installed version search hides unmatched entries");
             search.Text="1.21.1";Check(versions.Items.Count>0,"installed version search finds local game version");search.Clear();

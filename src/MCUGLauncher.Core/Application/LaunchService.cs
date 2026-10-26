@@ -12,7 +12,7 @@ public static class LaunchService
         var shared = new MinecraftPath(request.Root);
         var instance = new MinecraftPath(request.InstanceDirectory) { Library = shared.Library, Versions = shared.Versions, Assets = shared.Assets, Runtime = shared.Runtime, Resource = shared.Resource };
         var parameters = http == null ? MinecraftLauncherParameters.CreateDefault(shared) : MinecraftLauncherParameters.CreateDefault(shared, http); parameters.VersionLoader = new CmlLib.Core.VersionLoader.LocalJsonVersionLoader(shared);
-        var options = new MLaunchOption { Session = request.Session, MaximumRamMb = request.Ram, ScreenWidth = request.Width, ScreenHeight = request.Height, GameLauncherName = "MCUGLaunch", Path = instance };
+        var options = new MLaunchOption { Session = request.Session, MaximumRamMb = request.Ram, ScreenWidth = request.Width, ScreenHeight = request.Height, GameLauncherName = "MCUGLauncher", Path = instance };
         var java = request.Java.Length > 0 ? request.Java : await JavaDiscovery.FindCompatible(request.Root, request.Profile, token);
         if (request.Java.Length > 0)
         {

@@ -6,7 +6,7 @@ using System.Text;
 using System.IO.Compression;
 if (args.FirstOrDefault() == "--resources")
 {
-    using var live = new HttpClient(); live.DefaultRequestHeaders.UserAgent.ParseAdd("BlockLaunch/0.5 (desktop-resource-verification)"); var service = new ContentService(live);
+    using var live = new HttpClient(); live.DefaultRequestHeaders.UserAgent.ParseAdd("MCUGLauncher/0.5 (desktop-resource-verification)"); var service = new ContentService(live);
     foreach (var kind in new[] { "mod", "resourcepack", "shader", "datapack", "modpack" })
     {
         var page = await service.Search("", "1.21.1", kind == "datapack" ? "datapack" : "fabric", kind);

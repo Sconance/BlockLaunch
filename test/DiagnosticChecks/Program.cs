@@ -75,7 +75,7 @@ try
     var childRoot = Path.Combine(root, "child-instance"); Directory.CreateDirectory(childRoot);
     var processLog = Path.Combine(childRoot, "process-output.log");
     var child = new Process { StartInfo = new ProcessStartInfo(Environment.ProcessPath!) { UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true } };
-    if (Path.GetFileNameWithoutExtension(Environment.ProcessPath).Equals("dotnet", StringComparison.OrdinalIgnoreCase)) child.StartInfo.ArgumentList.Add(typeof(Diagnostics).Assembly.Location.Replace("BlockLaunch.Core.dll", "DiagnosticChecks.dll"));
+    if (Path.GetFileNameWithoutExtension(Environment.ProcessPath).Equals("dotnet", StringComparison.OrdinalIgnoreCase)) child.StartInfo.ArgumentList.Add(typeof(Diagnostics).Assembly.Location.Replace("MCUGLauncher.Core.dll", "DiagnosticChecks.dll"));
     child.StartInfo.ArgumentList.Add("--crash-fixture");
     var childStarted = DateTime.UtcNow; var session = new GameSession(child, processLog, _ => { }, ["child-process-fixture-secret"]); session.Start();
     var exit = await session.Completion.WaitAsync(TimeSpan.FromSeconds(15));

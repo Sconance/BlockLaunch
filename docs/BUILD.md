@@ -4,14 +4,14 @@
 
 | 目录 | 内容 |
 | --- | --- |
-| `src/BlockLaunch/` | WPF 界面、认证、图标与功能交互 |
-| `src/BlockLaunch.Core/` | 下载、Java、实例、整合包等服务 |
+| `src/MCUGLauncher/` | WPF 界面、认证、图标与功能交互 |
+| `src/MCUGLauncher.Core/` | 下载、Java、实例、整合包等服务 |
 | `test/` | 22 个独立检查程序 |
 | `tools/` | 4 个使用合成数据的界面预览程序 |
 | `scripts/` | 构建、发布、指定检查与静态布局校验 |
 | `docs/` | 使用指南、构建说明、依赖清单、历史测试记录与截图 |
 
-项目名与命名空间保留内部旧名 BlockLaunch，不影响产品名称。
+命名空间与兼容存储路径保留内部旧名 BlockLaunch，不影响产品名称。
 根目录保留 README、CHANGELOG 和 CONTRIBUTING，便于仓库平台展示。
 
 ## 构建与发布
@@ -27,12 +27,12 @@
 也可以直接使用 SDK：
 
 ```powershell
-dotnet restore src/BlockLaunch/BlockLaunch.csproj
-dotnet build src/BlockLaunch/BlockLaunch.csproj -c Release
-dotnet publish src/BlockLaunch/BlockLaunch.csproj -c Release -o artifacts/publish
+dotnet restore src/MCUGLauncher/MCUGLauncher.csproj
+dotnet build src/MCUGLauncher/MCUGLauncher.csproj -c Release
+dotnet publish src/MCUGLauncher/MCUGLauncher.csproj -c Release -o artifacts/publish
 ```
 
-输出 `artifacts/publish/MCUGLaunch.exe`。项目已配置自包含、Windows x64 单文件。
+输出 `artifacts/publish/MCUGLauncher.exe`。项目已配置自包含、Windows x64 单文件。
 游戏仍需 Java，微软内嵌授权需要 WebView2。Linux 不能直接运行 WPF 界面。
 
 ## 运行检查
