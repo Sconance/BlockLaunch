@@ -1,5 +1,5 @@
 <p align="center"><img src="src/BlockLaunch/Assets/MCUGLogo.png" width="112" alt="MCUG Launch Logo"></p>
-<h1 align="center">MCUG Launch</h1>
+<h1 align="center">MCUG Launcher</h1>
 <p align="center">面向 Windows 的 Minecraft Java 版启动器</p>
 <p align="center"><a href="https://github.com/Sconance/MCUGLaunch/releases/latest">下载最新版</a> · <a href="docs/USAGE.md">使用指南</a> · <a href="https://github.com/Sconance/MCUGLaunch/issues">反馈问题</a> · <a href="CHANGELOG.md">更新记录</a></p>
 
