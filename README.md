@@ -1,4 +1,4 @@
-<p align="center"><img src="BlockLaunch/Assets/MCUGLogo.png" width="112" alt="MCUG Launch Logo"></p>
+<p align="center"><img src="src/BlockLaunch/Assets/MCUGLogo.png" width="112" alt="MCUG Launch Logo"></p>
 <h1 align="center">MCUG Launch</h1>
 <p align="center">面向 Windows 的 Minecraft Java 版启动器</p>
 <p align="center"><a href="https://github.com/Sconance/MCUGLaunch/releases/latest">下载最新版</a> · <a href="docs/USAGE.md">使用指南</a> · <a href="https://github.com/Sconance/MCUGLaunch/issues">反馈问题</a> · <a href="CHANGELOG.md">更新记录</a></p>
@@ -46,11 +46,19 @@ MCUG Launch 提供游戏启动、分类下载、账号登录和实例内容管�
 ```powershell
 git clone https://github.com/Sconance/MCUGLaunch.git
 cd MCUGLaunch
-dotnet build BlockLaunch/BlockLaunch.csproj -c Release
-dotnet publish BlockLaunch/BlockLaunch.csproj -c Release -o artifacts/publish
+dotnet build src/BlockLaunch/BlockLaunch.csproj -c Release
+dotnet publish src/BlockLaunch/BlockLaunch.csproj -c Release -o artifacts/publish
 ```
 
 详见 [构建与目录说明](docs/BUILD.md)。历史版本源码仍保留在各 Release 的手动 Source.zip 附件中；旧标签未移动，旧版自动生成的 Source code 归档可能仅含原仓库文件。
+
+```text
+src/       主程序与核心逻辑（2 个项目）
+test/      功能、界面与集成检查（22 个项目）
+tools/     隔离界面预览（4 个项目）
+scripts/   构建与检查脚本
+docs/      使用、构建、历史测试记录与截图
+```
 
 ## 反馈与贡献
 
@@ -72,4 +80,4 @@ dotnet publish BlockLaunch/BlockLaunch.csproj -c Release -o artifacts/publish
 
 [完整更新记录](CHANGELOG.md) · [全部历史版本](https://github.com/Sconance/MCUGLaunch/releases)
 
-MCUG Launch 为独立项目，非 Mojang 或 Microsoft 官方产品。第三方组件见 [依赖清单](BlockLaunch/DEPENDENCIES.md) 与程序内声明。项目整体许可证尚未指定，不代表自动授予任意使用或再分发许可。
+MCUG Launch 为独立项目，非 Mojang 或 Microsoft 官方产品。第三方组件见 [依赖清单](docs/DEPENDENCIES.md) 与程序内声明。项目整体许可证尚未指定，不代表自动授予任意使用或再分发许可。

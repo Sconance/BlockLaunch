@@ -1,25 +1,79 @@
 # 构建与目录
 
+## 目录职责
+
+| 目录 | 内容 |
+| --- | --- |
+| `src/BlockLaunch/` | WPF 界面、认证、图标与功能交互 |
+| `src/BlockLaunch.Core/` | 下载、Java、实例、整合包等服务 |
+| `test/` | 22 个独立检查程序 |
+| `tools/` | 4 个使用合成数据的界面预览程序 |
+| `scripts/` | 构建、发布、指定检查与静态布局校验 |
+| `docs/` | 使用指南、构建说明、依赖清单、历史测试记录与截图 |
+
+项目名与命名空间保留内部旧名 BlockLaunch，不影响产品名称。
+根目录保留 README、CHANGELOG 和 CONTRIBUTING，便于仓库平台展示。
+
+## 构建与发布
+
 要求 Windows x64、.NET 8 SDK，首次还原 NuGet 包需要网络。
+以下命令从仓库根目录运行：
 
 ```powershell
-dotnet restore BlockLaunch/BlockLaunch.csproj
-dotnet build BlockLaunch/BlockLaunch.csproj -c Release
-dotnet publish BlockLaunch/BlockLaunch.csproj -c Release -o artifacts/publish
+.\scripts\build.ps1
+.\scripts\build.ps1 -Publish
 ```
 
-输出 artifacts/publish/MCUGLaunch.exe。项目已配置自包含、Windows x64 单文件。游戏仍需 Java，微软内嵌授权需要 WebView2。
-
-- BlockLaunch：WPF 界面、账号与功能交互。
-- BlockLaunch.Core：下载、Java、实例、整合包等服务。
-- *Checks：可独立运行的检查项目。
-- *Preview：隔离场景界面预览工具。
-
-保留现有兄弟目录关系以兼容 ProjectReference，内部旧名不影响产品名称。
+也可以直接使用 SDK：
 
 ```powershell
-dotnet run --project CompatibilityChecks/CompatibilityChecks.csproj -c Release
-dotnet run --project InlineUiChecks/InlineUiChecks.csproj -c Release
+dotnet restore src/BlockLaunch/BlockLaunch.csproj
+dotnet build src/BlockLaunch/BlockLaunch.csproj -c Release
+dotnet publish src/BlockLaunch/BlockLaunch.csproj -c Release -o artifacts/publish
 ```
 
-部分检查会启动窗口、访问网络或扫描本机环境，运行前阅读对应 Program.cs。自动化检查不代替真实授权、游戏联机或多显示器 DPI 验收。
+输出 `artifacts/publish/MCUGLaunch.exe`。项目已配置自包含、Windows x64 单文件。
+游戏仍需 Java，微软内嵌授权需要 WebView2。Linux 不能直接运行 WPF 界面。
+
+## 运行检查
+
+检查项目使用自定义控制台断言，以 `dotnet run` 执行，不是 `dotnet test`。
+PowerShell 脚本支持从任意工作目录调用，执行时会切换到仓库根目录：
+
+```powershell
+.\scripts\run-checks.ps1 -Name CompatibilityChecks
+.\scripts\run-checks.ps1 -Name DownloadChecks,DependencyChecks
+.\scripts\run-checks.ps1 -Name AuthChecks -CheckArguments '--avatar'
+```
+
+直接运行的等价示例：
+
+```powershell
+dotnet run --project test/InlineUiChecks/InlineUiChecks.csproj -c Release
+```
+
+脚本不会默认批量运行全部检查。部分检查会启动窗口、访问网络、读取账号缓存或扫描
+本机环境，运行前阅读对应 `Program.cs`。集成检查可能下载和启动真实游戏，需单独准备
+Java 与游戏环境。自动化检查不代替真实授权、游戏联机或多显示器 DPI 验收。
+
+## 界面预览与资源
+
+```powershell
+dotnet run --project tools/CompactPreview/CompactPreview.csproj -c Release
+```
+
+从仓库根目录运行预览，生成的隔离数据存入已忽略的 `work/`。
+主题 XAML 由项目配置复制到输出目录的 `Fixtures/LauncherApp.xaml`，不依赖旧开发机
+或 `work/v092/`。MUA 检查中的 metadata JSON 为合成 fixture，不是真实认证站响应，
+也不包含真人凭据。真实组件与认证集成验证仍需独立执行。
+
+## 静态布局校验
+
+```powershell
+python scripts/check-layout.py
+```
+
+只需 Python 3 标准库，在 Windows 或 Linux 上检查项目 XML、项目引用、链接源码、
+图标与复制资源是否存在，并检查旧路径残留；不会编译或运行游戏。CI 在构建前执行此校验。
+
+`docs/TESTING.md` 是历史测试记录，不表示目录迁移后重新运行了全部检查。
