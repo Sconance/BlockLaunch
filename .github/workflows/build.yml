@@ -13,7 +13,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.0.x
+          global-json-file: global.json
       - name: Validate repository layout
         run: python scripts/check-layout.py
       - name: Check source formatting

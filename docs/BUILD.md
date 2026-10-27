@@ -16,7 +16,7 @@
 
 ## 构建与发布
 
-要求 Windows x64、.NET 8 SDK，首次还原 NuGet 包需要网络。
+要求 Windows x64、.NET 8 SDK（global.json 固定 8.0.426，可使用同 feature band 的更新补丁），首次还原 NuGet 包需要网络。
 以下命令从仓库根目录运行：
 
 ```powershell
