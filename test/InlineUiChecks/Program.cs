@@ -151,7 +151,8 @@ static class Program
             search.Clear();
             Capture("v0162-home-offline.png");
             Check(((StackPanel)Field("offlineIdentity")).Visibility == Visibility.Visible, "offline identity has explicitly labeled editable name");
-            typeof(MainWindow).GetField("savedAccount", flags)!.SetValue(window, new SavedMicrosoftAccount("OnlineFixture", "0123456789abcdef0123456789abcdef"));
+            var accountController = Field("microsoftAccountController");
+            accountController.GetType().GetProperty("SavedAccount", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)!.SetValue(accountController, new SavedMicrosoftAccount("OnlineFixture", "0123456789abcdef0123456789abcdef"));
             ((ComboBox)Field("AccountMode")).SelectedIndex = 1;
             Check(((StackPanel)Field("offlineIdentity")).Visibility == Visibility.Collapsed && ((TextBlock)Field("AvatarPlayerName")).Text == "OnlineFixture", "Microsoft mode displays saved role and hides offline input");
             Capture("v0162-home-online.png");

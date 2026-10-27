@@ -7,12 +7,13 @@ MCUG Launcher 是 .NET 8 / WPF 应用。先从本文件定位功能，再阅读�
 
 1. `src/MCUGLauncher/MainWindow/MainWindow.xaml.cs`：窗口初始化、服务组装与主操作。
 2. `src/MCUGLauncher/MainWindow.xaml`、`App.xaml`：命名控件和公共样式。
-3. 对应的 `*UI.cs`：页面构建、事件和状态展示。
+3. `src/MCUGLauncher/MainWindow/UI/` 对应区域的 `*UI.cs`：页面构建、事件和状态展示。
 4. `src/MCUGLauncher.Core/`：实际业务服务；UI 调用这些服务。
 5. `test/` 对应检查程序：合成输入、预期行为和失败边界。
 
-窗口功能正从 `partial MainWindow` 分文件逐步迁移为独立控制器，代码位于
-`src/MCUGLauncher/MainWindow/`；新控制器放在 `Controllers/`，通过构造参数接收窗口或控件依赖。
+窗口功能由 `partial MainWindow` 与独立组件共同实现，代码位于
+`src/MCUGLauncher/MainWindow/`；窗口 partial 按功能放在 `UI/`，交互控制器放在 `Controllers/`，构建器放在 `Builders/`，展示模型放在 `Models/`，生命周期初始化放在 `Initialization/`，页面组合放在 `Presentation/`，视觉样式放在 `Styling/`。
+新组件通过构造参数接收窗口或控件依赖。
 `MainWindow` 仍负责 WPF/XAML 事件入口与控制器组装；尚未迁移的功能仍共享窗口状态，**不是互相独立的组件**。
 初始化顺序集中在窗口构造函数中；调整父子控件关系前，应检查后续布局方法是否仍会读取它们。
 本次保留了这个兼容边界，没有为了整洁重写启动、认证或实例存储。
@@ -21,20 +22,23 @@ MCUG Launcher 是 .NET 8 / WPF 应用。先从本文件定位功能，再阅读�
 
 | 想修改的内容 | 界面入口 | 服务或数据 |
 | --- | --- | --- |
-| 账号面板、登录方式与头像 | `HomeAccountUI.cs`、`Controllers/AvatarController.cs` | `Authentication/` |
-| 主导航、窗口拖动、大小适配 | `ModernUI.cs`、`CompactShellUI.cs`、`Controllers/WindowChromeController.cs`、`Controllers/LauncherTooltipsController.cs` | 窗口自身 |
-| 主页版本选择、版本搜索与内容管理 | `SketchUI.cs`、`VersionSettingsUI.cs`、`Controllers/InstanceSearchController.cs` | Core `Domain/Instances.cs`、`Application/InstanceManagement.cs` |
-| 版本和资源下载 | `DownloadPageUI.cs`、`ContentUI.cs`、`Controllers/LoaderInstallationController.cs` | Core `GameInstaller.cs`、`ContentService.cs` |
-| 下载队列与任务操作 | `DownloadQueueUI.cs`、`DownloadTaskUI.cs`、`MiniDownloadUI.cs` | Core `Application/OperationCoordinator.cs` |
-| 文件拖入、资源导入 | `Controllers/FileDropController.cs`、`InstanceLibraryUI.cs` | Core `Application/LocalImportClassifier.cs`、`WorldArchives.cs` |
-| 整合包导入、导出、升级 | `PackUI.cs`、`PackUpgradeUI.cs` | Core `PackService.cs`、`Application/PackUpgrade.cs` |
+| 账号面板、登录方式与头像 | `UI/Accounts/HomeAccountUI.cs`、`Controllers/MicrosoftAccountController.cs`、`Controllers/PlayerIdentityController.cs` | `Authentication/` |
+| 主导航、窗口拖动、大小适配 | `UI/Shell/ModernUI.cs`、`UI/Shell/CompactShellUI.cs`、`Controllers/PageNavigationController.cs`、`Builders/WindowChromeBuilder.cs`、`Initialization/LauncherTooltipInitializer.cs`、`Styling/ModernThemeStyler.cs`、`Styling/WindowThemeStyler.cs` | 窗口自身 |
+| 内嵌管理页栈与呈现 | `Presentation/InlinePageHost.cs` | `InlineDialog` 页面及窗口标题栏 |
+| 主页版本选择、版本搜索与内容管理 | `UI/Instances/SketchUI.cs`、`UI/Instances/VersionSettingsUI.cs`、`Controllers/InstanceSearchController.cs`、`Controllers/InstanceUninstallationController.cs` | Core `Domain/Instances.cs`、`Application/InstanceManagement.cs` |
+| 版本和资源下载 | `UI/Downloads/DownloadPageUI.cs`、`UI/Content/ContentUI.cs`、`Builders/ContentSearchFilterBuilder.cs`、`Controllers/LoaderInstallationController.cs`、`Controllers/ContentUpdateController.cs` | Core `GameInstaller.cs`、`ContentService.cs` |
+| 下载队列与任务操作 | `UI/Downloads/DownloadQueueUI.cs`、`UI/Downloads/DownloadTaskUI.cs`、`UI/Downloads/MiniDownloadUI.cs` | Core `Application/OperationCoordinator.cs` |
+| 文件拖入、资源导入 | `Controllers/FileImportController.cs`、`UI/Instances/InstanceLibraryUI.cs`、`Presentation/InstanceLibraryDialog.cs` | Core `Application/LocalImportClassifier.cs`、`WorldArchives.cs` |
+| 整合包导入、导出、升级 | `UI/Packs/PackUI.cs`、`Controllers/PackUpgradeController.cs` | Core `PackService.cs`、`Application/PackUpgrade.cs` |
 | Java 与游戏启动 | `Controllers/JavaManagerController.cs`、`MainWindow.xaml.cs` | Core `Application/Java*.cs`、`LaunchService.cs` |
-| 主题、背景 | `AppearanceUI.cs`、`ExperienceThemeUI.cs`、`App.xaml` | Core `Domain/Preferences.cs` |
+| 主题、背景 | `UI/Experience/AppearanceUI.cs`、`Styling/WindowThemeStyler.cs`、`Initialization/UtilityWindowInitializer.cs`、`App.xaml` | Core `Domain/Preferences.cs` |
 | 下载与网络设置 | `Controllers/NetworkSettingsController.cs` | `NetworkPolicyHandler`、Core 网络策略 |
-| 崩溃分析与反馈 | `DiagnosticsUI.cs` | Core `Application/Diagnostics.cs` |
+| 崩溃分析与反馈 | `UI/Support/DiagnosticsUI.cs` | Core `Application/Diagnostics.cs` |
+
+所有 MainWindow 类/记录类型的逐类说明和源码链接见 [组件文档索引](MainWindow/README.md)。
 
 表中的 Core 路径相对于 `src/MCUGLauncher.Core/`；界面代码路径相对于
-`src/MCUGLauncher/MainWindow/`，控制器路径再包含 `Controllers/`；显式列出的 XAML 路径相对于
+`src/MCUGLauncher/MainWindow/`，组件路径再包含对应职责目录；显式列出的 XAML 路径相对于
 `src/MCUGLauncher/`。
 
 ## 如何扩展

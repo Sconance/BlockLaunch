@@ -106,15 +106,25 @@ try
     var outside = Path.Combine(root, "outside.log");
     File.WriteAllText(outside, "outside-secret");
     File.Delete(latest);
+    var symlinkCreated = false;
     try
     {
         File.CreateSymbolicLink(latest, outside);
-        var linked = Diagnostics.Capture(new(root, "1.21.1"));
-        Check(linked.Logs.Count == 0 && linked.Notices.Any(n => n.Contains("链接")), "SYMLINK_LOG_NOT_READ");
+        symlinkCreated = true;
     }
     catch (UnauthorizedAccessException)
     {
         Console.WriteLine("SYMLINK_TEST_SKIPPED_OS_PERMISSION");
+    }
+    catch (IOException ex) when (OperatingSystem.IsWindows() && ex.HResult == unchecked((int)0x80070522))
+    {
+        Console.WriteLine("SYMLINK_TEST_SKIPPED_OS_PERMISSION");
+    }
+
+    if (symlinkCreated)
+    {
+        var linked = Diagnostics.Capture(new(root, "1.21.1"));
+        Check(linked.Logs.Count == 0 && linked.Notices.Any(n => n.Contains("链接")), "SYMLINK_LOG_NOT_READ");
     }
 
     var childRoot = Path.Combine(root, "child-instance");
