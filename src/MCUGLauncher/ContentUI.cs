@@ -259,6 +259,7 @@ public partial class MainWindow
             InstallContentButton.IsEnabled = list.Count > 0;
             if (list.Count == 0)
                 ProjectDescription.Text += "\n\n没有符合筛选条件的可下载版本。";
+            await LoadResourcePresentation(project, token);
         });
     }
 

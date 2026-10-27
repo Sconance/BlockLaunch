@@ -2,7 +2,7 @@
 
 - Release 构建 0 警告、0 错误；完整版和 Lite 单文件发布成功。
 - DownloadUiChecks：页内详情、依赖数量、宽窄布局、返回列表、图片图标接口、分类及加载器入口检查通过。
-- CompactUiChecks：真实 Modrinth 搜索、版本选择、独立资源下载及游戏目录未改变检查通过。
+- CompactUiChecks：真实 Modrinth 搜索、多列卡片、版本选择、独立资源下载及游戏目录未改变检查通过；官方加载器版本读取和所选版本入队检查通过。
 - InlineUiChecks、WorkflowUiChecks、MiniDownloadChecks 通过。
 - 29 个项目的引用和资源布局检查通过；源码格式检查通过。
 - 渲染图覆盖 1220×820 与 900×640。组件渲染不等同于原生鼠标输入、多 DPI 和真人授权验收；本轮未重跑完整游戏启动矩阵。

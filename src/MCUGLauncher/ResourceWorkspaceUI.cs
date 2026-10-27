@@ -17,6 +17,10 @@ public partial class MainWindow
     readonly TextBlock resourceVersionFacts = new() { TextWrapping = TextWrapping.Wrap, FontSize = 12 };
     readonly TextBlock resourceDependencies = new() { TextWrapping = TextWrapping.Wrap, FontSize = 12 };
     readonly TextBlock resourceWorkspaceTitle = new() { FontSize = 22, FontWeight = FontWeights.SemiBold };
+    readonly WrapPanel resourceGallery = new() { Margin = new Thickness(0, 8, 0, 12) };
+    readonly TextBlock resourceBody = new() { TextWrapping = TextWrapping.Wrap, FontSize = 13, LineHeight = 21 };
+    readonly TextBlock resourceDependencyList = new() { TextWrapping = TextWrapping.Wrap, FontSize = 13, Margin = new Thickness(0, 8, 0, 0) };
+    readonly WrapPanel resourceTagChips = new() { Margin = new Thickness(0, 7, 0, 5) };
 
     void BuildResourceWorkspace()
     {
@@ -65,16 +69,28 @@ public partial class MainWindow
         name.Children.Add(ProjectTitle);
         resourceProjectMeta.SetResourceReference(TextBlock.ForegroundProperty, "UiSecondaryTextBrush");
         name.Children.Add(resourceProjectMeta);
+        name.Children.Add(resourceTagChips);
         identity.Children.Add(name);
         introduction.Children.Add(identity);
-        introduction.Children.Add(Heading("项目介绍"));
         ProjectDescription.MaxHeight = double.PositiveInfinity;
         ProjectDescription.FontSize = 13;
         ProjectDescription.Margin = new Thickness(0, 0, 0, 16);
         ProjectDescription.SetResourceReference(TextBlock.ForegroundProperty, "ThemeTextBrush");
-        introduction.Children.Add(ProjectDescription);
-        introduction.Children.Add(Heading("版本与兼容性"));
-        introduction.Children.Add(resourceVersionFacts);
+        var overview = new StackPanel();
+        overview.Children.Add(resourceGallery);
+        overview.Children.Add(ProjectDescription);
+        overview.Children.Add(resourceBody);
+        var versions = new StackPanel();
+        versions.Children.Add(resourceVersionFacts);
+        var versionList = new ListBox { MaxHeight = 320, Margin = new Thickness(0, 12, 0, 0), DisplayMemberPath = "Label" };
+        versionList.SetBinding(ItemsControl.ItemsSourceProperty, new Binding("ItemsSource") { Source = ProjectVersions });
+        versionList.SetBinding(System.Windows.Controls.Primitives.Selector.SelectedItemProperty, new Binding("SelectedItem") { Source = ProjectVersions, Mode = BindingMode.TwoWay });
+        versions.Children.Add(versionList);
+        var tabs = new TabControl { Margin = new Thickness(0, 14, 0, 0), Background = Brushes.Transparent, BorderThickness = new Thickness(0) };
+        tabs.Items.Add(new TabItem { Header = "介绍", Content = overview, Style = (Style)FindResource("ResourceDetailTab") });
+        tabs.Items.Add(new TabItem { Header = "版本", Content = versions, Style = (Style)FindResource("ResourceDetailTab") });
+        tabs.Items.Add(new TabItem { Header = "依赖", Content = resourceDependencyList, Style = (Style)FindResource("ResourceDetailTab") });
+        introduction.Children.Add(tabs);
         var links = new WrapPanel { Margin = new Thickness(0, 16, 0, 0) };
         foreach (var action in actions)
             links.Children.Add(action);
@@ -94,6 +110,7 @@ public partial class MainWindow
         options.Children.Add(Hint("资源文件保存到上方独立下载目录；整合包按现有流程导入独立实例。"));
         var optionCard = FeatureCard(options);
         optionCard.Padding = new Thickness(14);
+        optionCard.VerticalAlignment = VerticalAlignment.Top;
         var optionScroll = new ScrollViewer { Content = optionCard, VerticalContentAlignment = VerticalAlignment.Top, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
         Grid.SetColumn(optionScroll, 1);
         resourceDetailColumns.Children.Add(optionScroll);
@@ -106,12 +123,12 @@ public partial class MainWindow
         resourceFilterPanel = filters;
         resourcePagination = page.Children.OfType<Grid>().First(g => Grid.GetRow(g) == 3);
         resourceWorkspaceTitle.Margin = new Thickness(0, 0, 0, 6);
-        filters.Children.Insert(0, resourceWorkspaceTitle);
+        BuildResourceSearchLayout(filters);
         SearchQuery.ToolTip = "搜索名称、作者或关键词；按 Enter 搜索";
         SearchResults.ItemTemplate = (DataTemplate)FindResource("ResourceSearchItem");
         var style = new Style(typeof(ListBoxItem), (Style)FindResource(typeof(ListBoxItem)));
-        style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(12, 9, 12, 9)));
-        style.Setters.Add(new Setter(FrameworkElement.MarginProperty, new Thickness(0, 0, 0, 6)));
+        style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(12)));
+        style.Setters.Add(new Setter(FrameworkElement.MarginProperty, new Thickness(0, 0, 8, 8)));
         SearchResults.ItemContainerStyle = style;
     }
 
@@ -126,15 +143,27 @@ public partial class MainWindow
         // Clear only selection, keeping items and scroll position so the same project can be opened again.
         SearchResults.SelectedIndex = -1;
         resourceWorkspaceTitle.Text = downloadCategory == "Mod" ? "模组" : downloadCategory;
+        resourceWorkspaceSubtitle.Text = "发现、下载和收藏 Minecraft " + resourceWorkspaceTitle.Text + "。";
+        SearchQuery.Tag = "搜索" + resourceWorkspaceTitle.Text + "名称、作者或描述…";
     }
 
     void ShowResourceDetail(ContentProject project)
     {
         resourceProjectIcon.SetBinding(Image.SourceProperty, new Binding(nameof(ContentProject.IconUrl)) { Source = project });
         resourceProjectIcon.ToolTip = project.Title;
-        resourceProjectMeta.Text = $"作者：{project.Author} · {project.Downloads:N0} 次下载\n{project.Tags}";
+        resourceProjectMeta.Text = $"作者：{project.Author} · ↓ {project.Downloads:N0} 次下载";
+        resourceTagChips.Children.Clear();
+        foreach (var tag in project.Tags.Split('·', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var chip = new Border { CornerRadius = new CornerRadius(4), Padding = new Thickness(6, 2, 6, 2), Margin = new Thickness(0, 0, 5, 3), Child = new TextBlock { Text = tag, FontSize = 11 } };
+            chip.SetResourceReference(Border.BackgroundProperty, "ThemeInputBrush");
+            resourceTagChips.Children.Add(chip);
+        }
+        resourceGallery.Children.Clear();
+        resourceBody.Text = "";
         resourceVersionFacts.Text = "正在读取兼容版本…";
         resourceDependencies.Text = "正在读取依赖信息…";
+        resourceDependencyList.Text = "正在读取依赖信息…";
         resourceResultsLayout!.Visibility = Visibility.Collapsed;
         resourceDetailSurface!.Visibility = Visibility.Visible;
         resourceFilterPanel!.Visibility = Visibility.Collapsed;
@@ -147,12 +176,14 @@ public partial class MainWindow
         {
             resourceVersionFacts.Text = "暂无可用版本。可返回搜索结果调整游戏版本和加载器筛选。";
             resourceDependencies.Text = "尚未选择资源版本。";
+            resourceDependencyList.Text = resourceDependencies.Text;
             return;
         }
         resourceVersionFacts.Text = $"游戏版本：{string.Join("、", version.GameVersions)}\n加载器：{string.Join("、", version.Loaders)}\n发布时间：{version.DatePublished.ToLocalTime():yyyy/MM/dd HH:mm}\n文件大小：{version.Files.Sum(f => f.Size) / 1048576d:0.##} MB";
         var required = version.Dependencies.Count(d => d.DependencyType == "required");
         var optional = version.Dependencies.Count(d => d.DependencyType == "optional");
         resourceDependencies.Text = $"必需依赖：{required} 项\n可选依赖：{optional} 项\n\n独立文件下载不自动安装依赖。使用实例内安装功能时解析必需依赖。";
+        resourceDependencyList.Text = version.Dependencies.Count == 0 ? "所选版本没有声明依赖。" : string.Join("\n\n", version.Dependencies.Select(d => (d.DependencyType == "required" ? "必需" : d.DependencyType == "optional" ? "可选" : d.DependencyType) + " · " + (d.ProjectId ?? d.VersionId ?? "未提供项目标识")));
     }
 
     void ArrangeResourceDetail(double width)

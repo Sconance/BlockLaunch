@@ -78,5 +78,8 @@ dotnet run --project tools/SourceFormatter
 
 - `DownloadNavigation.cs`：分类名称与 `DownloadCategoryIcon` 映射。为条目的 `Image` 传入 `ImageSource` 即显示图片；留空时回退到字形，不影响分类键或下载逻辑。图片建议以 WPF Resource 加入项目，并使用 pack URI 加载。
 - `ResourceWorkspaceUI.cs`：列表与页内详情切换、兼容信息与依赖数量展示、窄窗口布局。复用既有命名控件及事件，资源独立下载和整合包导入行为保持原样。
-- `LoaderOverviewUI.cs`：加载器入口卡片，只重组原有按钮，不创建第二套安装逻辑。
+- `LoaderOverviewUI.cs`：横向加载器配置行，从官方目录读取兼容版本；选择后调用既有 EnqueueDownload，不实现第二套安装器。
 - 列表模板 `ResourceSearchItem` 位于 `App.xaml`。不展示服务端未提供的评价、点赞或截图。
+
+- `ResponsiveResourcePanel.cs`：分页结果的自适应卡片排列；`ResourceSearchLayoutUI.cs`：搜索及带标签筛选布局。
+- `ResourcePresentationUI.cs`：可选的项目介绍与截图展示。请求失败不影响版本选择和下载；截图限 Modrinth CDN，正文仅显示有长度上限的纯文本预览。

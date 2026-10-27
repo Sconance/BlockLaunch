@@ -179,6 +179,8 @@ public partial class MainWindow
             downloadCategories[category].IsChecked = true;
         if (category == "原版游戏")
             RenderVanillaDownloads();
+        if (category == "模组加载器")
+            PrepareLoaderConfiguration();
     }
 
     void RenderVanillaDownloads()
