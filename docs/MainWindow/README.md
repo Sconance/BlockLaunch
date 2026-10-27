@@ -87,6 +87,7 @@ MainWindow/
 |---|---|---|
 | ContentSearchFilterBuilder | [职责](Classes/ContentSearchFilterBuilder.md) | [`ContentSearchFilterBuilder.cs`](../../src/MCUGLauncher/MainWindow/Builders/ContentSearchFilterBuilder.cs) |
 | LaunchOptionsForm | [职责](Classes/LaunchOptionsForm.md) | [`LaunchOptionsForm.cs`](../../src/MCUGLauncher/MainWindow/Builders/LaunchOptionsForm.cs) |
+| OfflineSkinPackBuilder | [职责](Classes/OfflineSkinPackBuilder.md) | [`OfflineSkinPackBuilder.cs`](../../src/MCUGLauncher/MainWindow/Builders/OfflineSkinPackBuilder.cs) |
 | VersionLaunchPageBuilder | [职责](Classes/VersionLaunchPageBuilder.md) | [`VersionLaunchPageBuilder.cs`](../../src/MCUGLauncher/MainWindow/Builders/VersionLaunchPageBuilder.cs) |
 | VersionLaunchScriptExportPageBuilder | [职责](Classes/VersionLaunchScriptExportPageBuilder.md) | [`VersionLaunchScriptExportPageBuilder.cs`](../../src/MCUGLauncher/MainWindow/Builders/VersionLaunchScriptExportPageBuilder.cs) |
 | VersionLoaderPageBuilder | [职责](Classes/VersionLoaderPageBuilder.md) | [`VersionLoaderPageBuilder.cs`](../../src/MCUGLauncher/MainWindow/Builders/VersionLoaderPageBuilder.cs) |

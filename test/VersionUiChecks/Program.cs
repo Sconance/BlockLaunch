@@ -1,4 +1,6 @@
 using BlockLaunch;
+using System.IO;
+using System.IO.Compression;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
@@ -85,6 +87,45 @@ public static class Program
         if (!System.IO.File.ReadAllLines(System.IO.Path.Combine(legacy, "options.txt")).Contains("lang:zh_CN"))
             throw new Exception("Legacy locale failed");
         Console.WriteLine("PASS wrapper/versions root detection, missing root rejection, new game Chinese, pack overrides, existing choice and other options preserved, legacy locale");
+
+        var skinRoot = System.IO.Path.Combine(fixture, "skin-game");
+        var skinDirectory = System.IO.Path.Combine(fixture, "skin-instance");
+        var skinFile = System.IO.Path.Combine(fixture, "skin.png");
+        var versionDirectory = System.IO.Path.Combine(skinRoot, "versions", "1.21.1");
+        System.IO.Directory.CreateDirectory(versionDirectory);
+        System.IO.File.WriteAllBytes(skinFile, [1, 2, 3, 4]);
+        using (var jar = ZipFile.Open(System.IO.Path.Combine(versionDirectory, "1.21.1.jar"), ZipArchiveMode.Create))
+        using (var writer = new StreamWriter(jar.CreateEntry("version.json").Open()))
+            writer.Write("{\"pack_version\":{\"resource\":{\"major\":34}}}");
+        OfflineSkinPackBuilder.Prepare(skinRoot, skinDirectory, skinFile, "1.21.1", false);
+        if (System.IO.Directory.Exists(System.IO.Path.Combine(skinDirectory, "resourcepacks")))
+            throw new Exception("Online launch created an offline skin pack");
+        OfflineSkinPackBuilder.Prepare(skinRoot, skinDirectory, skinFile, "1.21.1", true);
+        var skinPack = System.IO.Path.Combine(skinDirectory, "resourcepacks", "BlockLaunch Offline Skin.zip");
+        using (var archive = ZipFile.OpenRead(skinPack))
+        {
+            using var metadata = JsonDocument.Parse(archive.GetEntry("pack.mcmeta")!.Open());
+            if (metadata.RootElement.GetProperty("pack").GetProperty("pack_format").GetInt32() != 34 || archive.Entries.Count != 21)
+                throw new Exception("Offline skin pack metadata or texture set is invalid");
+            using var texture = archive.GetEntry("assets/minecraft/textures/entity/player/wide/steve.png")!.Open();
+            using var buffer = new MemoryStream();
+            texture.CopyTo(buffer);
+            if (!buffer.ToArray().SequenceEqual(new byte[] { 1, 2, 3, 4 }))
+                throw new Exception("Offline skin texture content changed");
+        }
+
+        System.IO.File.WriteAllBytes(skinFile, [5, 6, 7, 8]);
+        OfflineSkinPackBuilder.Prepare(skinRoot, skinDirectory, skinFile, "1.21.1", true);
+        using (var archive = ZipFile.OpenRead(skinPack))
+        using (var texture = archive.GetEntry("assets/minecraft/textures/entity/player/slim/alex.png")!.Open())
+        using (var buffer = new MemoryStream())
+        {
+            texture.CopyTo(buffer);
+            if (!buffer.ToArray().SequenceEqual(new byte[] { 5, 6, 7, 8 }))
+                throw new Exception("Offline skin pack was not refreshed");
+        }
+
+        Console.WriteLine("PASS offline skin pack generation, metadata, complete texture set, and replacement");
         Console.WriteLine("ALL_VERSION_UI_COMPONENT_CHECKS_PASSED");
     }
 }
