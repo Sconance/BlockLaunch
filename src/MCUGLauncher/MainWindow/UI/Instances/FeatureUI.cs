@@ -314,53 +314,7 @@ public partial class MainWindow
     }
 
     void ExportPackDialog(string key)
-    {
-        if (busy)
-            return;
-        var d = new InstanceCatalog(prefs.Root).GetOrCreate(key);
-        var body = new StackPanel();
-        body.Children.Add(Heading("导出 MultiMC / Prism 兼容整合包"));
-        body.Children.Add(Hint("按所选内容打包当前实例，自动生成组件清单。关闭游戏后导出；分享模组本体前请确认分发许可。"));
-        CheckBox Check(string title, bool selected)
-        {
-            var c = new CheckBox
-            {
-                Content = title,
-                IsChecked = selected,
-                Margin = new Thickness(0, 9, 0, 9)
-            };
-            body.Children.Add(c);
-            return c;
-        }
-
-        var mods = Check("包含模组本体（不勾选时仅导出配置）", true);
-        var servers = Check("包含服务器列表 servers.dat", false);
-        var shaders = Check("包含光影", true);
-        var resources = Check("包含资源包", true);
-        var saves = Check("包含存档", false);
-        var dialog = FeatureDialog("导出整合包", body);
-        body.Children.Add(ActionButton("选择保存位置并导出", async (_, _) =>
-        {
-            var picker = new SaveFileDialog
-            {
-                Filter = "整合包 ZIP|*.zip",
-                FileName = "BlockLaunch-Pack.zip"
-            };
-            if (picker.ShowDialog() != true)
-                return;
-            var options = new ExportOptions(mods.IsChecked == true, servers.IsChecked == true, shaders.IsChecked == true, resources.IsChecked == true, saves.IsChecked == true);
-            dialog.Close();
-            await Run(async () =>
-            {
-                RequireStopped();
-                var requirements = RequirementsFor(d.LaunchProfileId);
-                var directory = (d.Launch ?? prefs.Launch).Isolation == "共享根目录" ? prefs.Root : new InstanceCatalog(prefs.Root).DirectoryFor(key);
-                await InstanceManagement.Export(directory, picker.FileName, d.DisplayName, requirements, options, CurrentToken);
-                Log("整合包已导出：" + picker.FileName);
-            }, "导出整合包");
-        }));
-        dialog.ShowDialog();
-    }
+        => new InstancePackExportDialog(this).Show(key);
 
     void GlobalOptionsClick(object s, RoutedEventArgs e)
     {

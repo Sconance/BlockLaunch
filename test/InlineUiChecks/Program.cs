@@ -497,6 +497,13 @@ static class Program
                 page.Close();
                 return true;
             });
+            Drive(() => Call("ExportPackDialog", "1.21.1"), page =>
+            {
+                Check(page.Title == "导出整合包" && Walk(page).OfType<CheckBox>().Count() == 5, "instance pack export exposes all content choices");
+                Check(Buttons(page).Any(button => Equals(button.Content, "选择保存位置并导出")), "instance pack export keeps the explicit export action");
+                page.Close();
+                return true;
+            });
             Drive(() => Call("EditLaunchOptions", (object)null!), page =>
             {
                 Check(page.Title == "启动设置" && Walk(page).OfType<TextBlock>().Any(t => t.Text == "离线皮肤"), "global launch dialog includes launch and personalization settings");
