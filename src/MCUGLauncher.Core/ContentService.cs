@@ -120,8 +120,12 @@ public sealed class ContentService : IResourceProvider
     static string Esc(string s) => Uri.EscapeDataString(s);
     async Task<T> Get<T>(string route) => await http.GetFromJsonAsync<T>("https://api.modrinth.com/v2/" + route, Json, token) ?? throw new IOException("Modrinth 返回了空响应。");
 
-    public async Task<SearchPage> Search(string query, string game, string loader, string type, int offset = 0)
+    public Task<SearchPage> Search(string query, string game, string loader, string type, int offset = 0) => Search(query, game, loader, type, offset, "relevance");
+
+    public async Task<SearchPage> Search(string query, string game, string loader, string type, int offset, string sort)
     {
+        if (sort is not ("relevance" or "downloads" or "updated"))
+            throw new ArgumentException("不支持的资源排序方式。", nameof(sort));
         var filters = new List<string[]>
         {
             new[] {
@@ -134,7 +138,7 @@ public sealed class ContentService : IResourceProvider
             filters.Add(["versions:" + game]);
         if (type == "mod" && loader.Length > 0 && loader != "vanilla")
             filters.Add(["categories:" + loader]);
-        using var doc = await Get<JsonDocument>($"search?query={Esc(query)}&facets={Esc(JsonSerializer.Serialize(filters))}&index=relevance&offset={offset}&limit=15");
+        using var doc = await Get<JsonDocument>($"search?query={Esc(query)}&facets={Esc(JsonSerializer.Serialize(filters))}&index={Esc(sort)}&offset={offset}&limit=15");
         var hits = doc.RootElement.GetProperty("hits").EnumerateArray().Select(e => new ContentProject(e.GetProperty("project_id").GetString()!, e.GetProperty("slug").GetString() ?? "", e.GetProperty("title").GetString()!, e.GetProperty("description").GetString() ?? "", e.GetProperty("author").GetString() ?? "", e.GetProperty("downloads").GetInt64()) { IconUrl = e.TryGetProperty("icon_url", out var icon) && Uri.TryCreate(icon.GetString(), UriKind.Absolute, out var uri) && uri.Host == "cdn.modrinth.com" && uri.Scheme == "https" ? uri.AbsoluteUri : "", Tags = e.TryGetProperty("categories", out var categories) ? string.Join(" · ", categories.EnumerateArray().Take(5).Select(c => c.GetString())) : "" }).ToList();
         return new(hits, doc.RootElement.GetProperty("total_hits").GetInt32());
     }

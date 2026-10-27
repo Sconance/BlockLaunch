@@ -50,7 +50,7 @@ MCUG Launcher 提供游戏启动、分类下载、账号登录和实例内容管
 
 ## 源码与构建
 
-当前版本为 **0.20.1**，最终产品名确定为 **MCUG Launcher**。使用 Windows x64 与 .NET 8 SDK：
+当前版本为 **0.20.2**，最终产品名确定为 **MCUG Launcher**。使用 Windows x64 与 .NET 8 SDK：
 
 ```powershell
 git clone https://github.com/Sconance/MCUGLauncher.git
@@ -74,6 +74,13 @@ docs/      使用、构建、历史测试记录与截图
 请在 [Issues](https://github.com/Sconance/MCUGLauncher/issues) 提供软件版本、系统版本、复现步骤和脱敏日志。不要上传密码、Token、账号缓存或私人存档。参阅 [贡献说明](CONTRIBUTING.md)。
 
 ## 近期更新
+
+### [0.20.2](https://github.com/Sconance/MCUGLauncher/releases/tag/v0.20.2)
+
+- 按蓝白效果图完善多列资源卡片、心形收藏和详情布局。
+- 增加仅显示收藏、资源排序以及卡片/列表切换。
+- 为顶部、下载、设置、更多、主页、资源详情、版本设置和实例分类提供统一菜单注册接口。
+- 开发者可参考 [菜单扩展说明](docs/MENU_EXTENSIONS.md) 增加栏目和图片图标。
 
 ### [0.20.1](https://github.com/Sconance/MCUGLauncher/releases/tag/v0.20.1)
 

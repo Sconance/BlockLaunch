@@ -725,6 +725,7 @@ public partial class MainWindow
             menu.Children.Add(nav);
         }
 
+        AttachExtensionButtons(LauncherMenuArea.VersionSettings, menu, instanceId: key, lifetime: window);
         var selectedPage = versionInitialPage switch
         {
             "设置" => 1,

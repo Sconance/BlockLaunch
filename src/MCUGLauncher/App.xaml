@@ -1,5 +1,50 @@
 <Application x:Class="BlockLaunch.App" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" StartupUri="MainWindow.xaml">
   <Application.Resources>
+    <Style x:Key="ResourceHeart" TargetType="Button">
+      <Setter Property="Content" Value="♡" />
+      <Setter Property="Foreground" Value="{DynamicResource UiSecondaryTextBrush}" />
+      <Setter Property="Width" Value="26" />
+      <Setter Property="Height" Value="26" />
+      <Setter Property="FontSize" Value="20" />
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="ToolTip" Value="收藏或取消收藏" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Border x:Name="HeartSurface" Background="Transparent" CornerRadius="5">
+              <TextBlock Text="{TemplateBinding Content}" FontSize="{TemplateBinding FontSize}" Foreground="{TemplateBinding Foreground}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="HeartSurface" Property="Background" Value="{DynamicResource ThemeInputBrush}" />
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+      <Style.Triggers>
+        <DataTrigger Binding="{Binding IsFavorite}" Value="True">
+          <Setter Property="Content" Value="♥" />
+          <Setter Property="Foreground" Value="#DE4255" />
+        </DataTrigger>
+      </Style.Triggers>
+    </Style>
+    <DataTemplate x:Key="ResourceListItem">
+      <Grid>
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="48" />
+          <ColumnDefinition />
+          <ColumnDefinition Width="30" />
+        </Grid.ColumnDefinitions>
+        <Image Source="{Binding IconUrl}" Width="38" Height="38" />
+        <StackPanel Grid.Column="1">
+          <TextBlock Text="{Binding Title}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+          <TextBlock Text="{Binding Description}" FontSize="12" TextTrimming="CharacterEllipsis" Margin="0,4,0,3" Foreground="{DynamicResource UiSecondaryTextBrush}" />
+          <TextBlock Text="{Binding Tags}" FontSize="10" Foreground="{DynamicResource UiSecondaryTextBrush}" TextTrimming="CharacterEllipsis" />
+        </StackPanel>
+        <Button Grid.Column="2" Style="{StaticResource ResourceHeart}" Tag="FavoriteResource" />
+      </Grid>
+    </DataTemplate>
     <ControlTemplate x:Key="SearchInputTemplate" TargetType="TextBox">
       <Border x:Name="SearchSurface" Background="{DynamicResource ThemeInputBrush}" BorderBrush="{DynamicResource ThemeBorderBrush}" BorderThickness="1" CornerRadius="8" Padding="10,7">
         <Grid>
@@ -50,7 +95,7 @@
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="52" />
             <ColumnDefinition />
-            <ColumnDefinition Width="20" />
+            <ColumnDefinition Width="28" />
           </Grid.ColumnDefinitions>
           <Border Width="42" Height="42" CornerRadius="8" Background="{DynamicResource ThemeInputBrush}" VerticalAlignment="Top">
             <Grid>
@@ -59,20 +104,7 @@
             </Grid>
           </Border>
           <TextBlock Grid.Column="1" Text="{Binding Title}" FontSize="14" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" ToolTip="{Binding Title}" VerticalAlignment="Top" Margin="0,2,3,0" />
-          <TextBlock Grid.Column="2" FontSize="19" ToolTip="打开详情可收藏">
-            <TextBlock.Style>
-              <Style TargetType="TextBlock">
-                <Setter Property="Text" Value="☆" />
-                <Setter Property="Foreground" Value="{DynamicResource UiSecondaryTextBrush}" />
-                <Style.Triggers>
-                  <DataTrigger Binding="{Binding IsFavorite}" Value="True">
-                    <Setter Property="Text" Value="★" />
-                    <Setter Property="Foreground" Value="#CE9400" />
-                  </DataTrigger>
-                </Style.Triggers>
-              </Style>
-            </TextBlock.Style>
-          </TextBlock>
+          <Button Grid.Column="2" Style="{StaticResource ResourceHeart}" Tag="FavoriteResource" />
         </Grid>
         <TextBlock Grid.Row="1" Text="{Binding Description}" TextWrapping="Wrap" MaxHeight="36" TextTrimming="CharacterEllipsis" FontSize="12" Margin="0,7,0,6" Foreground="{DynamicResource UiSecondaryTextBrush}" ToolTip="{Binding Description}" />
         <StackPanel Grid.Row="2">

@@ -501,6 +501,7 @@ public partial class MainWindow
             categories.Children.Add(nav);
         }
 
+        AttachExtensionButtons(LauncherMenuArea.InstanceContent, categories, lifetime: page, instanceIdProvider: () => current);
         files.SelectionChanged += (_, _) =>
         {
             preview.Source = null;

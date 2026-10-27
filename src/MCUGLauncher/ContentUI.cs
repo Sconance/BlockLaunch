@@ -191,7 +191,14 @@ public partial class MainWindow
         Status.Text = "搜索 Modrinth…";
         if (resourceSource.SelectedIndex == 1)
             throw new NotSupportedException("CurseForge 未启用：当前没有 API Key。请使用 Modrinth。");
-        var page = await new ContentService(http, token).Search(SearchQuery.Text.Trim(), target.GameVersion, target.Loader, ContentKind, searchOffset);
+        var page = resourceFavoritesOnly
+            ? await SearchFavoriteResources(token)
+            : await new ContentService(http, token).Search(SearchQuery.Text.Trim(), target.GameVersion, target.Loader, ContentKind, searchOffset, resourceSort.SelectedIndex switch
+            {
+                1 => "downloads",
+                2 => "updated",
+                _ => "relevance"
+            });
         token.ThrowIfCancellationRequested();
         SearchResults.ItemsSource = DecorateProjects(page.Items);
         searchTotal = page.Total;
@@ -200,7 +207,9 @@ public partial class MainWindow
         ProjectTitle.Text = "选择一个项目";
         ProjectDescription.Text = "点击项目，选择需要下载的版本。";
         SearchSummary.Text = page.Total == 0 ? "没有匹配的项目" : $"{searchOffset + 1}–{searchOffset + page.Items.Count} / {page.Total:N0} 个项目 · Modrinth · 本页收藏优先";
-        SearchHint.Text = "没有找到匹配内容，试试其他关键词。";
+        if (resourceFavoritesOnly)
+            SearchSummary.Text = $"{page.Items.Count} / {page.Total:N0} 个匹配收藏";
+        SearchHint.Text = resourceFavoritesOnly ? "没有符合条件的收藏，可清除收藏筛选或调整关键词。" : "没有找到匹配内容，试试其他关键词。";
         SearchHint.Visibility = page.Items.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
@@ -313,7 +322,7 @@ public partial class MainWindow
 
     void ProjectPageClick(object s, RoutedEventArgs e)
     {
-        if (SearchResults.SelectedItem is ContentProject project)
+        if ((SearchResults.SelectedItem as ContentProject ?? resourceDetailProject) is ContentProject project)
             Process.Start(new ProcessStartInfo("https://modrinth.com/project/" + Uri.EscapeDataString(project.Id)) { UseShellExecute = true });
     }
 

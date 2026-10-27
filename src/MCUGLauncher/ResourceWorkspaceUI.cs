@@ -50,6 +50,14 @@ public partial class MainWindow
         });
         back.HorizontalAlignment = HorizontalAlignment.Left;
         body.Children.Add(back);
+        resourceDetailFavorite.HorizontalAlignment = HorizontalAlignment.Right;
+        resourceDetailFavorite.VerticalAlignment = VerticalAlignment.Top;
+        resourceDetailFavorite.Click += (_, _) =>
+        {
+            if (resourceDetailProject != null)
+                ToggleResourceFavorite(resourceDetailProject);
+        };
+        body.Children.Add(resourceDetailFavorite);
         resourceDetailColumns = new Grid { Margin = new Thickness(0, 10, 0, 0) };
         resourceDetailColumns.ColumnDefinitions.Add(new());
         resourceDetailColumns.ColumnDefinitions.Add(new()
@@ -87,13 +95,15 @@ public partial class MainWindow
         versionList.SetBinding(System.Windows.Controls.Primitives.Selector.SelectedItemProperty, new Binding("SelectedItem") { Source = ProjectVersions, Mode = BindingMode.TwoWay });
         versions.Children.Add(versionList);
         var tabs = new TabControl { Margin = new Thickness(0, 14, 0, 0), Background = Brushes.Transparent, BorderThickness = new Thickness(0) };
+        resourceDetailTabs = tabs;
         tabs.Items.Add(new TabItem { Header = "介绍", Content = overview, Style = (Style)FindResource("ResourceDetailTab") });
         tabs.Items.Add(new TabItem { Header = "版本", Content = versions, Style = (Style)FindResource("ResourceDetailTab") });
         tabs.Items.Add(new TabItem { Header = "依赖", Content = resourceDependencyList, Style = (Style)FindResource("ResourceDetailTab") });
         introduction.Children.Add(tabs);
         var links = new WrapPanel { Margin = new Thickness(0, 16, 0, 0) };
         foreach (var action in actions)
-            links.Children.Add(action);
+            if (action.Content?.ToString()?.Contains("一键收藏") != true)
+                links.Children.Add(action);
         introduction.Children.Add(links);
         resourceDetailColumns.Children.Add(new ScrollViewer { Content = introduction, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
 
@@ -130,6 +140,7 @@ public partial class MainWindow
         style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(12)));
         style.Setters.Add(new Setter(FrameworkElement.MarginProperty, new Thickness(0, 0, 8, 8)));
         SearchResults.ItemContainerStyle = style;
+        SearchResults.AddHandler(Button.ClickEvent, new RoutedEventHandler(CardFavoriteClick));
     }
 
     void ShowResourceResults()
@@ -149,6 +160,11 @@ public partial class MainWindow
 
     void ShowResourceDetail(ContentProject project)
     {
+        resourceDetailProject = project;
+        UpdateResourceFavoriteState(project.Id);
+        resourceDetailTabs!.SelectedIndex = 0;
+        foreach (var tab in resourceDetailTabs.Items.OfType<TabItem>().Where(t => t.Tag is LauncherMenuPage))
+            tab.Content = null;
         resourceProjectIcon.SetBinding(Image.SourceProperty, new Binding(nameof(ContentProject.IconUrl)) { Source = project });
         resourceProjectIcon.ToolTip = project.Title;
         resourceProjectMeta.Text = $"作者：{project.Author} · ↓ {project.Downloads:N0} 次下载";

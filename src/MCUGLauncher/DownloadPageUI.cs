@@ -91,6 +91,7 @@ public partial class MainWindow
         {
             Margin = new Thickness(0, 0, 14, 0)
         };
+        downloadNavigationPanel = navigation;
         foreach (var name in new[] {
             "原版游戏",
             "Mod",

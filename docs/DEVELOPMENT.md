@@ -83,3 +83,10 @@ dotnet run --project tools/SourceFormatter
 
 - `ResponsiveResourcePanel.cs`：分页结果的自适应卡片排列；`ResourceSearchLayoutUI.cs`：搜索及带标签筛选布局。
 - `ResourcePresentationUI.cs`：可选的项目介绍与截图展示。请求失败不影响版本选择和下载；截图限 Modrinth CDN，正文仅显示有长度上限的纯文本预览。
+
+
+## 0.20.2 菜单与资源交互
+
+- 新增栏目从 `MenuExtensions.cs` 注册，入口定义在 `Navigation/LauncherMenuRegistry.cs`，宿主适配在 `MenuExtensionsUI.cs`。具体区域、上下文和图片图标示例见 [菜单扩展说明](MENU_EXTENSIONS.md)。
+- `ResourceFavoritesUI.cs` 负责收藏筛选、心形状态及视图切换，持久化复用 `ResourceBookmarkStore`，不创建第二份收藏文档。
+- 收藏兼容性检查最多并发四个请求，并跟随浏览取消；资源服务保留原始 Search 签名，通过新增重载接收受限的排序值。

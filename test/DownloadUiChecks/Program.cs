@@ -132,6 +132,40 @@ public static class Program
             encoder.Frames.Add(BitmapFrame.Create(bitmap));
             using (var output = File.Create("work/verify/v0151-download-page.png"))
                 encoder.Save(output);
+            Call("SelectDownloadCategory", "Mod");
+            ((TextBox)Field("resourceGame")).Text = "全部";
+            ((ComboBox)Field("resourceLoader")).SelectedIndex = 1;
+            Call("ToggleResourceFavorite", example);
+            var store = (ResourceBookmarkStore)Field("bookmarks");
+            Assert(store.Read().Any(b => b.Project.Id == example.Id), "heart favorite saves to existing bookmark document");
+            typeof(MainWindow).GetField("resourceFavoritesOnly", flags)!.SetValue(window, true);
+            var favorites = ((Task<SearchPage>)Call("SearchFavoriteResources", CancellationToken.None)!).GetAwaiter().GetResult();
+            Assert(favorites.Items.Count == 1 && favorites.Items[0].Id == example.Id, "favorites filter searches full saved collection");
+            Call("ToggleResourceFavorite", example);
+            Assert(store.Read().Count == 0, "heart toggles favorite off");
+            Call("ToggleResourceView");
+            Assert(((bool)Field("resourceListView")), "resource list view switch changes layout");
+            Call("ToggleResourceView");
+            foreach (var area in Enum.GetValues<LauncherMenuArea>())
+                window.MenuPages.Register(area, new("fixture", "扩展验收", context => new TextBlock { Text = "扩展页面：" + context.InstanceId }));
+            Assert(window.MenuPages.Pages(LauncherMenuArea.Download).Count == 1 && ((StackPanel)Field("downloadNavigationPanel")).Children.OfType<Button>().Any(b => b.Tag is LauncherMenuPage), "download extension is visible after registration");
+            Assert(((TabControl)Field("resourceDetailTabs")).Items.OfType<TabItem>().Any(t => t.Tag is LauncherMenuPage), "detail extension tab is attached");
+            var downloadExtension = ((StackPanel)Field("downloadNavigationPanel")).Children.OfType<Button>().Single(b => b.Tag is LauncherMenuPage);
+            downloadExtension.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Assert(tabs.SelectedIndex == 1 && ((ContentControl)Field("downloadHost")).Content is ScrollViewer, "download extension preserves category sidebar");
+            var detailTab = ((TabControl)Field("resourceDetailTabs")).Items.OfType<TabItem>().Single(t => t.Tag is LauncherMenuPage);
+            detailTab.IsSelected = true;
+            Assert(detailTab.Content is TextBlock, "detail extension factory is activated lazily");
+
+            var duplicateRejected = false;
+            try
+            {
+                window.MenuPages.Register(LauncherMenuArea.Download, new("fixture", "重复", _ => new TextBlock()));
+            }
+            catch (ArgumentException) { duplicateRejected = true; }
+            Assert(duplicateRejected, "duplicate menu identifiers are rejected");
+            Call("OpenMenuExtension", window.MenuPages.Pages(LauncherMenuArea.Download)[0], "fixture-instance");
+            Assert(((TabItem)tabs.SelectedItem).Header?.ToString() == "扩展验收" && app.Windows.Count == 1, "extension navigates in main window");
             Console.WriteLine("ALL_DOWNLOAD_UI_COMPONENT_CHECKS_PASSED (not native input acceptance)");
         }
         catch (Exception ex)

@@ -72,6 +72,7 @@ public partial class MainWindow
             resourceLoader.SelectedIndex = 1;
             resourceSource.SelectedIndex = 0;
             releaseChannel.SelectedIndex = 0;
+            ResetResourceDisplayFilters();
             ResetSearch();
         }));
         filters.Children.Add(row);

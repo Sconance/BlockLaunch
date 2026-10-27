@@ -87,7 +87,7 @@ public partial class MainWindow : Window
         runtimeNetwork = JsonSerializer.Deserialize<NetworkSettings>(JsonSerializer.Serialize(prefs.Network))!;
         http.Dispose();
         http = NetworkPolicyHandler.Create(runtimeNetwork);
-        http.DefaultRequestHeaders.UserAgent.ParseAdd("MCUGLauncher/0.20.1 (Windows-desktop-launcher)");
+        http.DefaultRequestHeaders.UserAgent.ParseAdd("MCUGLauncher/0.20.2 (Windows-desktop-launcher)");
         SetupLauncher();
         BuildFeaturePages();
         ApplyPersonalization();
@@ -102,6 +102,7 @@ public partial class MainWindow : Window
         BuildKeyboardNavigation();
         BuildSketchUI();
         BuildModernUI();
+        BuildMenuExtensionHosts();
         Loaded += async (_, _) =>
         {
             EnsureOutputTimer();
