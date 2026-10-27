@@ -59,6 +59,7 @@ MainWindow/
 |---|---|---|
 | ContentUpdateController | [职责](Classes/ContentUpdateController.md) | [`ContentUpdateController.cs`](../../src/MCUGLauncher/MainWindow/Controllers/ContentUpdateController.cs) |
 | FileImportController | [职责](Classes/FileImportController.md) | [`FileImportController.cs`](../../src/MCUGLauncher/MainWindow/Controllers/FileImportController.cs) |
+| GameWindowBehaviorController | [职责](Classes/GameWindowBehaviorController.md) | [`GameWindowBehaviorController.cs`](../../src/MCUGLauncher/MainWindow/Controllers/GameWindowBehaviorController.cs) |
 | InstanceSearchController | [职责](Classes/InstanceSearchController.md) | [`InstanceSearchController.cs`](../../src/MCUGLauncher/MainWindow/Controllers/InstanceSearchController.cs) |
 | InstanceUninstallationController | [职责](Classes/InstanceUninstallationController.md) | [`InstanceUninstallationController.cs`](../../src/MCUGLauncher/MainWindow/Controllers/InstanceUninstallationController.cs) |
 | JavaManagerController | [职责](Classes/JavaManagerController.md) | [`JavaManagerController.cs`](../../src/MCUGLauncher/MainWindow/Controllers/JavaManagerController.cs) |

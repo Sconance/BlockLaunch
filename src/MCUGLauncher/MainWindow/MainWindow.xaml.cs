@@ -28,6 +28,7 @@ public partial class MainWindow : Window
     bool closeAfterTask;
     LoaderInstallationController loaderController = null!;
     FileImportController fileImportController = null!;
+    GameWindowBehaviorController gameWindowBehaviorController = null!;
     PlayerIdentityController playerIdentityController = null!;
     InstanceSearchController instanceSearchController = null!;
     JavaManagerController javaManagerController = null!;
@@ -75,6 +76,7 @@ public partial class MainWindow : Window
         settingsDir = Path.GetFullPath(configurationDirectory);
         InitializeComponent();
         inlinePageHost = new InlinePageHost(this, inlinePages, HomeNav, MainTabs);
+        gameWindowBehaviorController = new GameWindowBehaviorController(this, Log);
         windowThemeStyler = new WindowThemeStyler(this);
         contentUpdateController = new ContentUpdateController(this);
         instanceUninstallationController = new InstanceUninstallationController(this);

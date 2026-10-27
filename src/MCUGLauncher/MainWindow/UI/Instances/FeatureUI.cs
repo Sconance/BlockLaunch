@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
@@ -566,51 +565,6 @@ public partial class MainWindow
         Application.Current.Resources["AccentBrush"] = new SolidColorBrush((Color)ColorConverter.ConvertFromString(accent));
         ApplyBackground();
         playerIdentityController.Refresh();
-    }
-
-    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
-    static extern bool SetWindowText(IntPtr handle, string title);
-    [DllImport("psapi.dll")]
-    static extern bool EmptyWorkingSet(IntPtr handle);
-
-    async void ApplyLaunchBehavior(Process process, LaunchSettings settings, GameSession session)
-    {
-        try
-        {
-            process.PriorityClass = Enum.Parse<ProcessPriorityClass>(settings.Priority);
-            if (settings.TrimLauncher)
-                EmptyWorkingSet(Process.GetCurrentProcess().Handle);
-            if (settings.Visibility == "启动后最小化")
-                WindowState = WindowState.Minimized;
-            if (settings.Visibility == "启动后隐藏")
-                Hide();
-            if (settings.WindowTitle.Length > 0)
-                for (var i = 0; i < 60 && !process.HasExited; i++)
-                {
-                    process.Refresh();
-                    if (process.MainWindowHandle != IntPtr.Zero)
-                    {
-                        SetWindowText(process.MainWindowHandle, settings.WindowTitle);
-                        break;
-                    }
-
-                    await Task.Delay(500);
-                }
-
-            await session.Completion;
-        }
-        catch (Exception ex)
-        {
-            Log("启动外观设置：" + ex.Message);
-        }
-        finally
-        {
-            if (!Dispatcher.HasShutdownStarted && settings.Visibility == "启动后隐藏")
-            {
-                Show();
-                WindowState = WindowState.Normal;
-            }
-        }
     }
 
     void PrepareOfflineSkin(string directory, string baseVersion)

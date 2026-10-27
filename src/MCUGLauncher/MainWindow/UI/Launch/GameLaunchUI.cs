@@ -89,7 +89,7 @@ public partial class MainWindow
             lastGameDirectory = directory;
             recentDiagnosticContext = diagnosisContext;
             _ = ObserveGame(currentSession, diagnosisContext);
-            ApplyLaunchBehavior(process, launchSettings, currentSession);
+            _ = gameWindowBehaviorController.Apply(process, launchSettings, currentSession);
         }
 
         Log("已启动 " + id + "，实例：" + directory);

@@ -1,15 +1,23 @@
 using BlockLaunch;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Threading;
 
 public static class Program
 {
     [STAThread]
-    public static void Main()
+    public static void Main(string[] args)
     {
+        if (args.Contains("--window-behavior-fixture"))
+        {
+            Thread.Sleep(500);
+            return;
+        }
+
         foreach (var original in new[] {
             new LaunchSettings(),
             new LaunchSettings
@@ -132,6 +140,42 @@ public static class Program
             !cmdScript.Contains("\"C:\\Launcher\\100%%\\MCUG.exe\"") || !cmdScript.Contains("--account mua") || !cmdScript.StartsWith("@echo off\r\n"))
             throw new Exception("Launch script quoting or account arguments are invalid");
         Console.WriteLine("PASS PowerShell and command-prompt script quoting and account selection");
+
+        var application = new Application
+        {
+            ShutdownMode = ShutdownMode.OnExplicitShutdown
+        };
+        var behaviorWindow = new Window { Width = 120, Height = 80 };
+        behaviorWindow.Show();
+        var childStart = new ProcessStartInfo(Environment.ProcessPath!)
+        {
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true
+        };
+        if (string.Equals(Path.GetFileNameWithoutExtension(Environment.ProcessPath), "dotnet", StringComparison.OrdinalIgnoreCase))
+            childStart.ArgumentList.Add(typeof(Program).Assembly.Location);
+        childStart.ArgumentList.Add("--window-behavior-fixture");
+        using var childProcess = new Process { StartInfo = childStart };
+        var session = new GameSession(childProcess, Path.Combine(fixture, "window-behavior.log"), _ => { }, []);
+        session.Start();
+        var behavior = new GameWindowBehaviorController(behaviorWindow, _ => { });
+        var completion = behavior.Apply(childProcess, new LaunchSettings
+        {
+            Priority = "Normal",
+            Visibility = "启动后隐藏"
+        }, session);
+        if (behaviorWindow.Visibility != Visibility.Hidden)
+            throw new Exception("Hidden launcher setting did not hide the window");
+        var frame = new DispatcherFrame();
+        completion.ContinueWith(_ => behaviorWindow.Dispatcher.BeginInvoke(() => frame.Continue = false));
+        Dispatcher.PushFrame(frame);
+        completion.GetAwaiter().GetResult();
+        if (!behaviorWindow.IsVisible || behaviorWindow.WindowState != WindowState.Normal)
+            throw new Exception("Hidden launcher was not restored after game exit");
+        behaviorWindow.Close();
+        application.Shutdown();
+        Console.WriteLine("PASS hidden launcher is restored after the game process exits");
         Console.WriteLine("ALL_VERSION_UI_COMPONENT_CHECKS_PASSED");
     }
 }
