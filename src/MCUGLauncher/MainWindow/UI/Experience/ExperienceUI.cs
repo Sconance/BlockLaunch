@@ -264,7 +264,7 @@ public partial class MainWindow
         }
     }
 
-    void OpenServers()
+    internal void OpenServers()
     {
         var body = new StackPanel();
         body.Children.Add(Heading("服务器收藏"));

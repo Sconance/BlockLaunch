@@ -106,7 +106,7 @@ public partial class MainWindow
         await ImportPack(target);
     }
 
-    async void ImportPackClick(object s, RoutedEventArgs e)
+    internal async void ImportPackClick(object s, RoutedEventArgs e)
     {
         var dialog = new OpenFileDialog
         {

@@ -10,7 +10,7 @@ public partial class MainWindow
 
     static Style VersionMenuStyle() => NavigationMenuStyle.Create();
 
-    void OpenVersionSection(string key, string section)
+    internal void OpenVersionSection(string key, string section)
     {
         versionInitialPage = section;
         try
@@ -23,7 +23,7 @@ public partial class MainWindow
         }
     }
 
-    void OpenVersionSettings(string key)
+    internal void OpenVersionSettings(string key)
     {
         try
         {

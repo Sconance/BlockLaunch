@@ -206,7 +206,7 @@ public partial class MainWindow
         }
     }
 
-    async Task SwitchRoot(string root) => await Run(async () =>
+    internal async Task SwitchRoot(string root) => await Run(async () =>
     {
         RequireStopped();
         prefs.Root = GameDefaults.ResolveRoot(root, true);

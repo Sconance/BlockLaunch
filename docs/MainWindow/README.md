@@ -81,6 +81,7 @@ MainWindow/
 | InstanceLibraryDialog | [职责](Classes/InstanceLibraryDialog.md) | [`InstanceLibraryDialog.cs`](../../src/MCUGLauncher/MainWindow/Presentation/InstanceLibraryDialog.cs) |
 | InstancePackExportDialog | [职责](Classes/InstancePackExportDialog.md) | [`InstancePackExportDialog.cs`](../../src/MCUGLauncher/MainWindow/Presentation/InstancePackExportDialog.cs) |
 | LaunchOptionsDialog | [职责](Classes/LaunchOptionsDialog.md) | [`LaunchOptionsDialog.cs`](../../src/MCUGLauncher/MainWindow/Presentation/LaunchOptionsDialog.cs) |
+| SketchContentManagerDialog | [职责](Classes/SketchContentManagerDialog.md) | [`SketchContentManagerDialog.cs`](../../src/MCUGLauncher/MainWindow/Presentation/SketchContentManagerDialog.cs) |
 | VersionSettingsDialog | [职责](Classes/VersionSettingsDialog.md) | [`VersionSettingsDialog.cs`](../../src/MCUGLauncher/MainWindow/Presentation/VersionSettingsDialog.cs) |
 | VersionSettingsPageContext | [职责](Classes/VersionSettingsPageContext.md) | [`VersionSettingsPageContext.cs`](../../src/MCUGLauncher/MainWindow/Presentation/VersionSettingsPageContext.cs) |
 | VersionSettingsWindowView | [职责](Classes/VersionSettingsWindowView.md) | [`VersionSettingsWindowView.cs`](../../src/MCUGLauncher/MainWindow/Presentation/VersionSettingsWindowView.cs) |
