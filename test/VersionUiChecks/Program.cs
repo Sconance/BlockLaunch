@@ -126,6 +126,12 @@ public static class Program
         }
 
         Console.WriteLine("PASS offline skin pack generation, metadata, complete texture set, and replacement");
+        var psScript = LaunchScriptBuilder.Build("C:\\Launcher\\MCUG.exe", "D:\\Game's\\Root", "1.21.1", "microsoft", true);
+        var cmdScript = LaunchScriptBuilder.Build("C:\\Launcher\\100%\\MCUG.exe", "D:\\Games\\Root", "1.21.1", "mua", false);
+        if (!psScript.Contains("'D:\\Game''s\\Root'") || !psScript.Contains("--account microsoft") || psScript.Contains("access_token") ||
+            !cmdScript.Contains("\"C:\\Launcher\\100%%\\MCUG.exe\"") || !cmdScript.Contains("--account mua") || !cmdScript.StartsWith("@echo off\r\n"))
+            throw new Exception("Launch script quoting or account arguments are invalid");
+        Console.WriteLine("PASS PowerShell and command-prompt script quoting and account selection");
         Console.WriteLine("ALL_VERSION_UI_COMPONENT_CHECKS_PASSED");
     }
 }

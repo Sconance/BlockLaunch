@@ -296,16 +296,15 @@ public partial class MainWindow
             };
             if (picker.ShowDialog() != true)
                 return;
-            static string Q(string text) => "'" + text.Replace("'", "''") + "'";
-            static string Cmd(string text) => "\"" + text.Replace("%", "%%") + "\"";
             var account = AccountMode.SelectedIndex switch
             {
                 1 => "microsoft",
                 2 => "mua",
                 _ => "offline"
             };
-            var command = Path.GetExtension(picker.FileName).Equals(".ps1", StringComparison.OrdinalIgnoreCase) ? "# 账号授权由启动器完成，脚本不保存令牌。\r\n& " + Q(Environment.ProcessPath!) + " --root " + Q(prefs.Root) + " --instance " + Q(key) + " --account " + account + "\r\n" : "@echo off\r\nchcp 65001 >nul\r\nsetlocal DisableDelayedExpansion\r\n" + Cmd(Environment.ProcessPath!) + " --root " + Cmd(prefs.Root) + " --instance " + Cmd(key) + " --account " + account + "\r\n";
-            if (Path.GetExtension(picker.FileName).Equals(".ps1", StringComparison.OrdinalIgnoreCase))
+            var powershell = Path.GetExtension(picker.FileName).Equals(".ps1", StringComparison.OrdinalIgnoreCase);
+            var command = LaunchScriptBuilder.Build(Environment.ProcessPath!, prefs.Root, key, account, powershell);
+            if (powershell)
                 File.WriteAllText(picker.FileName, command, new System.Text.UTF8Encoding(true));
             else
                 File.WriteAllText(picker.FileName, command, new System.Text.UTF8Encoding(false));
