@@ -60,7 +60,7 @@ public sealed class MuaAccountService : IDisposable
             Timeout = TimeSpan.FromSeconds(25)
         };
         if (http.DefaultRequestHeaders.UserAgent.Count == 0)
-            http.DefaultRequestHeaders.UserAgent.ParseAdd("MCUGLauncher/0.20.0");
+            http.DefaultRequestHeaders.UserAgent.ParseAdd("MCUGLauncher/0.20.1");
     }
 
     public MuaCredential? Read()

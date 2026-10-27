@@ -70,12 +70,51 @@ public static class Program
                 Assert(((ComboBox)Field("ContentType")).SelectedIndex == pair.Item2 && ((ContentControl)Field("downloadHost")).Content == Field("resourcePage"), "embedded category " + pair.Item1);
             }
 
+            Call("SelectDownloadCategory", "Mod");
+            var example = new ContentProject("fixture", "fixture", "用于验证长名称适配的模组项目 · MCUG", "项目介绍保留完整文本，下载选项独立排列。", "MCUG", 12345) { IconUrl = "pack://application:,,,/MCUGLauncher;component/Assets/MCUGLogo.png" };
+            Call("ShowResourceDetail", example);
+            var detailSurface = (Border)Field("resourceDetailSurface");
+            Assert(detailSurface.Visibility == Visibility.Visible && ((Grid)Field("resourceResultsLayout")).Visibility == Visibility.Collapsed, "detail opens inside resource page");
+            var versions = (ComboBox)Field("ProjectVersions");
+            versions.ItemsSource = new[] { new ContentVersion { VersionNumber = "1.0", DatePublished = DateTimeOffset.Parse("2026-10-27T00:00:00Z"), GameVersions = ["1.21.1"], Loaders = ["fabric"], Dependencies = [new() { DependencyType = "required" }] } };
+            versions.SelectedIndex = 0;
+            Assert(((TextBlock)Field("resourceDependencies")).Text.Contains("必需依赖：1"), "dependency counts follow selected version");
+            Call("ArrangeResourceDetail", 600d);
+            Assert(Grid.GetRow(((Grid)Field("resourceDetailColumns")).Children[1]) == 1, "narrow detail stacks options below introduction");
+            Call("ArrangeResourceDetail", 900d);
+            Assert(Grid.GetColumn(((Grid)Field("resourceDetailColumns")).Children[1]) == 1, "wide detail restores right options column");
+            var previewRoot = (Grid)window.Content;
+            void Capture(string file, int width, int height)
+            {
+                previewRoot.Background = (Brush)window.Background;
+                previewRoot.Measure(new Size(width, height));
+                previewRoot.Arrange(new Rect(0, 0, width, height));
+                previewRoot.UpdateLayout();
+                var frame = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
+                frame.Render(previewRoot);
+                var png = new PngBitmapEncoder();
+                png.Frames.Add(BitmapFrame.Create(frame));
+                using var stream = File.Create(file);
+                png.Save(stream);
+            }
+            ((TextBlock)Field("ProjectTitle")).Text = example.Title;
+            ((TextBlock)Field("ProjectDescription")).Text = example.Description;
+            Capture("work/verify/v0201-resource-detail.png", 1220, 820);
+            Capture("work/verify/v0201-resource-detail-small.png", 900, 640);
+            Call("ShowResourceResults");
+            Assert(detailSurface.Visibility == Visibility.Collapsed && ((Grid)Field("resourceResultsLayout")).Visibility == Visibility.Visible, "back preserves resource list");
+            Assert(categories.Values.All(b => b.Content is Grid && b.ContentTemplate == null), "category artwork supports image slot without text template");
+            ((ListBox)Field("SearchResults")).ItemsSource = new[] { example, example with { Title = "Fabric API · 布局验证样例" }, example with { Title = "Iris Shaders · 布局验证样例" } };
+            ((TextBlock)Field("SearchHint")).Visibility = Visibility.Collapsed;
+            Capture("work/verify/v0201-resource-list.png", 1220, 820);
             Call("RestoreResourcePage");
             Assert(((TabItem)tabs.Items[2]).Content == Field("resourcePage"), "standalone content center restores same resource page");
             Call("SelectDownloadCategory", "本地整合包");
             Assert(((ContentControl)Field("downloadHost")).Content == Field("packImportPage"), "local pack import remains available");
             Call("SelectDownloadCategory", "模组加载器");
             Assert(((ContentControl)Field("downloadHost")).Content == Field("loaderPage"), "loader installation remains available");
+            Call("SelectDownloadCategory", "模组加载器");
+            Capture("work/verify/v0201-loaders.png", 1220, 820);
             Call("SelectDownloadCategory", "原版游戏");
             ((TextBox)Field("vanillaQuery")).Text = "1.21.1";
             Assert(((StackPanel)Groups()[1].Content).Children.OfType<Button>().Count() == 1, "version search filters groups");

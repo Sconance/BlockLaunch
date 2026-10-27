@@ -355,7 +355,7 @@
                   <TextBlock Text="关于 MCUG Launcher" FontSize="17" FontWeight="SemiBold" />
                   <TextBlock Text="参考 PCL / HMCL / SJMCL 的使用习惯，独立设计与实现。非 Mojang / Microsoft 官方产品。" TextWrapping="Wrap" Foreground="#647782" Margin="0,10,0,0" />
                   <Button Content="第三方许可与源码参考" Click="NoticesClick" HorizontalAlignment="Left" Margin="0,10,0,0" />
-                  <TextBlock Text="0.20.0 · 微软与 MUA 账号凭据使用 Windows 用户级加密保存，正版启动前验证和刷新。" TextWrapping="Wrap" Style="{StaticResource Caption}" Margin="0,9,0,0" />
+                  <TextBlock Text="0.20.1 · 微软与 MUA 账号凭据使用 Windows 用户级加密保存，正版启动前验证和刷新。" TextWrapping="Wrap" Style="{StaticResource Caption}" Margin="0,9,0,0" />
                 </StackPanel>
               </Border>
             </StackPanel>

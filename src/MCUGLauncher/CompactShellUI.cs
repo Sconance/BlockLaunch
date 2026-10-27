@@ -366,56 +366,7 @@ public partial class MainWindow
             button.Margin = new Thickness(4, 0, 0, 0);
         }
 
-        var details = (Border)((ScrollViewer)((StackPanel)ProjectTitle.Parent).Parent).Parent;
-        var resultGrid = (Grid)details.Parent;
-        var oldPanel = (StackPanel)ProjectTitle.Parent;
-        var detailActions = oldPanel.Children.OfType<Button>().Where(b => b != InstallContentButton).ToList();
-        oldPanel.Children.Remove(ProjectTitle);
-        oldPanel.Children.Remove(ProjectDescription);
-        oldPanel.Children.Remove(ProjectVersions);
-        oldPanel.Children.Remove(InstallContentButton);
-        foreach (var button in detailActions)
-            oldPanel.Children.Remove(button);
-        var detail = new StackPanel();
-        detail.Children.Add(ProjectTitle);
-        ProjectTitle.FontSize = 14;
-        ProjectTitle.Margin = new Thickness(0, 0, 0, 3);
-        ProjectDescription.MaxHeight = 32;
-        ProjectDescription.Margin = new Thickness(0);
-        detail.Children.Add(ProjectDescription);
-        var actions = new WrapPanel();
-        ProjectVersions.Width = 260;
-        ProjectVersions.Margin = new Thickness(0, 4, 8, 0);
-        actions.Children.Add(ProjectVersions);
-        actions.Children.Add(InstallContentButton);
-        foreach (var button in detailActions.Take(3))
-        {
-            button.Margin = new Thickness(5, 4, 0, 0);
-            button.Padding = new Thickness(8, 6, 8, 6);
-            actions.Children.Add(button);
-        }
-
-        detail.Children.Add(actions);
-        details.Child = detail;
-        details.Padding = new Thickness(10);
-        details.Margin = new Thickness(0, 8, 0, 0);
-        resultGrid.ColumnDefinitions.Clear();
-        resultGrid.ColumnDefinitions.Add(new());
-        resultGrid.RowDefinitions.Add(new());
-        resultGrid.RowDefinitions.Add(new()
-        {
-            Height = GridLength.Auto
-        });
-        Grid.SetColumn(details, 0);
-        Grid.SetRow(details, 1);
-        SearchResults.ItemTemplate = (DataTemplate)System.Windows.Markup.XamlReader.Parse("<DataTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'><Grid><Grid.ColumnDefinitions><ColumnDefinition Width='42'/><ColumnDefinition/></Grid.ColumnDefinitions><Image Width='34' Height='34' Source='{Binding IconUrl}'/><StackPanel Grid.Column='1'><TextBlock Text='{Binding DisplayTitle}' FontWeight='SemiBold' FontSize='13' TextTrimming='CharacterEllipsis'/><TextBlock Text='{Binding Description}' FontSize='11' Foreground='#647782' TextTrimming='CharacterEllipsis' Margin='0,2,0,2'/><TextBlock Text='{Binding Meta}' FontSize='10' Foreground='#647782' TextTrimming='CharacterEllipsis' MaxHeight='14'/></StackPanel></Grid></DataTemplate>");
-        var rowStyle = new Style(typeof(ListBoxItem), (Style)FindResource(typeof(ListBoxItem)));
-        rowStyle.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(8, 6, 8, 6)));
-        rowStyle.Setters.Add(new Setter(FrameworkElement.MarginProperty, new Thickness(0, 0, 0, 4)));
-        SearchResults.ItemContainerStyle = rowStyle;
-        rowStyle.Setters.Add(new Setter(Control.TemplateProperty, System.Windows.Markup.XamlReader.Parse("<ControlTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' TargetType='ListBoxItem'><Border Name='Surface' Background='{DynamicResource ThemeSurfaceBrush}' BorderBrush='{DynamicResource ThemeBorderBrush}' BorderThickness='1' CornerRadius='6' Padding='{TemplateBinding Padding}'><ContentPresenter/></Border><ControlTemplate.Triggers><Trigger Property='IsSelected' Value='True'><Setter TargetName='Surface' Property='Background' Value='{DynamicResource ThemeSelectedBrush}'/></Trigger><Trigger Property='IsMouseOver' Value='True'><Setter TargetName='Surface' Property='BorderBrush' Value='#9ABAE8'/></Trigger></ControlTemplate.Triggers></ControlTemplate>")));
-        SearchResults.SelectionChanged += (_, _) => details.Visibility = SearchResults.SelectedItem == null ? Visibility.Collapsed : Visibility.Visible;
-        details.Visibility = Visibility.Collapsed;
+        BuildResourceWorkspace();
     }
 
     void UpdateHomeLaunchLabel()

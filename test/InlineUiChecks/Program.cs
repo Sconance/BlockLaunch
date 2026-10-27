@@ -139,7 +139,7 @@ static class Program
             Check(((ComboBox)Field("AccountMode")).SelectedIndex == 2, "preferred MUA mode survives missing cache without offline fallback");
             ((ComboBox)Field("AccountMode")).SelectedIndex = 0;
             Check(window.WindowStyle == WindowStyle.None && WindowChrome.GetWindowChrome(window)?.ResizeBorderThickness.Left == 6, "custom integrated caption retains resize border");
-            Check(typeof(MainWindow).Assembly.GetName().Name == "MCUGLauncher" && typeof(MainWindow).Assembly.GetName().Version!.ToString() == "0.20.0.0", "final assembly name and version");
+            Check(typeof(MainWindow).Assembly.GetName().Name == "MCUGLauncher" && typeof(MainWindow).Assembly.GetName().Version!.ToString() == "0.20.1.0", "final assembly name and version");
             Check(window.Title.StartsWith("MCUG Launcher") && ((SolidColorBrush)app.Resources["AccentBrush"]).Color == Color.FromRgb(0, 109, 184), "new brand uses Wuhan CUG blue");
             Call("RefreshInstanceViews");
             var search = (TextBox)Field("instanceQuery");

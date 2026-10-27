@@ -1,5 +1,12 @@
 # 更新记录
 
+## 0.20.1
+
+- 重整下载页分类和资源详情的信息层级，详情页支持窄窗口排列。
+- 加载器入口按卡片分组，本地安装器折叠收纳。
+- 更新透明背景 Logo 和 EXE 图标，分类图标保留 ImageSource 图片接口。
+
+
 近期发布摘要如下，完整历史见 [Releases](https://github.com/Sconance/MCUGLauncher/releases)。源码从 0.18.3 基线提交到主分支，未改写旧标签或重建历史提交。
 
 ## [0.20.0](https://github.com/Sconance/MCUGLauncher/releases/tag/v0.20.0)

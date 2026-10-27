@@ -54,6 +54,9 @@ public partial class MainWindow
         selection.Child = selectionRow;
         selection.Padding = new Thickness(18, 12, 18, 12);
         var vanilla = new DockPanel();
+        var vanillaHeading = Heading("原版游戏");
+        DockPanel.SetDock(vanillaHeading, Dock.Top);
+        vanilla.Children.Add(vanillaHeading);
         DockPanel.SetDock(selection, Dock.Top);
         vanilla.Children.Add(selection);
         var list = new StackPanel
@@ -74,14 +77,14 @@ public partial class MainWindow
         };
         loaderPage = new ScrollViewer
         {
-            Content = cards[2],
+            Content = BuildLoaderOverview((Border)cards[2]),
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto
         };
         resourcePage = (FrameworkElement)((TabItem)MainTabs.Items[2]).Content;
         var layout = new Grid();
         layout.ColumnDefinitions.Add(new()
         {
-            Width = new GridLength(120)
+            Width = new GridLength(148)
         });
         layout.ColumnDefinitions.Add(new());
         var navigation = new StackPanel
@@ -103,7 +106,8 @@ public partial class MainWindow
         {
             var option = new RadioButton
             {
-                Content = name,
+                Content = DownloadCategoryVisual(name),
+                ContentTemplate = null,
                 GroupName = "DownloadCategory",
                 Style = (Style)FindResource("Nav"),
                 Margin = new Thickness(0, 0, 0, 5),
@@ -138,7 +142,9 @@ public partial class MainWindow
         if (resourcePage == null)
             return;
         RestoreResourcePage();
+        ShowResourceResults();
         downloadCategory = category;
+        ShowResourceResults();
         downloadHost.Content = category switch
         {
             "原版游戏" => vanillaPage,

@@ -37,6 +37,7 @@ public partial class MainWindow
         {
             if (generation == browseGeneration)
             {
+                ShowResourceResults();
                 SearchHint.Text = "读取失败，可重新搜索：" + ex.Message;
                 SearchHint.Visibility = Visibility.Visible;
                 Log("资源浏览失败：" + ex.Message);
@@ -184,6 +185,7 @@ public partial class MainWindow
 
     async Task SearchContent()
     {
+        ShowResourceResults();
         var token = browseCancellation?.Token ?? CancellationToken.None;
         var target = SearchTarget();
         Status.Text = "搜索 Modrinth…";
@@ -237,6 +239,7 @@ public partial class MainWindow
     {
         if (SearchResults.SelectedItem is not ContentProject project)
             return;
+        ShowResourceDetail(project);
         await RunBrowse(async () =>
         {
             var token = browseCancellation?.Token ?? CancellationToken.None;

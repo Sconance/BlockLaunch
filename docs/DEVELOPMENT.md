@@ -72,3 +72,11 @@ dotnet run --project tools/SourceFormatter
 
 多数检查采用隔离目录、模拟 HTTP 和合成实例，适合验证取消、恢复、文件提交和界面状态。
 真实微软/MUA 授权、Java 兼容性和不同游戏整合包启动仍需实际环境验证，不能由格式检查代替。
+
+
+## 0.20.1 下载界面扩展
+
+- `DownloadNavigation.cs`：分类名称与 `DownloadCategoryIcon` 映射。为条目的 `Image` 传入 `ImageSource` 即显示图片；留空时回退到字形，不影响分类键或下载逻辑。图片建议以 WPF Resource 加入项目，并使用 pack URI 加载。
+- `ResourceWorkspaceUI.cs`：列表与页内详情切换、兼容信息与依赖数量展示、窄窗口布局。复用既有命名控件及事件，资源独立下载和整合包导入行为保持原样。
+- `LoaderOverviewUI.cs`：加载器入口卡片，只重组原有按钮，不创建第二套安装逻辑。
+- 列表模板 `ResourceSearchItem` 位于 `App.xaml`。不展示服务端未提供的评价、点赞或截图。
