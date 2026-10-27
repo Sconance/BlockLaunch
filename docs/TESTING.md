@@ -1,6 +1,6 @@
 # 验证记录
 
-## 0.20.2 — 2026-10-28
+## 0.21.0 — 2026-10-28
 
 - Release 构建：0 警告、0 错误；源码格式检查通过；29 个项目的引用与资源路径检查通过。
 - 21 个检查程序通过：Auth、Mua、Collection、ContentSafety、Dependency、Diagnostic、Download、

@@ -51,7 +51,7 @@ MCUG Launcher 提供游戏启动、分类下载、账号登录和实例内容管
 
 ## 源码与构建
 
-当前版本为 **0.20.2**，最终产品名确定为 **MCUG Launcher**。使用 Windows x64 与 .NET 8 SDK：
+当前版本为 **0.21.0**（重构分支版本号，与开发分支的 0.20.x 分开发放），最终产品名确定为 **MCUG Launcher**。使用 Windows x64 与 .NET 8 SDK：
 
 ```powershell
 git clone https://github.com/Sconance/MCUGLauncher.git
@@ -82,10 +82,11 @@ docs/      使用、构建、历史测试记录与截图
 
 ## 近期更新
 
-### [0.20.2](https://github.com/Sconance/MCUGLauncher/releases/tag/v0.20.2)
+### [0.21.0](https://github.com/Sconance/MCUGLauncher/releases/tag/v0.21.0)
 
-- 资源收藏增强、兼容筛选、排序及卡片/列表布局。
-- 为顶部、下载、设置、主页、资源详情、版本设置和实例内容等区域提供源码级菜单扩展点。
+- 重构分支版本：组件化窗口结构，并整合开发分支 0.20.1 / 0.20.2 的功能。
+- 资源搜索与详情支持自适应卡片、排序、仅收藏筛选、项目介绍与依赖展示。
+- 下载页提供加载器版本概览，八个区域提供源码级菜单扩展点。
 
 ### [0.20.0](https://github.com/Sconance/MCUGLauncher/releases/tag/v0.20.0)
 
@@ -97,8 +98,6 @@ docs/      使用、构建、历史测试记录与截图
 - 顶栏下载进度、任务栏进度与内嵌下载列表，支持暂停、继续、取消和失败重试。
 - 下载期间保留账号切换和版本浏览；认证操作先提示暂停下载，安装与启动仍保持互斥。
 
-
-
 ### [0.19.1](https://github.com/Sconance/MCUGLauncher/releases/tag/v0.19.1)
 
 - 启动页移除 Java 筛选与搜索图标，新增搜索占位提示。
@@ -106,14 +105,10 @@ docs/      使用、构建、历史测试记录与截图
 - 版本内容管理增加目录切换，标题整合到顶栏，列表和滚动条更紧凑。
 - 强化导入区域分隔，修复内嵌页面切换深色主题时的背景。
 
-
-
 ### [0.19.0](https://github.com/Sconance/MCUGLauncher/releases/tag/v0.19.0)
 
 - 最终名称确定为 MCUG Launcher，统一界面、程序元数据、仓库与文档。
 - 源码项目目录和构建入口同步更名，保留现有账号、配置与实例兼容。
-
-
 
 ### [0.18.3](https://github.com/Sconance/MCUGLauncher/releases/tag/v0.18.3)
 
@@ -130,6 +125,5 @@ docs/      使用、构建、历史测试记录与截图
 [完整更新记录](CHANGELOG.md) · [全部历史版本](https://github.com/Sconance/MCUGLauncher/releases)
 
 MCUG Launcher 为独立项目，非 Mojang 或 Microsoft 官方产品。第三方组件见 [依赖清单](docs/DEPENDENCIES.md) 与程序内声明。项目整体许可证尚未指定，不代表自动授予任意使用或再分发许可。
-
 
 开发者可从 [开发导览](docs/DEVELOPMENT.md) 查看功能入口、模块边界与编码约定。

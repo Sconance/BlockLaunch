@@ -16,7 +16,7 @@
 | 项目介绍、图片、标签、版本事实与依赖摘要 | 资源模型已含标题、描述、图标、标签；收藏系统有独立持久化 | `UI/Content/ResourcePresentationUI.cs` 从 Modrinth 加载有限长度的纯文本介绍和最多三张受限域名图片；详情展示版本信息及依赖摘要。版本选择和下载仍复用原流程。 |
 | 心形收藏、仅收藏筛选、排序和列表/卡片切换 | 已有收藏夹、标签、批量下载、项目收藏标记和排序 | `UI/Content/ResourceFavoritesUI.cs` 扩展在线资源卡片与详情收藏，复用 `ResourceBookmarkStore`；收藏筛选在本地收藏全量数据上检索，并按当前游戏/加载器/发布类型验证兼容性。普通搜索支持 relevance、downloads、updated 排序；旧版 `ContentService.Search` 签名继续保留。 |
 | 八个区域的代码级菜单注册 | 尚无统一的可扩展菜单注册入口 | `Models/LauncherMenuRegistry.cs` 定义区域、上下文、页面工厂和注册表；`UI/Shell/MenuExtensionsUI.cs` 接入顶部、下载、设置、更多、主页和资源详情；版本设置视图及实例内容对话框接入对应临时菜单。仅加载源码中注册的页面，不加载下载或远程插件代码。 |
-| 品牌资源、0.20.2 版本信息与回归断言 | 版本为 0.20.0，图标为旧资源 | 版本与 User-Agent/诊断信息更新到 0.20.2；同步更新 `Assets/MCUGLauncher.ico` 和 `Assets/MCUGLogo.png`；`test/DownloadUiChecks` 增加资源工作区、收藏及菜单扩展检查，`test/InlineUiChecks` 更新程序集版本断言。 |
+| 品牌资源、版本信息与回归断言 | 版本为 0.20.0，图标为旧资源 | 本分支以 **0.21.0** 发布，避免与 develop 的 0.20.2 在程序集版本、User-Agent 和诊断信息上冲突；同步更新 `Assets/MCUGLauncher.ico` 与 `Assets/MCUGLogo.png`；`test/DownloadUiChecks` 增加资源工作区、收藏及菜单扩展检查，`test/InlineUiChecks` 更新程序集版本断言。 |
 
 ## 兼容和架构决定
 

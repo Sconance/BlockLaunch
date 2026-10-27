@@ -31,7 +31,7 @@
 - **收藏与排序**：新增 `UI/Content/ResourceFavoritesUI.cs`，复用既有 `ResourceBookmarkStore` 数据；`ContentService.Search` 增加可选排序重载，旧签名保持 relevance 行为。
 - **加载器概览**：新增 `UI/Downloads/LoaderOverviewUI.cs`，把 Forge / NeoForge / Fabric / Quilt 版本读取与安装队列接入下载页；`DownloadPageUI` 改为调用该概览并接入分类图标。
 - **菜单扩展**：新增 `Models/LauncherMenuRegistry.cs`、`UI/Shell/MenuExtensions.cs`、`UI/Shell/MenuExtensionsUI.cs`，覆盖八个区域；版本设置窗口与实例内容对话框接入各自的临时菜单。
-- **公共样式与品牌**：`App.xaml` 增加搜索框模板、资源卡片/列表模板和详情标签样式；应用图标与 Logo 更新为 0.20.2 资源；版本号、User-Agent 与诊断信息同步到 0.20.2。
+- **公共样式与品牌**：`App.xaml` 增加搜索框模板、资源卡片/列表模板和详情标签样式；应用图标与 Logo 更新为上游资源；本分支版本号定为 **0.21.0**（与 develop 的 0.20.x 分离，避免程序集版本与 User-Agent 冲突），并同步 `Brand`、项目文件、关于页、User-Agent 与诊断信息。
 - **文档**：新增 [compare_develop_refactor.md](compare_develop_refactor.md)、[docs/MENU_EXTENSIONS.md](docs/MENU_EXTENSIONS.md)，并更新 README、CHANGELOG、`docs/DEVELOPMENT.md`、组件索引与逐类说明。
 
 迁移保持 `MainWindow` 的 XAML 类型化控件入口与 `UI/` 分域结构，没有把 develop 的旧根目录 partial 覆盖到当前实现。
