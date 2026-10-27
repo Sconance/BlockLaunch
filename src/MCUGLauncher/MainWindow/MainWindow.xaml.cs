@@ -29,6 +29,7 @@ public partial class MainWindow : Window
     LoaderInstallationController loaderController = null!;
     FileImportController fileImportController = null!;
     GameWindowBehaviorController gameWindowBehaviorController = null!;
+    FeatureDialogBuilder featureDialogBuilder = null!;
     PlayerIdentityController playerIdentityController = null!;
     InstanceSearchController instanceSearchController = null!;
     JavaManagerController javaManagerController = null!;
@@ -52,6 +53,7 @@ public partial class MainWindow : Window
     void NetworkClick(object sender, RoutedEventArgs e) => new NetworkSettingsController(this).Open();
     internal void ConfigureUtilityWindow(Window window) => UtilityWindowInitializer.Configure(window, () => windowThemeStyler.Apply(window));
     internal void ConfigureUtilityWindow(InlineDialog page) => UtilityWindowInitializer.Configure(page, () => windowThemeStyler.Apply(this));
+    internal InlineDialog FeatureDialog(string title, StackPanel content) => featureDialogBuilder.Build(title, content);
     internal void ThemeWindow(Window window) => windowThemeStyler.Apply(window);
     async void RefreshAvatarClick(object sender, RoutedEventArgs e)
     {
@@ -78,6 +80,7 @@ public partial class MainWindow : Window
         inlinePageHost = new InlinePageHost(this, inlinePages, HomeNav, MainTabs);
         gameWindowBehaviorController = new GameWindowBehaviorController(this, Log);
         windowThemeStyler = new WindowThemeStyler(this);
+        featureDialogBuilder = new FeatureDialogBuilder(this);
         contentUpdateController = new ContentUpdateController(this);
         instanceUninstallationController = new InstanceUninstallationController(this);
         packUpgradeController = new PackUpgradeController(

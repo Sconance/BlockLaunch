@@ -318,6 +318,20 @@ static class Program
                 return true;
             });
             Check(folder.FolderName == files, "folder selector uses visible current location");
+            var featureContent = new StackPanel();
+            featureContent.Children.Add(new TextBlock { Text = "通用对话框检查" });
+            featureContent.Children.Add(new Button { Content = "主要操作" });
+            featureContent.Children.Add(new Button { Content = "取消" });
+            var featureDialog = (InlineDialog)Call("FeatureDialog", "通用对话框检查", featureContent)!;
+            Drive(() => Check(featureDialog.ShowDialog() == true, "generic feature dialog accepts result"), page =>
+            {
+                var heading = Walk(page).OfType<TextBlock>().FirstOrDefault(t => t.Text == "通用对话框检查");
+                var buttons = Buttons(page).ToArray();
+                Check(page.Title == "通用对话框检查" && heading?.Visibility == Visibility.Collapsed, "generic feature dialog prepares title and content");
+                Check(buttons.Length == 2 && buttons.All(button => button.MinWidth >= 145) && buttons.All(button => button.Parent is WrapPanel), "generic feature dialog groups and sizes action buttons");
+                page.DialogResult = true;
+                return true;
+            });
             Drive(() => Call("OpenJavaManager", game, "1.21.1", (Action<string>)(_ =>
             {
             }), window), page =>

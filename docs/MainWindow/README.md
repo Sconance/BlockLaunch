@@ -76,6 +76,7 @@ MainWindow/
 |---|---|---|
 | ContentUpdatePreviewView | [职责](Classes/ContentUpdatePreviewView.md) | [`ContentUpdatePreviewView.cs`](../../src/MCUGLauncher/MainWindow/Presentation/ContentUpdatePreviewView.cs) |
 | ContentUpdateSelectionView | [职责](Classes/ContentUpdateSelectionView.md) | [`ContentUpdateSelectionView.cs`](../../src/MCUGLauncher/MainWindow/Presentation/ContentUpdateSelectionView.cs) |
+| FeatureDialogBuilder | [职责](Classes/FeatureDialogBuilder.md) | [`FeatureDialogBuilder.cs`](../../src/MCUGLauncher/MainWindow/Presentation/FeatureDialogBuilder.cs) |
 | InlinePageHost | [职责](Classes/InlinePageHost.md) | [`InlinePageHost.cs`](../../src/MCUGLauncher/MainWindow/Presentation/InlinePageHost.cs) |
 | InstanceLibraryDialog | [职责](Classes/InstanceLibraryDialog.md) | [`InstanceLibraryDialog.cs`](../../src/MCUGLauncher/MainWindow/Presentation/InstanceLibraryDialog.cs) |
 | VersionSettingsDialog | [职责](Classes/VersionSettingsDialog.md) | [`VersionSettingsDialog.cs`](../../src/MCUGLauncher/MainWindow/Presentation/VersionSettingsDialog.cs) |
