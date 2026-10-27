@@ -1,5 +1,7 @@
 using System.Text.Json;
+
 namespace BlockLaunch;
+
 public static class AtomicFile
 {
     public static void WriteJson<T>(string file, T value)
@@ -9,11 +11,20 @@ public static class AtomicFile
         try
         {
             using (var stream = new FileStream(temp, FileMode.CreateNew, FileAccess.Write, FileShare.None))
-            { JsonSerializer.Serialize(stream, value, new JsonSerializerOptions { WriteIndented = true }); stream.Flush(true); }
+            {
+                JsonSerializer.Serialize(stream, value, new JsonSerializerOptions { WriteIndented = true });
+                stream.Flush(true);
+            }
+
             File.Move(temp, file, true);
         }
-        finally { if (File.Exists(temp)) File.Delete(temp); }
+        finally
+        {
+            if (File.Exists(temp))
+                File.Delete(temp);
+        }
     }
+
     public static T ReadJson<T>(string file)
     {
         // Readers hold an immutable snapshot while atomic writers may replace the name.

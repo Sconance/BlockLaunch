@@ -1,4 +1,5 @@
 namespace BlockLaunch;
+
 // Reserved provider boundary: never scrape pages or silently send an unlicensed key.
 public sealed class CurseForgeProvider : IResourceProvider
 {

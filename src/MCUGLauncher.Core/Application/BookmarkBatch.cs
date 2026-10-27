@@ -1,5 +1,7 @@
 namespace BlockLaunch;
+
 public record BookmarkDownload(ResourceBookmark Bookmark, ContentVersion? Version, string Error);
+
 public static class BookmarkBatch
 {
     public static async Task<List<BookmarkDownload>> Resolve(IResourceProvider provider, IEnumerable<ResourceBookmark> items, string game, string loader, CancellationToken token)
@@ -10,14 +12,19 @@ public static class BookmarkBatch
             token.ThrowIfCancellationRequested();
             try
             {
-                if (item.Kind == "mod" && loader == "vanilla") throw new IOException("当前实例为纯原版，请先选择模组加载器版本。");
+                if (item.Kind == "mod" && loader == "vanilla")
+                    throw new IOException("当前实例为纯原版，请先选择模组加载器版本。");
                 var versions = await provider.Versions(item.Project.Id, item.Kind == "modpack" ? "" : game, item.Kind == "modpack" ? "" : item.Kind == "datapack" ? "datapack" : loader, item.Kind);
                 token.ThrowIfCancellationRequested();
                 var version = versions.FirstOrDefault(v => v.VersionType == "release") ?? versions.FirstOrDefault() ?? throw new IOException("没有兼容版本。");
                 result.Add(new(item, version, ""));
             }
-            catch (Exception ex) when (ex is not OperationCanceledException) { result.Add(new(item, null, ex.Message)); }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                result.Add(new(item, null, ex.Message));
+            }
         }
+
         return result;
     }
 }

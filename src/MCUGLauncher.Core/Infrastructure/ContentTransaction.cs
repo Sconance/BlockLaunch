@@ -1,50 +1,121 @@
 using System.Security.Cryptography;
+
 namespace BlockLaunch;
+
 public class TransactionMove
 {
     public string Relative { get; set; } = "";
     public string Hash { get; set; } = "";
-    public bool Backup { get; set; }
+    public bool Backup
+    {
+        get;
+        set;
+    }
 }
+
 public class TransactionJournal
 {
     public string State { get; set; } = "Preparing";
     public List<TransactionMove> Moves { get; set; } = [];
 }
+
 // The per-instance operation.lock must be held by the caller.
 public sealed class ContentTransaction
 {
     readonly string instance, directory, journalPath;
     readonly TransactionJournal journal;
-    public string Stage { get; }
+
+    public string Stage
+    {
+        get;
+    }
+
     public ContentTransaction(string instance)
     {
-        this.instance = Path.GetFullPath(instance); directory = Path.Combine(instance, ".blocklaunch", "backups", "transaction-" + Guid.NewGuid().ToString("N"));
-        Stage = Path.Combine(directory, "stage"); Directory.CreateDirectory(Stage); journalPath = Path.Combine(directory, "transaction.json"); journal = new(); Save();
+        this.instance = Path.GetFullPath(instance);
+        directory = Path.Combine(instance, ".blocklaunch", "backups", "transaction-" + Guid.NewGuid().ToString("N"));
+        Stage = Path.Combine(directory, "stage");
+        Directory.CreateDirectory(Stage);
+        journalPath = Path.Combine(directory, "transaction.json");
+        journal = new();
+        Save();
     }
+
     ContentTransaction(string instance, string directory, TransactionJournal journal)
-    { this.instance = instance; this.directory = directory; this.journal = journal; Stage = Path.Combine(directory, "stage"); journalPath = Path.Combine(directory, "transaction.json"); }
+    {
+        this.instance = instance;
+        this.directory = directory;
+        this.journal = journal;
+        Stage = Path.Combine(directory, "stage");
+        journalPath = Path.Combine(directory, "transaction.json");
+    }
+
     string Destination(string relative)
     {
-        if (relative != ".blocklaunch-content.json" && !(relative.StartsWith("mods/", StringComparison.Ordinal) || relative.StartsWith("resourcepacks/", StringComparison.Ordinal) || relative.StartsWith("shaderpacks/", StringComparison.Ordinal) || relative.StartsWith("datapacks/", StringComparison.Ordinal))) throw new IOException("事务目标不在内容目录中。");
+        if (relative != ".blocklaunch-content.json" && !(relative.StartsWith("mods/", StringComparison.Ordinal) || relative.StartsWith("resourcepacks/", StringComparison.Ordinal) || relative.StartsWith("shaderpacks/", StringComparison.Ordinal) || relative.StartsWith("datapacks/", StringComparison.Ordinal)))
+            throw new IOException("事务目标不在内容目录中。");
         return PackService.SafePath(instance, relative);
     }
+
     void Save() => AtomicFile.WriteJson(journalPath, journal);
-    public static string Hash(string file) { using var input = File.OpenRead(file); return Convert.ToHexString(SHA512.HashData(input)); }
+
+    public static string Hash(string file)
+    {
+        using var input = File.OpenRead(file);
+        return Convert.ToHexString(SHA512.HashData(input));
+    }
+
     public void Backup(string relative)
     {
-        var file = Destination(relative); if (!File.Exists(file)) return;
-        journal.Moves.Add(new() { Relative = relative, Backup = true, Hash = Hash(file) }); Save();
-        var backup = PackService.SafePath(Path.Combine(directory, "files"), relative); Directory.CreateDirectory(Path.GetDirectoryName(backup)!); File.Move(file, backup);
+        var file = Destination(relative);
+        if (!File.Exists(file))
+            return;
+        journal.Moves.Add(new()
+        {
+            Relative = relative,
+            Backup = true,
+            Hash = Hash(file)
+        });
+        Save();
+        var backup = PackService.SafePath(Path.Combine(directory, "files"), relative);
+        Directory.CreateDirectory(Path.GetDirectoryName(backup)!);
+        File.Move(file, backup);
     }
+
     public void Write(string source, string relative)
     {
-        var target = Destination(relative); if (File.Exists(target)) throw new IOException("事务不能覆盖未备份的文件。");
-        journal.Moves.Add(new() { Relative = relative, Hash = Hash(source) }); Save();
-        Directory.CreateDirectory(Path.GetDirectoryName(target)!); File.Move(source, target);
+        var target = Destination(relative);
+        if (File.Exists(target))
+            throw new IOException("事务不能覆盖未备份的文件。");
+        journal.Moves.Add(new()
+        {
+            Relative = relative,
+            Hash = Hash(source)
+        });
+        Save();
+        Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+        File.Move(source, target);
     }
-    public void Commit() { journal.State = "Committed"; Save(); try { CleanupStage(); } catch (IOException) { } }
-    void CleanupStage() { if (Directory.Exists(Stage)) Directory.Delete(Stage, true); }
+
+    public void Commit()
+    {
+        journal.State = "Committed";
+        Save();
+        try
+        {
+            CleanupStage();
+        }
+        catch (IOException)
+        {
+        }
+    }
+
+    void CleanupStage()
+    {
+        if (Directory.Exists(Stage))
+            Directory.Delete(Stage, true);
+    }
+
     public void Rollback()
     {
         foreach (var move in journal.Moves.AsEnumerable().Reverse())
@@ -52,27 +123,43 @@ public sealed class ContentTransaction
             var target = Destination(move.Relative);
             if (!move.Backup)
             {
-                if (journal.Moves.Any(m => m.Backup && m.Relative == move.Relative) && !File.Exists(PackService.SafePath(Path.Combine(directory, "files"), move.Relative))) continue;
-                if (!File.Exists(target)) continue;
-                if (!Hash(target).Equals(move.Hash, StringComparison.OrdinalIgnoreCase)) throw new IOException("恢复遇到已被用户修改的文件，已保留：" + move.Relative);
+                if (journal.Moves.Any(m => m.Backup && m.Relative == move.Relative) && !File.Exists(PackService.SafePath(Path.Combine(directory, "files"), move.Relative)))
+                    continue;
+                if (!File.Exists(target))
+                    continue;
+                if (!Hash(target).Equals(move.Hash, StringComparison.OrdinalIgnoreCase))
+                    throw new IOException("恢复遇到已被用户修改的文件，已保留：" + move.Relative);
                 File.Delete(target);
             }
             else
             {
-                var backup = PackService.SafePath(Path.Combine(directory, "files"), move.Relative); if (!File.Exists(backup)) continue;
-                if (File.Exists(target)) throw new IOException("恢复目标已存在，已保留备份：" + move.Relative);
-                Directory.CreateDirectory(Path.GetDirectoryName(target)!); File.Move(backup, target);
+                var backup = PackService.SafePath(Path.Combine(directory, "files"), move.Relative);
+                if (!File.Exists(backup))
+                    continue;
+                if (File.Exists(target))
+                    throw new IOException("恢复目标已存在，已保留备份：" + move.Relative);
+                Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+                File.Move(backup, target);
             }
         }
-        journal.State = "RolledBack"; Save(); CleanupStage();
+
+        journal.State = "RolledBack";
+        Save();
+        CleanupStage();
     }
+
     public static string? LatestCommitted(string instance)
     {
-        var directory = Path.Combine(instance, ".blocklaunch", "backups"); if (!Directory.Exists(directory)) return null;
-        return Directory.GetDirectories(directory, "transaction-*").Where(d => File.Exists(Path.Combine(d, "transaction.json")))
-            .OrderByDescending(d => File.GetLastWriteTimeUtc(Path.Combine(d, "transaction.json")))
-            .FirstOrDefault(d => { var journal = AtomicFile.ReadJson<TransactionJournal>(Path.Combine(d, "transaction.json")); return journal.State == "Committed" && journal.Moves.Count > 0; });
+        var directory = Path.Combine(instance, ".blocklaunch", "backups");
+        if (!Directory.Exists(directory))
+            return null;
+        return Directory.GetDirectories(directory, "transaction-*").Where(d => File.Exists(Path.Combine(d, "transaction.json"))).OrderByDescending(d => File.GetLastWriteTimeUtc(Path.Combine(d, "transaction.json"))).FirstOrDefault(d =>
+        {
+            var journal = AtomicFile.ReadJson<TransactionJournal>(Path.Combine(d, "transaction.json"));
+            return journal.State == "Committed" && journal.Moves.Count > 0;
+        });
     }
+
     public static void RestoreLatest(string instance, CancellationToken token = default)
     {
         token.ThrowIfCancellationRequested();
@@ -93,27 +180,46 @@ public sealed class ContentTransaction
             else
             {
                 var backup = PackService.SafePath(Path.Combine(directory, "files"), move.Relative);
-                if (!File.Exists(backup) || !Hash(backup).Equals(move.Hash, StringComparison.OrdinalIgnoreCase)) throw new IOException("回退备份缺失或已改变：" + move.Relative);
-                if ((File.Exists(target) || Directory.Exists(target)) && !journal.Moves.Any(m => !m.Backup && m.Relative == move.Relative)) throw new IOException("回退目标被占用：" + move.Relative);
+                if (!File.Exists(backup) || !Hash(backup).Equals(move.Hash, StringComparison.OrdinalIgnoreCase))
+                    throw new IOException("回退备份缺失或已改变：" + move.Relative);
+                if ((File.Exists(target) || Directory.Exists(target)) && !journal.Moves.Any(m => !m.Backup && m.Relative == move.Relative))
+                    throw new IOException("回退目标被占用：" + move.Relative);
             }
         }
-        using var commit = OperationExecution.BeginCommit(); journal.State = "Restoring"; transaction.Save(); transaction.Rollback();
+
+        using var commit = OperationExecution.BeginCommit();
+        journal.State = "Restoring";
+        transaction.Save();
+        transaction.Rollback();
     }
+
     public static List<string> Recover(string instance)
     {
-        var messages = new List<string>(); var directory = Path.Combine(instance, ".blocklaunch", "backups"); if (!Directory.Exists(directory)) return messages;
+        var messages = new List<string>();
+        var directory = Path.Combine(instance, ".blocklaunch", "backups");
+        if (!Directory.Exists(directory))
+            return messages;
         var lockPath = Path.Combine(instance, ".blocklaunch", "operation.lock");
         using var lease = new FileStream(lockPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
         foreach (var transaction in Directory.GetDirectories(directory, "transaction-*"))
         {
-            var file = Path.Combine(transaction, "transaction.json"); if (!File.Exists(file)) continue;
+            var file = Path.Combine(transaction, "transaction.json");
+            if (!File.Exists(file))
+                continue;
             try
             {
-                var record = AtomicFile.ReadJson<TransactionJournal>(file); if (record.State is not ("Preparing" or "Restoring")) continue;
-                new ContentTransaction(instance, transaction, record).Rollback(); messages.Add("已回滚中断的内容安装：" + Path.GetFileName(instance));
+                var record = AtomicFile.ReadJson<TransactionJournal>(file);
+                if (record.State is not ("Preparing" or "Restoring"))
+                    continue;
+                new ContentTransaction(instance, transaction, record).Rollback();
+                messages.Add("已回滚中断的内容安装：" + Path.GetFileName(instance));
             }
-            catch (Exception ex) when (ex is IOException or System.Text.Json.JsonException) { messages.Add("内容安装需要检查备份：" + ex.Message); }
+            catch (Exception ex) when (ex is IOException or System.Text.Json.JsonException)
+            {
+                messages.Add("内容安装需要检查备份：" + ex.Message);
+            }
         }
+
         return messages;
     }
 }

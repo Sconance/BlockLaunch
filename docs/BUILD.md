@@ -7,7 +7,7 @@
 | `src/MCUGLauncher/` | WPF 界面、认证、图标与功能交互 |
 | `src/MCUGLauncher.Core/` | 下载、Java、实例、整合包等服务 |
 | `test/` | 22 个独立检查程序 |
-| `tools/` | 4 个使用合成数据的界面预览程序 |
+| `tools/` | 4 个界面预览程序与源码格式工具 |
 | `scripts/` | 构建、发布、指定检查与静态布局校验 |
 | `docs/` | 使用指南、构建说明、依赖清单、历史测试记录与截图 |
 
@@ -76,7 +76,7 @@ python scripts/check-layout.py
 只需 Python 3 标准库，在 Windows 或 Linux 上检查项目 XML、项目引用、链接源码、
 图标与复制资源是否存在，并检查旧路径残留；不会编译或运行游戏。CI 在构建前执行此校验。
 
-`docs/TESTING.md` 是历史测试记录，不表示目录迁移后重新运行了全部检查。
+`docs/TESTING.md` 顶部记录当前版本验证范围，下方保留历史记录。
 
 ## 双版本发布
 

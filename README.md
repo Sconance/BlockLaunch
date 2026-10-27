@@ -50,7 +50,7 @@ MCUG Launcher 提供游戏启动、分类下载、账号登录和实例内容管
 
 ## 源码与构建
 
-当前版本为 **0.19.2**，最终产品名确定为 **MCUG Launcher**。使用 Windows x64 与 .NET 8 SDK：
+当前版本为 **0.20.0**，最终产品名确定为 **MCUG Launcher**。使用 Windows x64 与 .NET 8 SDK：
 
 ```powershell
 git clone https://github.com/Sconance/MCUGLauncher.git
@@ -64,7 +64,7 @@ dotnet publish src/MCUGLauncher/MCUGLauncher.csproj -c Release -o artifacts/publ
 ```text
 src/       主程序与核心逻辑（2 个项目）
 test/      功能、界面与集成检查（22 个项目）
-tools/     隔离界面预览（4 个项目）
+tools/     隔离界面预览（4 个）和源码格式工具
 scripts/   构建与检查脚本
 docs/      使用、构建、历史测试记录与截图
 ```
@@ -74,6 +74,10 @@ docs/      使用、构建、历史测试记录与截图
 请在 [Issues](https://github.com/Sconance/MCUGLauncher/issues) 提供软件版本、系统版本、复现步骤和脱敏日志。不要上传密码、Token、账号缓存或私人存档。参阅 [贡献说明](CONTRIBUTING.md)。
 
 ## 近期更新
+
+### [0.20.0](https://github.com/Sconance/MCUGLauncher/releases/tag/v0.20.0)
+
+源码可读性整理：统一格式，拆分账号面板与下载任务职责，加入开发导览和格式检查。
 
 ### [0.19.2](https://github.com/Sconance/MCUGLauncher/releases/tag/v0.19.2)
 
@@ -114,3 +118,6 @@ docs/      使用、构建、历史测试记录与截图
 [完整更新记录](CHANGELOG.md) · [全部历史版本](https://github.com/Sconance/MCUGLauncher/releases)
 
 MCUG Launcher 为独立项目，非 Mojang 或 Microsoft 官方产品。第三方组件见 [依赖清单](docs/DEPENDENCIES.md) 与程序内声明。项目整体许可证尚未指定，不代表自动授予任意使用或再分发许可。
+
+
+开发者可从 [开发导览](docs/DEVELOPMENT.md) 查看功能入口、模块边界与编码约定。

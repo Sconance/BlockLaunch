@@ -1,4 +1,20 @@
-# 测试记录 — 2026-10-20
+# 验证记录
+
+## 0.20.0 — 2026-10-27
+
+- Release 构建：0 警告、0 错误；源码格式检查通过；29 个项目的引用与资源路径检查通过。
+- 21 个检查程序通过：Auth、Mua、Collection、ContentSafety、Dependency、Diagnostic、Download、
+  Library、ResourceDownload、Stability、Uninstall、Upgrade、Experience、DownloadUi、VersionUi、
+  CompactUi、InlineUi、MiniDownload、Queue、Compatibility、WorkflowUi（均为对应的 `*Checks` 工程）。
+- 覆盖模拟认证与凭据保护、下载续传/取消、事务回滚与恢复、实例删除边界、资源依赖、
+  整合包导入升级、账号显示和内嵌任务交互；CompactUi 另完成真实版本清单、Modrinth 搜索和独立资源下载。
+- 更新 CompactUi 的异步等待与当前主页断言；更新版本断言并消除 DiagnosticChecks 的可空警告。
+- 格式化前后以 C# token 比对保护表达式和字符串，任务类型分文件后保持同一命名空间和公开接口。
+- 未执行需要真人凭据的真实登录，也未重跑完整真实游戏/整合包启动矩阵；组件渲染不等于原生鼠标与多显示器 DPI 验收。
+
+以下保留历史记录，不能作为当前版本的全部验证结论。
+
+## 历史记录 — 2026-10-20
 
 ## 0.2 增量验证
 

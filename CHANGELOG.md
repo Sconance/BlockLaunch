@@ -2,6 +2,15 @@
 
 近期发布摘要如下，完整历史见 [Releases](https://github.com/Sconance/MCUGLauncher/releases)。源码从 0.18.3 基线提交到主分支，未改写旧标签或重建历史提交。
 
+## [0.20.0](https://github.com/Sconance/MCUGLauncher/releases/tag/v0.20.0)
+
+- 统一 C#、XAML 和项目文件排版，展开密集语句，便于阅读和审查。
+- 拆分主页账号面板构建职责，将账号切换按钮样式移入 XAML。
+- 整理下载任务卡片、状态排序和任务栏进度映射，明确任务状态变更入口。
+- 将持久化任务模型、单次执行上下文与队列协调器分文件组织，保留数据和调用兼容。
+- 新增开发导览、编码约定与 SDK 格式检查工具。
+- 继续提供完整版与 Lite，保留原有配置、账号和实例兼容。
+
 ## [0.19.2](https://github.com/Sconance/MCUGLauncher/releases/tag/v0.19.2)
 
 - 拖入文件显示导入提示；整合包先确认名称和目标目录，其他资源导入管理页当前实例。

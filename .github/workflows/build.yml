@@ -16,5 +16,10 @@ jobs:
           dotnet-version: 8.0.x
       - name: Validate repository layout
         run: python scripts/check-layout.py
+      - name: Check source formatting
+        run: dotnet run --project tools/SourceFormatter
       - name: Build launcher
         run: ./scripts/build.ps1
+
+      - name: Run isolated regression checks
+        run: ./scripts/run-checks.ps1 -Name AuthChecks,MuaChecks,DownloadChecks,QueueChecks,CompatibilityChecks
