@@ -7,7 +7,7 @@
     <Nullable>enable</Nullable>
     <AssemblyName>MCUGLauncher</AssemblyName>
     <RootNamespace>BlockLaunch</RootNamespace>
-    <Version>0.20.0</Version>
+    <Version>0.20.2</Version>
     <Product>MCUG Launcher</Product>
     <Title>MCUG Launcher</Title>
     <PublishSingleFile>true</PublishSingleFile>

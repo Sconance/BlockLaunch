@@ -41,6 +41,32 @@ internal sealed class VersionSettingsDialog(MainWindow host, string key, string 
 
         context = new VersionSettingsPageContext(host, key, root, catalog, descriptor, requirements, window, view.Title, view.Content);
         context.Render = Render;
+        void RefreshExtensions(LauncherMenuArea area)
+        {
+            if (area == LauncherMenuArea.VersionSettings)
+                RefreshExtensionPages();
+        }
+        void RefreshExtensionPages()
+        {
+            view.RefreshExtensionPages(host.MenuPages.Pages(LauncherMenuArea.VersionSettings), ShowExtension);
+        }
+        void ShowExtension(LauncherMenuPage page)
+        {
+            FrameworkElement content;
+            try
+            {
+                content = page.CreateContent(new(host, key, null))
+                    ?? MainWindow.Hint("栏目未提供页面内容。");
+            }
+            catch (Exception ex)
+            {
+                content = MainWindow.Hint("无法加载“" + page.Title + "”：" + ex.Message);
+            }
+            view.ShowExtensionPage(page.Title, content);
+        }
+        host.MenuPages.Changed += RefreshExtensions;
+        window.Closed += (_, _) => host.MenuPages.Changed -= RefreshExtensions;
+        RefreshExtensionPages();
         view.SelectPage(initialPage);
         window.ShowDialog();
     }

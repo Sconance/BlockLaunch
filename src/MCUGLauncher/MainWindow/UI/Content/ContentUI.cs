@@ -141,6 +141,8 @@ public partial class MainWindow
         ContentSearchSummaryLabel.Text = "内容来自 Modrinth";
         searchOffset = 0;
         searchTotal = 0;
+        ResetResourceDisplayFilters();
+        ShowResourceResults();
     }
 
     async Task SearchContent()
@@ -150,7 +152,11 @@ public partial class MainWindow
         OperationStatusLabel.Text = "搜索 Modrinth…";
         if (resourceSource.SelectedIndex == 1)
             throw new NotSupportedException("CurseForge 未启用：当前没有 API Key。请使用 Modrinth。");
-        var page = await new ContentService(http, token).Search(ContentSearchQueryInput.Text.Trim(), target.GameVersion, target.Loader, ContentKind, searchOffset);
+        ShowResourceResults();
+        var service = new ContentService(http, token);
+        var page = resourceFavoritesOnly
+            ? await SearchFavoriteResources(token)
+            : await service.Search(ContentSearchQueryInput.Text.Trim(), target.GameVersion, target.Loader, ContentKind, searchOffset, ResourceSearchSort());
         token.ThrowIfCancellationRequested();
         ContentSearchResultsControl.ItemsSource = DecorateProjects(page.Items);
         searchTotal = page.Total;
@@ -158,7 +164,7 @@ public partial class MainWindow
         ContentInstallButtonControl.IsEnabled = false;
         ContentProjectTitleLabel.Text = "选择一个项目";
         ContentProjectDescriptionLabel.Text = "点击项目，选择需要下载的版本。";
-        ContentSearchSummaryLabel.Text = page.Total == 0 ? "没有匹配的项目" : $"{searchOffset + 1}–{searchOffset + page.Items.Count} / {page.Total:N0} 个项目 · Modrinth · 本页收藏优先";
+        ContentSearchSummaryLabel.Text = page.Total == 0 ? "没有匹配的项目" : $"{searchOffset + 1}–{searchOffset + page.Items.Count} / {page.Total:N0} 个项目 · Modrinth" + (resourceFavoritesOnly ? " · 收藏筛选" : "");
         ContentSearchHintControl.Text = "没有找到匹配内容，试试其他关键词。";
         ContentSearchHintControl.Visibility = page.Items.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
@@ -198,6 +204,7 @@ public partial class MainWindow
     {
         if (ContentSearchResultsControl.SelectedItem is not ContentProject project)
             return;
+        ShowResourceDetail(project);
         await RunBrowse(async () =>
         {
             var token = browseCancellation?.Token ?? CancellationToken.None;
@@ -208,6 +215,7 @@ public partial class MainWindow
             ContentInstallButtonControl.IsEnabled = false;
             var type = ContentKind;
             OperationStatusLabel.Text = "读取兼容版本…";
+            var presentation = LoadResourcePresentation(project, token);
             var list = await new ContentService(http, token).Versions(project.Id, target.GameVersion, target.Loader, type);
             token.ThrowIfCancellationRequested();
             if (releaseChannel.SelectedIndex > 0)
@@ -215,6 +223,8 @@ public partial class MainWindow
             ContentProjectVersionsControl.ItemsSource = list;
             ContentProjectVersionsControl.SelectedIndex = list.Count > 0 ? 0 : -1;
             ContentInstallButtonControl.IsEnabled = list.Count > 0;
+            UpdateResourceVersionFacts();
+            await presentation;
             if (list.Count == 0)
                 ContentProjectDescriptionLabel.Text += "\n\n没有符合筛选条件的可下载版本。";
         });

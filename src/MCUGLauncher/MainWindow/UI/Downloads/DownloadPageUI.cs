@@ -74,7 +74,7 @@ public partial class MainWindow
         };
         loaderPage = new ScrollViewer
         {
-            Content = cards[2],
+            Content = BuildLoaderOverview((Border)cards[2]),
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto
         };
         resourcePage = (FrameworkElement)((TabItem)MainTabControl.Items[2]).Content;
@@ -88,6 +88,7 @@ public partial class MainWindow
         {
             Margin = new Thickness(0, 0, 14, 0)
         };
+        downloadNavigationPanel = navigation;
         foreach (var name in new[] {
             "原版游戏",
             "Mod",
@@ -103,7 +104,8 @@ public partial class MainWindow
         {
             var option = new RadioButton
             {
-                Content = name,
+                Content = DownloadCategoryVisual(name),
+                ContentTemplate = null,
                 GroupName = "DownloadCategory",
                 Style = (Style)FindResource("Nav"),
                 Margin = new Thickness(0, 0, 0, 5),
@@ -168,6 +170,8 @@ public partial class MainWindow
             if (LocalVersions().Count == 0 && resourceGame.Text == "跟随实例")
                 resourceGame.Text = "全部";
         }
+        else if (category == "模组加载器")
+            PrepareLoaderConfiguration();
 
         if (!downloadCategories[category].IsChecked.GetValueOrDefault())
             downloadCategories[category].IsChecked = true;

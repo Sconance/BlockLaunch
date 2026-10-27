@@ -227,6 +227,83 @@
         </Setter.Value>
       </Setter>
     </Style>
+    <ControlTemplate x:Key="SearchInputTemplate" TargetType="TextBox">
+      <Border x:Name="Surface" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="8">
+        <Grid>
+          <ScrollViewer x:Name="PART_ContentHost" />
+          <TextBlock x:Name="Watermark" Text="{TemplateBinding Tag}" Foreground="#8A9AA3" Margin="12,0" VerticalAlignment="Center" IsHitTestVisible="False" Visibility="Collapsed" />
+        </Grid>
+      </Border>
+      <ControlTemplate.Triggers>
+        <Trigger Property="Text" Value="">
+          <Setter TargetName="Watermark" Property="Visibility" Value="Visible" />
+        </Trigger>
+        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+          <Setter TargetName="Surface" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+        </Trigger>
+      </ControlTemplate.Triggers>
+    </ControlTemplate>
+    <DataTemplate x:Key="ResourceSearchItem">
+      <Grid>
+        <Grid.RowDefinitions>
+          <RowDefinition Height="64" />
+          <RowDefinition />
+        </Grid.RowDefinitions>
+        <Image Source="{Binding IconUrl}" Stretch="UniformToFill" />
+        <Button x:Name="FavoriteButton" Tag="FavoriteResource" HorizontalAlignment="Right" VerticalAlignment="Top" Padding="6,2" Margin="5" Content="♡" ToolTip="收藏此资源" />
+        <StackPanel Grid.Row="1" Margin="0,5,0,0">
+          <TextBlock Text="{Binding DisplayTitle}" FontWeight="SemiBold" FontSize="13" TextTrimming="CharacterEllipsis" />
+          <TextBlock Text="{Binding Description}" FontSize="11" Foreground="#647782" TextTrimming="CharacterEllipsis" MaxHeight="14" Margin="0,2,0,2" />
+          <TextBlock Text="{Binding Meta}" FontSize="10" Foreground="#647782" TextTrimming="CharacterEllipsis" MaxHeight="14" />
+        </StackPanel>
+      </Grid>
+      <DataTemplate.Triggers>
+        <DataTrigger Binding="{Binding IsFavorite}" Value="True">
+          <Setter TargetName="FavoriteButton" Property="Content" Value="♥" />
+        </DataTrigger>
+      </DataTemplate.Triggers>
+    </DataTemplate>
+    <DataTemplate x:Key="ResourceListItem">
+      <Grid MinHeight="58">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="48" />
+          <ColumnDefinition />
+          <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        <Image Width="40" Height="40" Source="{Binding IconUrl}" Stretch="UniformToFill" />
+        <StackPanel Grid.Column="1" Margin="8,0">
+          <TextBlock Text="{Binding DisplayTitle}" FontWeight="SemiBold" FontSize="13" TextTrimming="CharacterEllipsis" />
+          <TextBlock Text="{Binding Description}" FontSize="11" Foreground="#647782" TextTrimming="CharacterEllipsis" />
+          <TextBlock Text="{Binding Meta}" FontSize="10" Foreground="#647782" TextTrimming="CharacterEllipsis" />
+        </StackPanel>
+        <Button x:Name="FavoriteButton" Grid.Column="2" Tag="FavoriteResource" Padding="7,3" Content="♡" ToolTip="收藏此资源" />
+      </Grid>
+      <DataTemplate.Triggers>
+        <DataTrigger Binding="{Binding IsFavorite}" Value="True">
+          <Setter TargetName="FavoriteButton" Property="Content" Value="♥" />
+        </DataTrigger>
+      </DataTemplate.Triggers>
+    </DataTemplate>
+    <Style x:Key="ResourceDetailTab" TargetType="TabItem">
+      <Setter Property="Padding" Value="12,7" />
+      <Setter Property="Margin" Value="0,0,5,0" />
+      <Setter Property="Foreground" Value="{DynamicResource UiSecondaryTextBrush}" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="TabItem">
+            <Border x:Name="Surface" Background="Transparent" CornerRadius="7" Padding="{TemplateBinding Padding}">
+              <ContentPresenter ContentSource="Header" />
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsSelected" Value="True">
+                <Setter TargetName="Surface" Property="Background" Value="{DynamicResource ThemeSelectedBrush}" />
+                <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
     <Style x:Key="AccountLoginChip" TargetType="RadioButton">
       <Setter Property="Foreground" Value="{DynamicResource UiSecondaryTextBrush}" />
       <Setter Property="Margin" Value="2,0" />

@@ -21,6 +21,7 @@ internal sealed class VersionSettingsWindowView
     readonly PackRequirements requirements;
     readonly ScrollViewer scroll;
     readonly RadioButton[] navigation;
+    readonly StackPanel menu;
 
     public InlineDialog Window
     {
@@ -34,6 +35,7 @@ internal sealed class VersionSettingsWindowView
     {
         get;
     }
+    public StackPanel Menu => menu;
 
     public VersionSettingsWindowView(
         Window owner,
@@ -96,7 +98,7 @@ internal sealed class VersionSettingsWindowView
         Grid.SetRow(body, 1);
         layout.Children.Add(body);
 
-        var menu = new StackPanel { Background = Brushes.White };
+        menu = new StackPanel { Background = Brushes.White };
         body.Children.Add(menu);
         Content = new StackPanel { Margin = new Thickness(16) };
         scroll = new ScrollViewer
@@ -153,6 +155,45 @@ internal sealed class VersionSettingsWindowView
             _ => 0
         };
         navigation[index].IsChecked = true;
+    }
+
+    public void RefreshExtensionPages(IEnumerable<LauncherMenuPage> pages, Action<LauncherMenuPage> selected)
+    {
+        foreach (var old in menu.Children.OfType<RadioButton>().Where(item => item.Tag is LauncherMenuPage).ToArray())
+            menu.Children.Remove(old);
+        foreach (var page in pages)
+        {
+            var label = new StackPanel { Orientation = Orientation.Horizontal };
+            label.Children.Add(page.Icon == null
+                ? new TextBlock { Text = page.Glyph, Width = 24, VerticalAlignment = VerticalAlignment.Center }
+                : new Image { Source = page.Icon, Width = 18, Height = 18, Margin = new Thickness(0, 0, 6, 0), Stretch = Stretch.Uniform });
+            label.Children.Add(new TextBlock { Text = page.Title, VerticalAlignment = VerticalAlignment.Center });
+            var nav = new RadioButton
+            {
+                Style = NavigationMenuStyle.Create(),
+                Content = label,
+                GroupName = "VersionPages",
+                Margin = new Thickness(0, 7, 0, 0),
+                FontSize = 14,
+                Tag = page
+            };
+            nav.Checked += (_, _) => selected(page);
+            menu.Children.Add(nav);
+        }
+    }
+
+    public void ShowExtensionPage(string title, FrameworkElement content)
+    {
+        Content.Children.Clear();
+        scroll.ScrollToTop();
+        Content.Children.Add(new TextBlock
+        {
+            Text = title,
+            FontSize = 20,
+            FontWeight = FontWeights.SemiBold,
+            Margin = new Thickness(0, 0, 0, 12)
+        });
+        Content.Children.Add(content);
     }
 
     public void BeginPage()

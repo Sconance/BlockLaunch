@@ -41,14 +41,14 @@ MainWindow/
 | 目录 | 源文件 |
 |---|---|
 | `UI/Accounts/` | [AccountUI](../../src/MCUGLauncher/MainWindow/UI/Accounts/AccountUI.cs)、[HomeAccountUI](../../src/MCUGLauncher/MainWindow/UI/Accounts/HomeAccountUI.cs)、[MuaAccountUI](../../src/MCUGLauncher/MainWindow/UI/Accounts/MuaAccountUI.cs) |
-| `UI/Content/` | [ContentUI](../../src/MCUGLauncher/MainWindow/UI/Content/ContentUI.cs)、[LocalContentUI](../../src/MCUGLauncher/MainWindow/UI/Content/LocalContentUI.cs)、[ResourceFiltersUI](../../src/MCUGLauncher/MainWindow/UI/Content/ResourceFiltersUI.cs)、[UpdatesUI](../../src/MCUGLauncher/MainWindow/UI/Content/UpdatesUI.cs) |
-| `UI/Downloads/` | [DownloadPageUI](../../src/MCUGLauncher/MainWindow/UI/Downloads/DownloadPageUI.cs)、[DownloadQueueUI](../../src/MCUGLauncher/MainWindow/UI/Downloads/DownloadQueueUI.cs)、[DownloadTaskUI](../../src/MCUGLauncher/MainWindow/UI/Downloads/DownloadTaskUI.cs)、[MiniDownloadUI](../../src/MCUGLauncher/MainWindow/UI/Downloads/MiniDownloadUI.cs) |
+| `UI/Content/` | [ContentUI](../../src/MCUGLauncher/MainWindow/UI/Content/ContentUI.cs)、[LocalContentUI](../../src/MCUGLauncher/MainWindow/UI/Content/LocalContentUI.cs)、[ResourceFavoritesUI](../../src/MCUGLauncher/MainWindow/UI/Content/ResourceFavoritesUI.cs)、[ResourceFiltersUI](../../src/MCUGLauncher/MainWindow/UI/Content/ResourceFiltersUI.cs)、[ResourcePresentationUI](../../src/MCUGLauncher/MainWindow/UI/Content/ResourcePresentationUI.cs)、[ResourceSearchLayoutUI](../../src/MCUGLauncher/MainWindow/UI/Content/ResourceSearchLayoutUI.cs)、[ResourceWorkspaceUI](../../src/MCUGLauncher/MainWindow/UI/Content/ResourceWorkspaceUI.cs)、[UpdatesUI](../../src/MCUGLauncher/MainWindow/UI/Content/UpdatesUI.cs)、[ResponsiveResourcePanel](../../src/MCUGLauncher/MainWindow/UI/Content/ResponsiveResourcePanel.cs) |
+| `UI/Downloads/` | [DownloadPageUI](../../src/MCUGLauncher/MainWindow/UI/Downloads/DownloadPageUI.cs)、[LoaderOverviewUI](../../src/MCUGLauncher/MainWindow/UI/Downloads/LoaderOverviewUI.cs)、[DownloadQueueUI](../../src/MCUGLauncher/MainWindow/UI/Downloads/DownloadQueueUI.cs)、[DownloadTaskUI](../../src/MCUGLauncher/MainWindow/UI/Downloads/DownloadTaskUI.cs)、[MiniDownloadUI](../../src/MCUGLauncher/MainWindow/UI/Downloads/MiniDownloadUI.cs) |
 | `UI/Experience/` | [AppearanceUI](../../src/MCUGLauncher/MainWindow/UI/Experience/AppearanceUI.cs)、[ExperienceUI](../../src/MCUGLauncher/MainWindow/UI/Experience/ExperienceUI.cs) |
 | `UI/Instances/` | [CollectionsUI](../../src/MCUGLauncher/MainWindow/UI/Instances/CollectionsUI.cs)、[FeatureUI](../../src/MCUGLauncher/MainWindow/UI/Instances/FeatureUI.cs)、[GameVersionUI](../../src/MCUGLauncher/MainWindow/UI/Instances/GameVersionUI.cs)、[InstanceLibraryUI](../../src/MCUGLauncher/MainWindow/UI/Instances/InstanceLibraryUI.cs)、[SketchUI](../../src/MCUGLauncher/MainWindow/UI/Instances/SketchUI.cs)、[UninstallUI](../../src/MCUGLauncher/MainWindow/UI/Instances/UninstallUI.cs)、[VersionSettingsUI](../../src/MCUGLauncher/MainWindow/UI/Instances/VersionSettingsUI.cs) |
 | `UI/Launch/` | [GameLaunchUI](../../src/MCUGLauncher/MainWindow/UI/Launch/GameLaunchUI.cs) |
 | `UI/Packs/` | [PackUI](../../src/MCUGLauncher/MainWindow/UI/Packs/PackUI.cs)、[PackUpgradeUI](../../src/MCUGLauncher/MainWindow/UI/Packs/PackUpgradeUI.cs) |
 | `UI/Settings/` | [PreferencesUI](../../src/MCUGLauncher/MainWindow/UI/Settings/PreferencesUI.cs) |
-| `UI/Shell/` | [CompactShellUI](../../src/MCUGLauncher/MainWindow/UI/Shell/CompactShellUI.cs)、[InlineHostUI](../../src/MCUGLauncher/MainWindow/UI/Shell/InlineHostUI.cs)、[ModernUI](../../src/MCUGLauncher/MainWindow/UI/Shell/ModernUI.cs) |
+| `UI/Shell/` | [CompactShellUI](../../src/MCUGLauncher/MainWindow/UI/Shell/CompactShellUI.cs)、[InlineHostUI](../../src/MCUGLauncher/MainWindow/UI/Shell/InlineHostUI.cs)、[MenuExtensions](../../src/MCUGLauncher/MainWindow/UI/Shell/MenuExtensions.cs)、[MenuExtensionsUI](../../src/MCUGLauncher/MainWindow/UI/Shell/MenuExtensionsUI.cs)、[ModernUI](../../src/MCUGLauncher/MainWindow/UI/Shell/ModernUI.cs) |
 | `UI/Support/` | [DiagnosticsUI](../../src/MCUGLauncher/MainWindow/UI/Support/DiagnosticsUI.cs)、[StabilityUI](../../src/MCUGLauncher/MainWindow/UI/Support/StabilityUI.cs) |
 
 ## 独立组件
@@ -107,8 +107,10 @@ MainWindow/
 | 类型 | 说明页 | 源码 |
 |---|---|---|
 | BookmarkView | [职责](Classes/BookmarkView.md) | [`BookmarkView.cs`](../../src/MCUGLauncher/MainWindow/Models/BookmarkView.cs) |
+| DownloadCategoryIcon | [职责](Classes/DownloadNavigation.md) | [`DownloadNavigation.cs`](../../src/MCUGLauncher/MainWindow/Models/DownloadNavigation.cs) |
 | InstanceTarget | [职责](Classes/InstanceTarget.md) | [`InstanceTarget.cs`](../../src/MCUGLauncher/MainWindow/Models/InstanceTarget.cs) |
 | InstanceView | [职责](Classes/InstanceView.md) | [`InstanceView.cs`](../../src/MCUGLauncher/MainWindow/Models/InstanceView.cs) |
+| LauncherMenuArea、LauncherMenuContext、LauncherMenuPage、LauncherMenuRegistry | [职责](Classes/LauncherMenuRegistry.md) | [`LauncherMenuRegistry.cs`](../../src/MCUGLauncher/MainWindow/Models/LauncherMenuRegistry.cs) |
 | PlayerIdentityState | [职责](Classes/PlayerIdentityState.md) | [`PlayerIdentityState.cs`](../../src/MCUGLauncher/MainWindow/Models/PlayerIdentityState.cs) |
 | SaveChoice | [职责](Classes/SaveChoice.md) | [`SaveChoice.cs`](../../src/MCUGLauncher/MainWindow/Models/SaveChoice.cs) |
 | VersionModView | [职责](Classes/VersionModView.md) | [`VersionModView.cs`](../../src/MCUGLauncher/MainWindow/Models/VersionModView.cs) |

@@ -1,7 +1,7 @@
 <p align="center"><img src="src/MCUGLauncher/Assets/MCUGLogo.png" width="112" alt="MCUG Launcher Logo"></p>
 <h1 align="center">MCUG Launcher</h1>
 <p align="center">面向 Windows 的 Minecraft Java 版启动器</p>
-<p align="center"><a href="https://github.com/Sconance/MCUGLauncher/releases/latest">下载最新版</a> · <a href="docs/USAGE.md">使用指南</a> · <a href="https://github.com/Sconance/MCUGLauncher/issues">反馈问题</a> · <a href="CHANGELOG.md">更新记录</a></p>
+<p align="center"><a href="https://github.com/Sconance/MCUGLauncher/releases/latest">下载最新版</a> · <a href="docs/USAGE.md">使用指南</a> · <a href="https://github.com/Sconance/MCUGLauncher/issues">反馈问题</a> · <a href="CHANGELOG.md">更新记录</a> · <a href="compare_develop_refactor.md">develop/refactor 功能对照</a></p>
 
 MCUG Launcher 提供游戏启动、分类下载、账号登录和实例内容管理，采用 MCUG 蓝白主题，支持浅深配色与本地背景。升级保留现有账号、配置和实例数据。
 
@@ -32,12 +32,13 @@ MCUG Launcher 提供游戏启动、分类下载、账号登录和实例内容管
 | 方向 | 已有能力 |
 | --- | --- |
 | 账号与启动 | 微软正版、离线角色、MUA 认证，头像与会话刷新 |
-| 游戏下载 | 原版分类、模组加载器安装相关流程 |
-| 资源中心 | Modrinth 模组、整合包、资源包、光影、数据包，收藏与标签 |
+| 游戏下载 | 原版分类、加载器版本配置、整合包及资源分类下载 |
+| 资源中心 | Modrinth 搜索、兼容筛选、排序、收藏筛选、卡片/列表视图、项目介绍与依赖详情 |
 | 实例管理 | 多目录、隔离、分类、搜索、直接启动、启动参数与内容管理 |
 | 整合包 | Modrinth、MultiMC / Prism 导入，清单预检与可选内容导出 |
 | Java | 常见位置扫描、指定目录与全盘搜索、手动指定、版本匹配 |
 | 下载任务 | 紧凑进度与速度、暂停继续、失败重试、任务恢复 |
+| 扩展入口 | 顶部、下载、设置、更多、主页、资源详情、版本设置和实例内容八个菜单区 |
 | 辅助工具 | 存档备份、截图预览、日志、崩溃线索与诊断导出 |
 
 当前资源平台以 Modrinth 为主，CurseForge 在线服务未接入。蓝图入口浏览实例的 schematics 目录。社区、在线公告及新闻尚未实现。
@@ -50,7 +51,7 @@ MCUG Launcher 提供游戏启动、分类下载、账号登录和实例内容管
 
 ## 源码与构建
 
-当前版本为 **0.20.0**，最终产品名确定为 **MCUG Launcher**。使用 Windows x64 与 .NET 8 SDK：
+当前版本为 **0.20.2**，最终产品名确定为 **MCUG Launcher**。使用 Windows x64 与 .NET 8 SDK：
 
 ```powershell
 git clone https://github.com/Sconance/MCUGLauncher.git
@@ -80,6 +81,11 @@ docs/      使用、构建、历史测试记录与截图
 请在 [Issues](https://github.com/Sconance/MCUGLauncher/issues) 提供软件版本、系统版本、复现步骤和脱敏日志。不要上传密码、Token、账号缓存或私人存档。参阅 [贡献说明](CONTRIBUTING.md)。
 
 ## 近期更新
+
+### [0.20.2](https://github.com/Sconance/MCUGLauncher/releases/tag/v0.20.2)
+
+- 资源收藏增强、兼容筛选、排序及卡片/列表布局。
+- 为顶部、下载、设置、主页、资源详情、版本设置和实例内容等区域提供源码级菜单扩展点。
 
 ### [0.20.0](https://github.com/Sconance/MCUGLauncher/releases/tag/v0.20.0)
 

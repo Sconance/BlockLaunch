@@ -1,5 +1,16 @@
 # 验证记录
 
+## 0.20.2 — 2026-10-28
+
+- Release 构建：0 警告、0 错误；源码格式检查通过；29 个项目的引用与资源路径检查通过。
+- 21 个检查程序通过：Auth、Mua、Collection、ContentSafety、Dependency、Diagnostic、Download、
+  MiniDownload、Queue、ResourceDownload、Library、Stability、Uninstall、Upgrade、Experience、
+  VersionUi、WorkflowUi、Compatibility、InlineUi、DownloadUi、CompactUi。
+- 本次新增覆盖：资源详情页内切换与窄/宽布局、心形收藏与仅收藏筛选、搜索排序、卡片/列表视图、
+  加载器版本读取与下载队列、八个菜单区域的注册/去重/延迟创建、下载扩展保留分类栏。
+- CompactUi 使用真实版本清单与 Modrinth 搜索验证响应式卡片列数与独立资源下载。
+- 未执行 `IntegrationChecks`（需要已安装游戏、Java 与真实启动矩阵）、真实微软/MUA 授权与原生鼠标/多显示器 DPI 验收。
+
 ## 0.20.0 — 2026-10-27
 
 - Release 构建：0 警告、0 错误；源码格式检查通过；29 个项目的引用与资源路径检查通过。

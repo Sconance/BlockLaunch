@@ -26,7 +26,9 @@ MCUG Launcher 是 .NET 8 / WPF 应用。先从本文件定位功能，再阅读�
 | 主导航、窗口拖动、大小适配 | `UI/Shell/ModernUI.cs`、`UI/Shell/CompactShellUI.cs`、`Controllers/PageNavigationController.cs`、`Builders/WindowChromeBuilder.cs`、`Initialization/LauncherTooltipInitializer.cs`、`Styling/ModernThemeStyler.cs`、`Styling/WindowThemeStyler.cs` | 窗口自身 |
 | 内嵌管理页栈与呈现 | `Presentation/InlinePageHost.cs` | `InlineDialog` 页面及窗口标题栏 |
 | 主页版本选择、版本搜索与内容管理 | `UI/Instances/SketchUI.cs`、`UI/Instances/VersionSettingsUI.cs`、`Controllers/InstanceSearchController.cs`、`Controllers/InstanceUninstallationController.cs` | Core `Domain/Instances.cs`、`Application/InstanceManagement.cs` |
-| 版本和资源下载 | `UI/Downloads/DownloadPageUI.cs`、`UI/Content/ContentUI.cs`、`Builders/ContentSearchFilterBuilder.cs`、`Controllers/LoaderInstallationController.cs`、`Controllers/ContentUpdateController.cs` | Core `GameInstaller.cs`、`ContentService.cs` |
+| 版本和资源下载 | `UI/Downloads/DownloadPageUI.cs`、`UI/Downloads/LoaderOverviewUI.cs`、`UI/Content/ContentUI.cs`、`Builders/ContentSearchFilterBuilder.cs`、`Controllers/LoaderInstallationController.cs`、`Controllers/ContentUpdateController.cs` | Core `GameInstaller.cs`、`ContentService.cs` |
+| 资源搜索、详情与收藏 | `UI/Content/ResourceSearchLayoutUI.cs`、`UI/Content/ResourceWorkspaceUI.cs`、`UI/Content/ResourcePresentationUI.cs`、`UI/Content/ResourceFavoritesUI.cs`、`UI/Content/ResponsiveResourcePanel.cs`、`UI/Instances/CollectionsUI.cs` | Core `ContentService.cs`、`Domain/ResourceBookmarks.cs` |
+| 菜单栏目扩展 | `UI/Shell/MenuExtensions.cs`、`UI/Shell/MenuExtensionsUI.cs`、`Models/LauncherMenuRegistry.cs`；说明见 [增加菜单栏目](MENU_EXTENSIONS.md) | 源码级注册，不加载外部插件 |
 | 下载队列与任务操作 | `UI/Downloads/DownloadQueueUI.cs`、`UI/Downloads/DownloadTaskUI.cs`、`UI/Downloads/MiniDownloadUI.cs` | Core `Application/OperationCoordinator.cs` |
 | 文件拖入、资源导入 | `Controllers/FileImportController.cs`、`UI/Instances/InstanceLibraryUI.cs`、`Presentation/InstanceLibraryDialog.cs` | Core `Application/LocalImportClassifier.cs`、`WorldArchives.cs` |
 | 整合包导入、导出、升级 | `UI/Packs/PackUI.cs`、`Controllers/PackUpgradeController.cs` | Core `PackService.cs`、`Application/PackUpgrade.cs` |
@@ -51,6 +53,8 @@ MCUG Launcher 是 .NET 8 / WPF 应用。先从本文件定位功能，再阅读�
   再交给协调器处理。不要在按钮回调里直接修改任务文件。
   持久化任务模型在 Core `Domain/Operations.cs`，单次执行上下文在 `Application/OperationContext.cs`，
   异步提交边界在 `Application/OperationExecution.cs`。
+- 需要新增常驻或页内栏目时，在 `UI/Shell/MenuExtensions.cs` 的 `ConfigureMenuExtensions` 中注册；
+  页面工厂必须为每个宿主返回新控件，不要复制下载分类或导航索引逻辑。详见 [增加菜单栏目](MENU_EXTENSIONS.md)。
 - 为实际业务补充对应 `test/*Checks` 的边界检查。不要把预览窗口当作回归检查。
 - 默认分支包含当前源码，Release 附件必须从同一提交构建。历史标签保持原样。
 

@@ -207,6 +207,7 @@ internal sealed class SketchContentManagerDialog(MainWindow host, ListBox instan
         }
 
         host.refreshSketchManager = SafeRender;
+        var categoryNavigation = new Dictionary<string, RadioButton>(StringComparer.Ordinal);
         foreach (var name in new[] {
             "存档",
             "模组",
@@ -232,7 +233,63 @@ internal sealed class SketchContentManagerDialog(MainWindow host, ListBox instan
                 SafeRender();
             };
             categories.Children.Add(nav);
+            categoryNavigation[name] = nav;
         }
+
+        void ShowMenuExtension(LauncherMenuPage menuPage)
+        {
+            right.Children.Clear();
+            var extension = new DockPanel();
+            var back = MainWindow.ActionButton("← 返回内容分类", (_, _) =>
+            {
+                if (categoryNavigation.TryGetValue(category, out var navigation))
+                    navigation.IsChecked = true;
+                else
+                    SafeRender();
+            });
+            DockPanel.SetDock(back, Dock.Top);
+            extension.Children.Add(back);
+            FrameworkElement content;
+            try
+            {
+                content = menuPage.CreateContent(new(host, current, null))
+                    ?? MainWindow.Hint("栏目未提供页面内容。");
+            }
+            catch (Exception ex)
+            {
+                content = MainWindow.Hint("无法加载“" + menuPage.Title + "”：" + ex.Message);
+            }
+            extension.Children.Add(new ScrollViewer
+            {
+                Content = content,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto
+            });
+            right.Children.Add(extension);
+        }
+
+        void RefreshInstanceExtensions(LauncherMenuArea area)
+        {
+            if (area != LauncherMenuArea.InstanceContent)
+                return;
+            foreach (var old in categories.Children.OfType<FrameworkElement>().Where(element => element.Tag is LauncherMenuPage).ToArray())
+                categories.Children.Remove(old);
+            foreach (var menuPage in host.MenuPages.Pages(area))
+            {
+                var nav = new RadioButton
+                {
+                    Content = menuPage.Title,
+                    GroupName = "SketchCategories",
+                    Style = NavigationMenuStyle.Create(),
+                    Margin = new Thickness(0, 4, 0, 4),
+                    Tag = menuPage
+                };
+                nav.Checked += (_, _) => ShowMenuExtension(menuPage);
+                categories.Children.Add(nav);
+            }
+        }
+
+        host.MenuPages.Changed += RefreshInstanceExtensions;
+        RefreshInstanceExtensions(LauncherMenuArea.InstanceContent);
 
         files.SelectionChanged += (_, _) =>
         {
@@ -294,6 +351,7 @@ internal sealed class SketchContentManagerDialog(MainWindow host, ListBox instan
         };
         page.Closed += (_, _) =>
         {
+            host.MenuPages.Changed -= RefreshInstanceExtensions;
             host.sketchManagerKey = null;
             host.refreshSketchManager = null;
             host.RefreshInstanceViews();

@@ -313,16 +313,6 @@ public partial class MainWindow
         resourceSource.Width = 110;
         releaseChannel.Width = 95;
         ContentInstallButtonControl.Content = "↓ 下载所选文件";
-        var filters = (StackPanel)((Grid)ContentSearchQueryInput.Parent).Parent;
-        foreach (var text in filters.Children.OfType<TextBlock>())
-            text.Visibility = Visibility.Collapsed;
-        var favorite = filters.Children.OfType<Button>().FirstOrDefault();
-        var filterRow = filters.Children.OfType<WrapPanel>().First();
-        if (favorite != null)
-        {
-            filters.Children.Remove(favorite);
-            filterRow.Children.Add(favorite);
-        }
 
         var directoryButtons = new WrapPanel();
         directoryButtons.Children.Add(ActionButton("选择下载目录", (_, _) =>
@@ -366,56 +356,7 @@ public partial class MainWindow
             button.Margin = new Thickness(4, 0, 0, 0);
         }
 
-        var details = (Border)((ScrollViewer)((StackPanel)ContentProjectTitleLabel.Parent).Parent).Parent;
-        var resultGrid = (Grid)details.Parent;
-        var oldPanel = (StackPanel)ContentProjectTitleLabel.Parent;
-        var detailActions = oldPanel.Children.OfType<Button>().Where(b => b != ContentInstallButtonControl).ToList();
-        oldPanel.Children.Remove(ContentProjectTitleLabel);
-        oldPanel.Children.Remove(ContentProjectDescriptionLabel);
-        oldPanel.Children.Remove(ContentProjectVersionsControl);
-        oldPanel.Children.Remove(ContentInstallButtonControl);
-        foreach (var button in detailActions)
-            oldPanel.Children.Remove(button);
-        var detail = new StackPanel();
-        detail.Children.Add(ContentProjectTitleLabel);
-        ContentProjectTitleLabel.FontSize = 14;
-        ContentProjectTitleLabel.Margin = new Thickness(0, 0, 0, 3);
-        ContentProjectDescriptionLabel.MaxHeight = 32;
-        ContentProjectDescriptionLabel.Margin = new Thickness(0);
-        detail.Children.Add(ContentProjectDescriptionLabel);
-        var actions = new WrapPanel();
-        ContentProjectVersionsControl.Width = 260;
-        ContentProjectVersionsControl.Margin = new Thickness(0, 4, 8, 0);
-        actions.Children.Add(ContentProjectVersionsControl);
-        actions.Children.Add(ContentInstallButtonControl);
-        foreach (var button in detailActions.Take(3))
-        {
-            button.Margin = new Thickness(5, 4, 0, 0);
-            button.Padding = new Thickness(8, 6, 8, 6);
-            actions.Children.Add(button);
-        }
-
-        detail.Children.Add(actions);
-        details.Child = detail;
-        details.Padding = new Thickness(10);
-        details.Margin = new Thickness(0, 8, 0, 0);
-        resultGrid.ColumnDefinitions.Clear();
-        resultGrid.ColumnDefinitions.Add(new());
-        resultGrid.RowDefinitions.Add(new());
-        resultGrid.RowDefinitions.Add(new()
-        {
-            Height = GridLength.Auto
-        });
-        Grid.SetColumn(details, 0);
-        Grid.SetRow(details, 1);
-        ContentSearchResultsControl.ItemTemplate = (DataTemplate)System.Windows.Markup.XamlReader.Parse("<DataTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'><Grid><Grid.ColumnDefinitions><ColumnDefinition Width='42'/><ColumnDefinition/></Grid.ColumnDefinitions><Image Width='34' Height='34' Source='{Binding IconUrl}'/><StackPanel Grid.Column='1'><TextBlock Text='{Binding DisplayTitle}' FontWeight='SemiBold' FontSize='13' TextTrimming='CharacterEllipsis'/><TextBlock Text='{Binding Description}' FontSize='11' Foreground='#647782' TextTrimming='CharacterEllipsis' Margin='0,2,0,2'/><TextBlock Text='{Binding Meta}' FontSize='10' Foreground='#647782' TextTrimming='CharacterEllipsis' MaxHeight='14'/></StackPanel></Grid></DataTemplate>");
-        var rowStyle = new Style(typeof(ListBoxItem), (Style)FindResource(typeof(ListBoxItem)));
-        rowStyle.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(8, 6, 8, 6)));
-        rowStyle.Setters.Add(new Setter(FrameworkElement.MarginProperty, new Thickness(0, 0, 0, 4)));
-        ContentSearchResultsControl.ItemContainerStyle = rowStyle;
-        rowStyle.Setters.Add(new Setter(Control.TemplateProperty, System.Windows.Markup.XamlReader.Parse("<ControlTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' TargetType='ListBoxItem'><Border Name='Surface' Background='{DynamicResource ThemeSurfaceBrush}' BorderBrush='{DynamicResource ThemeBorderBrush}' BorderThickness='1' CornerRadius='6' Padding='{TemplateBinding Padding}'><ContentPresenter/></Border><ControlTemplate.Triggers><Trigger Property='IsSelected' Value='True'><Setter TargetName='Surface' Property='Background' Value='{DynamicResource ThemeSelectedBrush}'/></Trigger><Trigger Property='IsMouseOver' Value='True'><Setter TargetName='Surface' Property='BorderBrush' Value='#9ABAE8'/></Trigger></ControlTemplate.Triggers></ControlTemplate>")));
-        ContentSearchResultsControl.SelectionChanged += (_, _) => details.Visibility = ContentSearchResultsControl.SelectedItem == null ? Visibility.Collapsed : Visibility.Visible;
-        details.Visibility = Visibility.Collapsed;
+        BuildResourceWorkspace();
     }
 
     void UpdateHomeLaunchLabel()

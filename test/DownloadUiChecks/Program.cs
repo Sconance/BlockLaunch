@@ -26,7 +26,10 @@ public static class Program
             Resources = (ResourceDictionary)System.Windows.Markup.XamlReader.Parse(dictionary.ToString())
         };
         var window = new MainWindow(root);
-        object Field(string name) => typeof(MainWindow).GetField(name, flags)!.GetValue(window)!;
+        object Field(string name) =>
+            typeof(MainWindow).GetField(name, flags)?.GetValue(window)
+            ?? typeof(MainWindow).GetProperty(name, flags)?.GetValue(window)
+            ?? throw new InvalidOperationException("Missing window member: " + name);
         object? Call(string name, params object[] args) => typeof(MainWindow).GetMethod(name, flags)!.Invoke(window, args);
         void Assert(bool condition, string label)
         {
@@ -70,12 +73,51 @@ public static class Program
                 Assert(((ComboBox)Field("ContentType")).SelectedIndex == pair.Item2 && ((ContentControl)Field("downloadHost")).Content == Field("resourcePage"), "embedded category " + pair.Item1);
             }
 
+            Call("SelectDownloadCategory", "Mod");
+            var example = new ContentProject("fixture", "fixture", "用于验证长名称适配的模组项目 · MCUG", "项目介绍保留完整文本，下载选项独立排列。", "MCUG", 12345) { IconUrl = "pack://application:,,,/MCUGLauncher;component/Assets/MCUGLogo.png" };
+            Call("ShowResourceDetail", example);
+            var detailSurface = (Border)Field("resourceDetailSurface");
+            Assert(detailSurface.Visibility == Visibility.Visible && ((Grid)Field("resourceResultsLayout")).Visibility == Visibility.Collapsed, "detail opens inside resource page");
+            var versions = (ComboBox)Field("ProjectVersions");
+            versions.ItemsSource = new[] { new ContentVersion { VersionNumber = "1.0", DatePublished = DateTimeOffset.Parse("2026-10-27T00:00:00Z"), GameVersions = ["1.21.1"], Loaders = ["fabric"], Dependencies = [new() { DependencyType = "required" }] } };
+            versions.SelectedIndex = 0;
+            Assert(((TextBlock)Field("resourceDependencies")).Text.Contains("必需依赖：1"), "dependency counts follow selected version");
+            Call("ArrangeResourceDetail", 600d);
+            Assert(Grid.GetRow(((Grid)Field("resourceDetailColumns")).Children[1]) == 1, "narrow detail stacks options below introduction");
+            Call("ArrangeResourceDetail", 900d);
+            Assert(Grid.GetColumn(((Grid)Field("resourceDetailColumns")).Children[1]) == 1, "wide detail restores right options column");
+            var previewRoot = (Grid)window.Content;
+            void Capture(string file, int width, int height)
+            {
+                previewRoot.Background = (Brush)window.Background;
+                previewRoot.Measure(new Size(width, height));
+                previewRoot.Arrange(new Rect(0, 0, width, height));
+                previewRoot.UpdateLayout();
+                var frame = new RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
+                frame.Render(previewRoot);
+                var png = new PngBitmapEncoder();
+                png.Frames.Add(BitmapFrame.Create(frame));
+                using var stream = File.Create(file);
+                png.Save(stream);
+            }
+            ((TextBlock)Field("ProjectTitle")).Text = example.Title;
+            ((TextBlock)Field("ProjectDescription")).Text = example.Description;
+            Capture("work/verify/v0201-resource-detail.png", 1220, 820);
+            Capture("work/verify/v0201-resource-detail-small.png", 900, 640);
+            Call("ShowResourceResults");
+            Assert(detailSurface.Visibility == Visibility.Collapsed && ((Grid)Field("resourceResultsLayout")).Visibility == Visibility.Visible, "back preserves resource list");
+            Assert(categories.Values.All(button => button.Content is Grid && button.ContentTemplate == null), "category artwork supports image slot without text template");
+            ((ListBox)Field("SearchResults")).ItemsSource = new[] { example, example with { Title = "Fabric API · 布局验证样例" }, example with { Title = "Iris Shaders · 布局验证样例" } };
+            ((TextBlock)Field("SearchHint")).Visibility = Visibility.Collapsed;
+            Capture("work/verify/v0201-resource-list.png", 1220, 820);
             Call("RestoreResourcePage");
             Assert(((TabItem)tabs.Items[2]).Content == Field("resourcePage"), "standalone content center restores same resource page");
             Call("SelectDownloadCategory", "本地整合包");
             Assert(((ContentControl)Field("downloadHost")).Content == Field("packImportPage"), "local pack import remains available");
             Call("SelectDownloadCategory", "模组加载器");
             Assert(((ContentControl)Field("downloadHost")).Content == Field("loaderPage"), "loader installation remains available");
+            Call("SelectDownloadCategory", "模组加载器");
+            Capture("work/verify/v0201-loaders.png", 1220, 820);
             Call("SelectDownloadCategory", "原版游戏");
             ((TextBox)Field("vanillaQuery")).Text = "1.21.1";
             Assert(((StackPanel)Groups()[1].Content).Children.OfType<Button>().Count() == 1, "version search filters groups");
@@ -93,6 +135,42 @@ public static class Program
             encoder.Frames.Add(BitmapFrame.Create(bitmap));
             using (var output = File.Create("work/verify/v0151-download-page.png"))
                 encoder.Save(output);
+            Call("SelectDownloadCategory", "Mod");
+            ((TextBox)Field("resourceGame")).Text = "全部";
+            ((ComboBox)Field("resourceLoader")).SelectedIndex = 1;
+            Call("ToggleResourceFavorite", example);
+            var store = (ResourceBookmarkStore)Field("bookmarks");
+            Assert(store.Read().Any(bookmark => bookmark.Project.Id == example.Id), "heart favorite saves to existing bookmark document");
+            typeof(MainWindow).GetField("resourceFavoritesOnly", flags)!.SetValue(window, true);
+            var favorites = ((Task<SearchPage>)Call("SearchFavoriteResources", CancellationToken.None)!).GetAwaiter().GetResult();
+            Assert(favorites.Items.Count == 1 && favorites.Items[0].Id == example.Id, "favorites filter searches full saved collection");
+            Call("ToggleResourceFavorite", example);
+            Assert(store.Read().Count == 0, "heart toggles favorite off");
+            Call("ToggleResourceView");
+            Assert((bool)Field("resourceListView"), "resource list view switch changes layout");
+            Call("ToggleResourceView");
+            foreach (var area in Enum.GetValues<LauncherMenuArea>())
+                window.MenuPages.Register(area, new("fixture", "扩展验收", context => new TextBlock { Text = "扩展页面：" + context.InstanceId }));
+            Assert(window.MenuPages.Pages(LauncherMenuArea.Download).Count == 1 && ((StackPanel)Field("downloadNavigationPanel")).Children.OfType<Button>().Any(button => button.Tag is LauncherMenuPage), "download extension is visible after registration");
+            Assert(((TabControl)Field("resourceDetailTabs")).Items.OfType<TabItem>().Any(item => item.Tag is LauncherMenuPage), "detail extension tab is attached");
+            var downloadExtension = ((StackPanel)Field("downloadNavigationPanel")).Children.OfType<Button>().Single(button => button.Tag is LauncherMenuPage);
+            downloadExtension.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            Assert(tabs.SelectedIndex == 1 && ((ContentControl)Field("downloadHost")).Content is ScrollViewer, "download extension preserves category sidebar");
+            var detailTab = ((TabControl)Field("resourceDetailTabs")).Items.OfType<TabItem>().Single(item => item.Tag is LauncherMenuPage);
+            detailTab.IsSelected = true;
+            Assert(detailTab.Content is TextBlock, "detail extension factory is activated lazily");
+            var duplicateRejected = false;
+            try
+            {
+                window.MenuPages.Register(LauncherMenuArea.Download, new("fixture", "重复", _ => new TextBlock()));
+            }
+            catch (ArgumentException)
+            {
+                duplicateRejected = true;
+            }
+            Assert(duplicateRejected, "duplicate menu identifiers are rejected");
+            Call("OpenMenuExtension", window.MenuPages.Pages(LauncherMenuArea.Download)[0], "fixture-instance");
+            Assert(((TabItem)tabs.SelectedItem).Header?.ToString() == "扩展验收" && app.Windows.Count == 1, "extension navigates in main window");
             Console.WriteLine("ALL_DOWNLOAD_UI_COMPONENT_CHECKS_PASSED (not native input acceptance)");
         }
         catch (Exception ex)

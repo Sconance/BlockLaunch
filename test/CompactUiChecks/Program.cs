@@ -140,10 +140,11 @@ public static class Program
             Call("NavigateDownloads", "Mod");
             Wait((Task)Call("SearchContent")!);
             Assert(((ListBox)Field("SearchResults")).Items.Count > 0, "live Modrinth search works without installed instance");
-            Capture("v0152-mods.png");
+            Wait(Task.Delay(1500));
+            Capture("v0202-resources.png");
             var list = (ListBox)Field("SearchResults");
             var row = (ListBoxItem)list.ItemContainerGenerator.ContainerFromIndex(0);
-            Assert(row.ActualHeight < 90, "compact project rows leave room for results");
+            Assert(row.ActualHeight <= 152 && row.ActualWidth < list.ActualWidth / 1.5, "responsive resource cards use multiple columns");
             list.SelectedIndex = 0;
             async Task Settle()
             {
@@ -160,7 +161,7 @@ public static class Program
             Wait(Settle());
             var versions = (ComboBox)Field("ProjectVersions");
             Assert(versions.Items.Count > 0, "project versions load without vanilla-instance restriction");
-            Capture("v0152-mod-details.png");
+            Capture("v0202-resource-detail.png");
             var selectedResource = (ContentVersion)versions.SelectedItem;
             ((Button)Field("InstallContentButton")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             var coordinator = (OperationCoordinator)Field("operations");
@@ -170,6 +171,24 @@ public static class Program
             var downloadedPath = ResourceDownloads.PathFor(prefs.ResourceDownloadDirectory, "mod", selectedResource);
             Assert(File.Exists(downloadedPath) && new FileInfo(downloadedPath).Length > 0, "real Modrinth selected file downloaded outside game");
             Assert(Directory.GetFiles(prefs.Root, "*", SearchOption.AllDirectories).Length == beforeFiles.Count && beforeFiles.All(x => File.ReadAllBytes(x.Key).SequenceEqual(x.Value)), "real resource download leaves game directory unchanged");
+            var favoriteProject = (ContentProject)list.SelectedItem;
+            Call("ToggleResourceFavorite", favoriteProject);
+            Wait((Task)Call("ToggleResourceFavoriteFilter")!);
+            Assert(list.Items.Count > 0 && list.Items.Cast<ContentProject>().All(p => p.IsFavorite), "only-favorites view returns saved resources across search pages");
+            Capture("v0202-favorites.png");
+            Wait((Task)Call("ToggleResourceFavoriteFilter")!);
+            Call("NavigateDownloads", "模组加载器");
+            var minecraftChoice = (ComboBox)Field("loaderMinecraft");
+            minecraftChoice.SelectedItem = liveRows.First(r => r.Id == "1.21.1");
+            Wait((Task)Call("LoadConfigurationVersions")!);
+            var loaderRows = (System.Collections.IDictionary)Field("loaderRows");
+            var fabricControls = loaderRows["fabric"]!;
+            var fabricVersions = (ComboBox)fabricControls.GetType().GetField("Item1")!.GetValue(fabricControls)!;
+            Assert(fabricVersions.Items.Count > 0 && fabricVersions.SelectedItem is LoaderRelease, "inline loader versions load from official metadata");
+            Call("QueueConfiguredLoader", "fabric");
+            var chosenLoader = (LoaderRelease)fabricVersions.SelectedItem;
+            Assert(coordinator.History().Any(r => r.Download?.Loader == "fabric" && r.Download.Version == "1.21.1" && r.Download.LoaderVersion == chosenLoader.Version), "inline loader selection reaches existing download queue");
+            Capture("v0202-loader-configuration.png");
             ((RadioButton)Field("HomeNav")).IsChecked = true;
             Capture("v0152-home.png");
             Assert(Walk(content).OfType<Button>().Contains((Button)Field("sketchToggle")) && Walk(content).OfType<Button>().Any(b => Equals(b.ToolTip, "管理当前版本")), "home exposes version selection and settings");

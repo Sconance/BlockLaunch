@@ -173,7 +173,7 @@ public static class Diagnostics
             notices.Add("没有找到可读取的本次日志，不能据此确定退出原因。");
         if (findings.Count == 0)
             notices.Add("未命中已知规则。请查看日志证据，不能仅凭 ERROR 或退出码断定模组冲突。");
-        var environment = $"MCUG Launcher 0.20.0\n系统：{RuntimeInformation.OSDescription}\n系统架构：{RuntimeInformation.OSArchitecture}\n启动器架构：{RuntimeInformation.ProcessArchitecture}\n.NET：{RuntimeInformation.FrameworkDescription}\n游戏配置：{Clean(context.Profile)}\n退出码：{context.Exit?.Code.ToString() ?? "未知"}\n主动关闭：{context.Exit?.Requested.ToString() ?? "未知"}\n";
+        var environment = $"MCUG Launcher 0.20.2\n系统：{RuntimeInformation.OSDescription}\n系统架构：{RuntimeInformation.OSArchitecture}\n启动器架构：{RuntimeInformation.ProcessArchitecture}\n.NET：{RuntimeInformation.FrameworkDescription}\n游戏配置：{Clean(context.Profile)}\n退出码：{context.Exit?.Code.ToString() ?? "未知"}\n主动关闭：{context.Exit?.Requested.ToString() ?? "未知"}\n";
         return new(DateTime.UtcNow, summary, findings, logs, string.Join('\n', mods.Order(StringComparer.OrdinalIgnoreCase)), environment, notices);
     }
 
