@@ -497,6 +497,16 @@ static class Program
                 page.Close();
                 return true;
             });
+            Drive(() => Call("EditLaunchOptions", (object)null!), page =>
+            {
+                Check(page.Title == "启动设置" && Walk(page).OfType<TextBlock>().Any(t => t.Text == "离线皮肤"), "global launch dialog includes launch and personalization settings");
+                var titleLabel = Walk(page).OfType<TextBlock>().Single(t => t.Text == "游戏窗口标题（留空使用默认）");
+                var optionsPanel = (StackPanel)titleLabel.Parent;
+                ((TextBox)optionsPanel.Children[optionsPanel.Children.IndexOf(titleLabel) + 1]).Text = "Fixture launch title";
+                Buttons(page).Single(button => Equals(button.Content, "保存设置")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                return true;
+            });
+            Check(preferences.Launch.WindowTitle == "Fixture launch title", "launch options dialog persists edited global settings");
             var currentChooser = (Border)Field("sketchVersions");
             Check(!Walk(currentChooser).OfType<ComboBox>().Any(c => c.ToolTip?.ToString()?.Contains("Java 大版本") == true), "home removes Java filter");
             var homeSearch = Walk(currentChooser).OfType<TextBox>().Single();

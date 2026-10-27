@@ -1,11 +1,9 @@
 using System.Diagnostics;
 using System.IO;
-using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using Microsoft.Win32;
 
 namespace BlockLaunch;
@@ -366,149 +364,10 @@ public partial class MainWindow
 
     void GlobalOptionsClick(object s, RoutedEventArgs e)
     {
-        if (!busy)
-            EditLaunchOptions(null);
+        EditLaunchOptions(null);
     }
 
-    void EditLaunchOptions(InstanceDescriptor? descriptor)
-    {
-        if (busy)
-            return;
-        var original = descriptor?.Launch ?? prefs.Launch;
-        var value = JsonSerializer.Deserialize<LaunchSettings>(JsonSerializer.Serialize(original))!;
-        var body = new StackPanel();
-        body.Children.Add(Heading(descriptor == null ? "全局启动与个性化" : "版本设置 · " + descriptor.DisplayName));
-        body.Children.Add(Hint("版本独立设置保存后覆盖全局启动选项。共享根目录会共享 mods/config/saves；独立实例为推荐默认值。"));
-        var options = new LaunchOptionsForm(value);
-        body.Children.Add(options.Panel);
-        var dialog = FeatureDialog("启动设置", body);
-        if (descriptor == null)
-            AddPersonalization(body);
-        else
-            body.Children.Add(ActionButton("恢复跟随全局设置", (_, _) =>
-            {
-                try
-                {
-                    RequireStopped();
-                    descriptor.Launch = null;
-                    new InstanceCatalog(prefs.Root).Save(descriptor);
-                    dialog.Close();
-                }
-                catch (Exception ex)
-                {
-                    InlineMessageBox.Show(ex.Message);
-                }
-            }));
-        body.Children.Add(ActionButton("保存设置", (_, _) =>
-        {
-            try
-            {
-                RequireStopped();
-                var updated = options.Read();
-                updated.Validate();
-                if (descriptor != null)
-                {
-                    descriptor.Launch = updated;
-                    new InstanceCatalog(prefs.Root).Save(descriptor);
-                }
-                else
-                {
-                    prefs.Launch = updated;
-                    prefs.Ram = updated.RamMb;
-                    prefs.Java = updated.Java;
-                    prefs.Width = updated.Width;
-                    prefs.Height = updated.Height;
-                    Memory.Text = prefs.Ram.ToString();
-                    JavaPath.Text = prefs.Java;
-                    GameWidth.Text = prefs.Width.ToString();
-                    GameHeight.Text = prefs.Height.ToString();
-                    settings.Save(prefs);
-                }
-
-                dialog.Close();
-            }
-            catch (Exception ex)
-            {
-                InlineMessageBox.Show(ex.Message, "设置未保存");
-            }
-        }));
-        dialog.ShowDialog();
-    }
-
-    void AddPersonalization(StackPanel body)
-    {
-        body.Children.Add(Heading("个性化"));
-        body.Children.Add(ActionButton("背景填充、透明度与主题", (_, _) => OpenAppearance()));
-        var colors = new ComboBox
-        {
-            ItemsSource = new[] {
-                "地大蓝",
-                "青绿",
-                "石墨",
-                "紫罗兰"
-            },
-            SelectedItem = "地大蓝"
-        };
-        body.Children.Add(colors);
-        body.Children.Add(ActionButton("应用主题色", (_, _) =>
-        {
-            prefs.Accent = colors.SelectedItem as string ?? "蓝色";
-            settings.Save(prefs);
-            ApplyPersonalization();
-        }));
-        body.Children.Add(ActionButton("选择自定义背景", (_, _) =>
-        {
-            var picker = new OpenFileDialog
-            {
-                Filter = "背景图片|*.png;*.jpg;*.jpeg"
-            };
-            if (picker.ShowDialog() != true)
-                return;
-            prefs.BackgroundPath = picker.FileName;
-            settings.Save(prefs);
-            ApplyPersonalization();
-        }));
-        body.Children.Add(ActionButton("恢复默认背景", (_, _) =>
-        {
-            prefs.BackgroundPath = "";
-            settings.Save(prefs);
-            ApplyPersonalization();
-        }));
-        body.Children.Add(Heading("离线皮肤"));
-        body.Children.Add(Hint("本地 PNG 通过资源包覆盖默认玩家皮肤，需要在游戏内启用“BlockLaunch Offline Skin”。只影响本机显示，不提供服务器皮肤认证，其他使用默认皮肤的玩家也可能显示相同贴图。"));
-        body.Children.Add(ActionButton("选择离线皮肤 PNG", (_, _) =>
-        {
-            var picker = new OpenFileDialog
-            {
-                Filter = "Minecraft 皮肤|*.png"
-            };
-            if (picker.ShowDialog() != true)
-                return;
-            try
-            {
-                var image = new BitmapImage(new Uri(picker.FileName));
-                if (image.PixelWidth != 64 || image.PixelHeight is not (32 or 64))
-                    throw new IOException("请选择 64×64 或 64×32 皮肤。");
-                var file = Path.Combine(settingsDir, "offline-skin.png");
-                File.Copy(picker.FileName, file, true);
-                prefs.OfflineSkin = file;
-                settings.Save(prefs);
-                ApplyPersonalization();
-                InlineMessageBox.Show("离线启动时会生成皮肤资源包，请在游戏内启用。");
-            }
-            catch (Exception ex)
-            {
-                InlineMessageBox.Show(ex.Message);
-            }
-        }));
-        body.Children.Add(ActionButton("停止生成离线皮肤资源包", (_, _) =>
-        {
-            prefs.OfflineSkin = "";
-            settings.Save(prefs);
-            ApplyPersonalization();
-            InlineMessageBox.Show("已停止生成；已有资源包可在游戏内停用。");
-        }));
-    }
+    void EditLaunchOptions(InstanceDescriptor? descriptor) => launchOptionsDialog.Show(descriptor);
 
     void ApplyPersonalization()
     {

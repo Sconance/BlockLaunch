@@ -30,6 +30,7 @@ public partial class MainWindow : Window
     FileImportController fileImportController = null!;
     GameWindowBehaviorController gameWindowBehaviorController = null!;
     FeatureDialogBuilder featureDialogBuilder = null!;
+    LaunchOptionsDialog launchOptionsDialog = null!;
     PlayerIdentityController playerIdentityController = null!;
     InstanceSearchController instanceSearchController = null!;
     JavaManagerController javaManagerController = null!;
@@ -81,6 +82,7 @@ public partial class MainWindow : Window
         gameWindowBehaviorController = new GameWindowBehaviorController(this, Log);
         windowThemeStyler = new WindowThemeStyler(this);
         featureDialogBuilder = new FeatureDialogBuilder(this);
+        launchOptionsDialog = new LaunchOptionsDialog(this, settingsDir, ApplyPersonalization, OpenAppearance);
         contentUpdateController = new ContentUpdateController(this);
         instanceUninstallationController = new InstanceUninstallationController(this);
         packUpgradeController = new PackUpgradeController(

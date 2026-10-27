@@ -6,7 +6,7 @@
 
 - [`MainWindow.xaml.cs`](../../../src/MCUGLauncher/MainWindow/MainWindow.xaml.cs)：初始化配置、服务及控制器，接收窗口生命周期事件。
 - `UI/` 下 partial：按账号、内容、下载、实例、启动、整合包、设置、壳层和诊断区域扩展窗口。
-- `Controllers/`、`Presentation/` 与 `Builders/`：由窗口初始化或 UI partial 调用，承担具体流程、视图及控件构造；离线皮肤打包、启动脚本格式化、游戏窗口行为和通用功能对话框也已移至专职组件。
+- `Controllers/`、`Presentation/` 与 `Builders/`：由窗口初始化或 UI partial 调用，承担具体流程、视图及控件构造；启动选项对话框、离线皮肤打包、启动脚本格式化、游戏窗口行为和通用功能对话框也已移至专职组件。
 - 长时间任务通过 `Run` 和现有下载队列执行，以保留互斥、取消和状态更新行为。
 
 ## 设计边界

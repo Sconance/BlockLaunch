@@ -79,6 +79,7 @@ MainWindow/
 | FeatureDialogBuilder | [职责](Classes/FeatureDialogBuilder.md) | [`FeatureDialogBuilder.cs`](../../src/MCUGLauncher/MainWindow/Presentation/FeatureDialogBuilder.cs) |
 | InlinePageHost | [职责](Classes/InlinePageHost.md) | [`InlinePageHost.cs`](../../src/MCUGLauncher/MainWindow/Presentation/InlinePageHost.cs) |
 | InstanceLibraryDialog | [职责](Classes/InstanceLibraryDialog.md) | [`InstanceLibraryDialog.cs`](../../src/MCUGLauncher/MainWindow/Presentation/InstanceLibraryDialog.cs) |
+| LaunchOptionsDialog | [职责](Classes/LaunchOptionsDialog.md) | [`LaunchOptionsDialog.cs`](../../src/MCUGLauncher/MainWindow/Presentation/LaunchOptionsDialog.cs) |
 | VersionSettingsDialog | [职责](Classes/VersionSettingsDialog.md) | [`VersionSettingsDialog.cs`](../../src/MCUGLauncher/MainWindow/Presentation/VersionSettingsDialog.cs) |
 | VersionSettingsPageContext | [职责](Classes/VersionSettingsPageContext.md) | [`VersionSettingsPageContext.cs`](../../src/MCUGLauncher/MainWindow/Presentation/VersionSettingsPageContext.cs) |
 | VersionSettingsWindowView | [职责](Classes/VersionSettingsWindowView.md) | [`VersionSettingsWindowView.cs`](../../src/MCUGLauncher/MainWindow/Presentation/VersionSettingsWindowView.cs) |
