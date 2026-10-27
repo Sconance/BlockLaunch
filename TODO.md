@@ -2,13 +2,13 @@
 
 ## 已完成
 
-- [x] **整合 develop 中基于原始 `MainWindow` 的改动**（0.20.1 / 0.20.2 功能线）：资源工作区、收藏筛选与排序、加载器概览、八个菜单扩展区域、品牌资源与版本号，均按 `UI/` 与 `Models/` 分层迁移，未覆盖当前窗口实现。对照表见 [compare_develop_refactor.md](compare_develop_refactor.md)。
+- [X]  **整合 develop 中基于原始 `MainWindow` 的改动**（0.20.1 / 0.20.2 功能线）：资源工作区、收藏筛选与排序、加载器概览、八个菜单扩展区域、品牌资源与版本号，均按 `UI/` 与 `Models/` 分层迁移，未覆盖当前窗口实现。对照表见 [compare_develop_refactor.md](compare_develop_refactor.md)。
 
 ## 待办规划
 
-- [ ] **继续拆分 `MainWindow`**：审视剩余 partial 和窗口级协调逻辑，按职责提取为命名与功能相符的组件；每次拆分保持 UI 行为不变，并同步更新组件文档、运行构建和相关回归检查。
-- [ ] **减少窗口级共享状态**：逐步把内容搜索、下载导航、资源详情状态从 `MainWindow` 字段迁移到专职组件，保留现有 XAML 事件入口与类型化控件访问。
-- [ ] **补充验证**：在具备已安装游戏与 Java 的环境运行 `IntegrationChecks` 完整矩阵，并完成真实微软 / MUA 登录回归。
+- [ ]  **继续拆分 `MainWindow`**：仍然过于巨大的MainWindow类承载了太多功能，尽管撰写了相关文档，但是扩展和维护仍然困难，需要继续拆分和整合这个庞大的partical类。
+- [ ]  **`前后端分离`** 提上日程。
+- [ ]  **补充验证**：在具备已安装游戏与 Java 的环境运行 `IntegrationChecks` 完整矩阵，并完成真实微软 / MUA 登录回归。
 
 ## 整合与拆分时的检查要点
 

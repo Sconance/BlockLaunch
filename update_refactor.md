@@ -11,16 +11,17 @@
 
 相对早期基线已有以下提交（摘录）：
 
-| 提交 | 改动 |
-| --- | --- |
-| `34582d6` | 将离线皮肤包准备逻辑提取为 `OfflineSkinPackBuilder`。 |
-| `fbecfd0` | 将启动脚本生成逻辑提取为 `LaunchScriptBuilder`。 |
-| `41ba613` | 将游戏窗口行为管理提取为 `GameWindowBehaviorController`。 |
-| `5d9c21b` | 将通用功能对话框构建逻辑提取为 `FeatureDialogBuilder`。 |
-| `8e1b89e` | 将启动选项页面与设置交互提取为 `LaunchOptionsDialog`。 |
-| `6c4ef41` | 将实例整合包导出流程提取为 `InstancePackExportDialog`。 |
-| `c1b2601` | 将草图式实例内容管理页面提取为 `SketchContentManagerDialog`。 |
-| `c7dbf71` | 修正 UI partial 的 XAML 生成成员误报，并补充分支文档。 |
+
+| 提交      | 改动                                                         |
+| --------- | ------------------------------------------------------------ |
+| `34582d6` | 将离线皮肤包准备逻辑提取为`OfflineSkinPackBuilder`。         |
+| `fbecfd0` | 将启动脚本生成逻辑提取为`LaunchScriptBuilder`。              |
+| `41ba613` | 将游戏窗口行为管理提取为`GameWindowBehaviorController`。     |
+| `5d9c21b` | 将通用功能对话框构建逻辑提取为`FeatureDialogBuilder`。       |
+| `8e1b89e` | 将启动选项页面与设置交互提取为`LaunchOptionsDialog`。        |
+| `6c4ef41` | 将实例整合包导出流程提取为`InstancePackExportDialog`。       |
+| `c1b2601` | 将草图式实例内容管理页面提取为`SketchContentManagerDialog`。 |
+| `c7dbf71` | 修正 UI partial 的 XAML 生成成员误报，并补充分支文档。       |
 
 对应类型的职责、入口及协作说明见 [MainWindow 组件文档目录](docs/MainWindow/README.md)。
 
@@ -35,10 +36,6 @@
 
 迁移保持 `MainWindow` 的 XAML 类型化控件入口与 `UI/` 分域结构，没有把 develop 的旧根目录 partial 覆盖到当前实现。
 
-## 验证
+## 应在下次提交将此文档移动至历史文档档案库
 
-- Release 构建：0 警告、0 错误。
-- 常规检查 21 项通过：Auth、Mua、Collection、ContentSafety、Dependency、Diagnostic、Download、MiniDownload、Queue、ResourceDownload、Library、Stability、Uninstall、Upgrade、Experience、VersionUi、WorkflowUi、Compatibility、InlineUi、DownloadUi、CompactUi。
-- `DownloadUiChecks` 覆盖资源详情布局切换、收藏筛选、菜单注册与下载扩展；`CompactUiChecks` 使用真实清单与 Modrinth 数据验证卡片列数、收藏筛选与加载器队列。
-- SourceFormatter、项目布局检查、`git diff --check` 通过。
-- 未执行 `IntegrationChecks`（需要已安装游戏、Java 与真实客户端矩阵）及真实微软/MUA 授权。
+如若没有档案库，请在docs/新建history文件夹，并以版本号为子文件夹对文档归档。
