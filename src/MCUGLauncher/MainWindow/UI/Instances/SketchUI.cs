@@ -40,7 +40,7 @@ public partial class MainWindow
 
     void BuildSketchUI()
     {
-        sketchHome = (Grid)((TabItem)MainTabs.Items[0]).Content;
+        sketchHome = (Grid)((TabItem)MainTabControl.Items[0]).Content;
         sketchHome.ColumnDefinitions[0].Width = new GridLength(255);
         sketchWelcome = sketchHome.Children.OfType<Border>().FirstOrDefault(b => Grid.GetColumn(b) == 2);
         var left = (DockPanel)sketchHome.Children[0];
@@ -56,9 +56,9 @@ public partial class MainWindow
         row.RowDefinitions.Add(new());
         row.RowDefinitions.Add(new());
         row.Margin = new Thickness(0, 6, 0, 0);
-        launch.Children.Remove(LaunchGameButton);
-        Grid.SetRowSpan(LaunchGameButton, 2);
-        row.Children.Add(LaunchGameButton);
+        launch.Children.Remove(LaunchGameButtonControl);
+        Grid.SetRowSpan(LaunchGameButtonControl, 2);
+        row.Children.Add(LaunchGameButtonControl);
         var choose = ActionButton(">", (_, _) => ToggleSketchVersions());
         sketchToggle = choose;
         choose.ToolTip = "展开版本列表";
@@ -90,12 +90,12 @@ public partial class MainWindow
         Grid.SetRow(manage, 1);
         row.Children.Add(manage);
         launch.Children.Insert(0, row);
-        LaunchGameButton.FontSize = 15;
+        LaunchGameButtonControl.FontSize = 15;
         if (sketchWelcome != null)
             sketchWelcome.Visibility = Visibility.Collapsed;
-        var main = (Grid)MainTabs.Parent;
+        var main = (Grid)MainTabControl.Parent;
         main.RowDefinitions[0].Height = new GridLength(8);
-        var heading = (Grid)((StackPanel)PageTitle.Parent).Parent;
+        var heading = (Grid)((StackPanel)PageTitleLabel.Parent).Parent;
         heading.Visibility = Visibility.Collapsed;
         var header = (DockPanel)((Grid)Content).Children[0];
         var logo = new BitmapImage(new Uri("pack://application:,,,/MCUGLauncher;component/Assets/MCUGLogo.png"));
@@ -207,7 +207,7 @@ public partial class MainWindow
                     {
                         if (busy)
                             return;
-                        Versions.SelectedValue = item.Key;
+                        VersionSelectorControl.SelectedValue = item.Key;
                         await Run(Launch);
                     });
                     play.ToolTip = "启动此版本";
@@ -226,7 +226,7 @@ public partial class MainWindow
                     {
                         if (busy && !DownloadInProgress)
                             return;
-                        Versions.SelectedValue = item.Key;
+                        VersionSelectorControl.SelectedValue = item.Key;
                         UpdateHomeLaunchLabel();
                         RenderGroups();
                     });
@@ -237,9 +237,9 @@ public partial class MainWindow
                     select.Padding = new Thickness(12, 7, 12, 7);
                     select.Template = (ControlTemplate)System.Windows.Markup.XamlReader.Parse("<ControlTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' TargetType='Button'><Border Background='{TemplateBinding Background}' CornerRadius='8' Padding='{TemplateBinding Padding}' BorderThickness='2,0,0,0' BorderBrush='{TemplateBinding BorderBrush}'><ContentPresenter HorizontalAlignment='Stretch' VerticalAlignment='Center'/></Border><ControlTemplate.Triggers><Trigger Property='IsMouseOver' Value='True'><Setter Property='Opacity' Value='0.8'/></Trigger></ControlTemplate.Triggers></ControlTemplate>");
                     select.BorderBrush = Brushes.Transparent;
-                    if (Versions.SelectedValue as string == item.Key)
+                    if (VersionSelectorControl.SelectedValue as string == item.Key)
                         select.SetResourceReference(Control.BackgroundProperty, "ThemeSelectedBrush");
-                    if (Versions.SelectedValue as string == item.Key)
+                    if (VersionSelectorControl.SelectedValue as string == item.Key)
                         select.SetResourceReference(Control.BorderBrushProperty, "AccentBrush");
                     line.Children.Add(select);
                     entries.Children.Add(line);

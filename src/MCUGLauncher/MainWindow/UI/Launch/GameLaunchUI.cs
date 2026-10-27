@@ -31,12 +31,12 @@ public partial class MainWindow
         }
 
         MSession session;
-        if (AccountMode.SelectedIndex == 1)
+        if (AccountModeControl.SelectedIndex == 1)
         {
             await EnsureMicrosoftLogin();
             session = online!;
         }
-        else if (AccountMode.SelectedIndex == 2)
+        else if (AccountModeControl.SelectedIndex == 2)
         {
             await EnsureMuaLogin();
             session = MuaAccountService.Session(muaAccount!);
@@ -51,7 +51,7 @@ public partial class MainWindow
         var id = Selected();
         if (!LocalVersions().Contains(id))
             throw new IOException("所选版本尚未安装完成，请到「游戏安装」下载 / 修复后再启动。");
-        Status.Text = "构建启动命令…";
+        OperationStatusLabel.Text = "构建启动命令…";
         var directory = Instance();
         var descriptor = new InstanceCatalog(prefs.Root).GetOrCreate(id);
         GameDefaults.EnsureChinese(directory, Target().GameVersion);
@@ -68,7 +68,7 @@ public partial class MainWindow
         if (preflight.Findings.Count > 0 && !ConfirmModScan(preflight, "启动前检查"))
             return;
         AuthlibLaunch? external = null;
-        if (AccountMode.SelectedIndex == 2)
+        if (AccountModeControl.SelectedIndex == 2)
         {
             var metadata = await muaAccounts.Metadata(CurrentToken);
             operations.Current?.Report("准备 MUA 认证组件…");
@@ -81,8 +81,8 @@ public partial class MainWindow
         var access = typeof(MSession).GetProperty("AccessToken")?.GetValue(session)?.ToString() ?? "";
         using (OperationExecution.BeginCommit())
         {
-            var currentSession = new GameSession(process, Path.Combine(settingsDir, "process-logs", descriptor.InstanceId + ".log"), QueueGameLine, new[] { access, AccountMode.SelectedIndex == 2 ? muaAccount?.ClientToken ?? "" : "" });
-            var diagnosisContext = new DiagnosticContext(directory, descriptor.LaunchProfileId, Path.Combine(settingsDir, "process-logs", descriptor.InstanceId + ".log"), DateTime.UtcNow, Secrets: new[] { access, AccountMode.SelectedIndex == 2 ? muaAccount?.ClientToken ?? "" : "" });
+            var currentSession = new GameSession(process, Path.Combine(settingsDir, "process-logs", descriptor.InstanceId + ".log"), QueueGameLine, new[] { access, AccountModeControl.SelectedIndex == 2 ? muaAccount?.ClientToken ?? "" : "" });
+            var diagnosisContext = new DiagnosticContext(directory, descriptor.LaunchProfileId, Path.Combine(settingsDir, "process-logs", descriptor.InstanceId + ".log"), DateTime.UtcNow, Secrets: new[] { access, AccountModeControl.SelectedIndex == 2 ? muaAccount?.ClientToken ?? "" : "" });
             currentSession.Start();
             game = process;
             gameSession = currentSession;

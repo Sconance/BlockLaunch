@@ -39,12 +39,12 @@ public partial class MainWindow
         var selectionBody = (StackPanel)selection.Child;
         var actions = (WrapPanel)selectionBody.Children[4];
         selectionBody.Children.Remove(actions);
-        selectionBody.Children.Remove(InstallTarget);
+        selectionBody.Children.Remove(InstallTargetLabel);
         var target = new StackPanel
         {
             VerticalAlignment = VerticalAlignment.Center
         };
-        target.Children.Add(InstallTarget);
+        target.Children.Add(InstallTargetLabel);
         target.Children.Add(Hint("选择下方版本后下载；已安装版本可修复。"));
         var selectionRow = new DockPanel();
         DockPanel.SetDock(actions, Dock.Right);
@@ -77,7 +77,7 @@ public partial class MainWindow
             Content = cards[2],
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto
         };
-        resourcePage = (FrameworkElement)((TabItem)MainTabs.Items[2]).Content;
+        resourcePage = (FrameworkElement)((TabItem)MainTabControl.Items[2]).Content;
         var layout = new Grid();
         layout.ColumnDefinitions.Add(new()
         {
@@ -118,7 +118,7 @@ public partial class MainWindow
         layout.Children.Add(new ScrollViewer { Content = navigation, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
         Grid.SetColumn(downloadHost, 1);
         layout.Children.Add(downloadHost);
-        ((TabItem)MainTabs.Items[1]).Content = layout;
+        ((TabItem)MainTabControl.Items[1]).Content = layout;
         vanillaQuery.TextChanged += (_, _) => RenderVanillaDownloads();
         SelectDownloadCategory("原版游戏");
     }
@@ -128,9 +128,9 @@ public partial class MainWindow
         if (resourcePage == null || downloadHost.Content != resourcePage)
             return;
         downloadHost.Content = null;
-        ((TabItem)MainTabs.Items[2]).Content = resourcePage;
-        ContentType.Visibility = Visibility.Visible;
-        ((Grid)ContentType.Parent).ColumnDefinitions[1].Width = new GridLength(132);
+        ((TabItem)MainTabControl.Items[2]).Content = resourcePage;
+        ContentKindSelector.Visibility = Visibility.Visible;
+        ((Grid)ContentKindSelector.Parent).ColumnDefinitions[1].Width = new GridLength(132);
     }
 
     void SelectDownloadCategory(string category)
@@ -148,12 +148,12 @@ public partial class MainWindow
         };
         if (downloadHost.Content == null)
         {
-            ((TabItem)MainTabs.Items[2]).Content = null;
+            ((TabItem)MainTabControl.Items[2]).Content = null;
             downloadHost.Content = resourcePage;
             bookmarkPage.Visibility = Visibility.Collapsed;
             resourceSearchPage.Visibility = Visibility.Visible;
-            ContentType.Visibility = Visibility.Collapsed;
-            ((Grid)ContentType.Parent).ColumnDefinitions[1].Width = new GridLength(0);
+            ContentKindSelector.Visibility = Visibility.Collapsed;
+            ((Grid)ContentKindSelector.Parent).ColumnDefinitions[1].Width = new GridLength(0);
             var type = category switch
             {
                 "Mod" => 0,
@@ -163,8 +163,8 @@ public partial class MainWindow
                 "数据包" => 4,
                 _ => 0
             };
-            if (ContentType.SelectedIndex != type)
-                ContentType.SelectedIndex = type;
+            if (ContentKindSelector.SelectedIndex != type)
+                ContentKindSelector.SelectedIndex = type;
             if (LocalVersions().Count == 0 && resourceGame.Text == "跟随实例")
                 resourceGame.Text = "全部";
         }

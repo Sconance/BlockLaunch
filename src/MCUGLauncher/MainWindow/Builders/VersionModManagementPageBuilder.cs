@@ -83,18 +83,6 @@ internal sealed class VersionModManagementPageBuilder(VersionSettingsPageContext
                 RefreshMods();
             }, "导入 Mod");
         }));
-        actions.Children.Add(context.Button("搜索下载 Mod", (_, _) =>
-        {
-            if (!host.LocalVersions().Contains(context.Key))
-            {
-                InlineMessageBox.Show(context.Window, "请先完成版本安装。");
-                return;
-            }
-
-            host.Versions.SelectedValue = context.Key;
-            host.ContentType.SelectedIndex = 0;
-            context.Window.Close();
-            host.DiscoverNav.IsChecked = true;
-        }));
+        actions.Children.Add(context.Button("搜索下载 Mod", (_, _) => host.OpenModSearch(context.Key, context.Window)));
     }
 }

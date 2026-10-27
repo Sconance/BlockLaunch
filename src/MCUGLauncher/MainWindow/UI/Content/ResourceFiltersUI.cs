@@ -13,8 +13,8 @@ public partial class MainWindow
 
     void BuildResourceFilters()
     {
-        var filters = contentSearchFilterBuilder.Build(SearchQuery, ContentType, () => busy, ResetSearch);
-        var manage = (Grid)InstalledContent.Parent;
+        var filters = contentSearchFilterBuilder.Build(ContentSearchQueryInput, ContentKindSelector, () => busy, ResetSearch);
+        var manage = (Grid)InstalledContentListControl.Parent;
         var toolbar = manage.Children.OfType<WrapPanel>().First(p => Grid.GetRow(p) == 1);
         toolbar.Children.Add(ActionButton("导入光影", async (_, _) => await Import("shaderpacks", "光影包|*.zip")));
         toolbar.Children.Add(ActionButton("管理存档数据包", (_, _) =>

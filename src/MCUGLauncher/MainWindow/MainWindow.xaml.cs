@@ -18,7 +18,7 @@ public partial class MainWindow : Window
     };
     internal Preferences prefs = new();
     NetworkSettings runtimeNetwork = new();
-    internal bool IncludeOptionalPackContent => PackOptional.IsChecked == true;
+    internal bool IncludeOptionalPackContent => PackOptionalCheckBox.IsChecked == true;
     MinecraftLauncher launcher = null!;
     List<VersionRow> rows = new();
     internal string? downloadVersion;
@@ -26,6 +26,7 @@ public partial class MainWindow : Window
     Process? game;
     internal bool busy;
     bool closeAfterTask;
+    bool xamlReady;
     LoaderInstallationController loaderController = null!;
     FileImportController fileImportController = null!;
     GameWindowBehaviorController gameWindowBehaviorController = null!;
@@ -56,11 +57,78 @@ public partial class MainWindow : Window
     internal void ConfigureUtilityWindow(InlineDialog page) => UtilityWindowInitializer.Configure(page, () => windowThemeStyler.Apply(this));
     internal InlineDialog FeatureDialog(string title, StackPanel content) => featureDialogBuilder.Build(title, content);
     internal void ThemeWindow(Window window) => windowThemeStyler.Apply(window);
+    internal int AccountModeIndex
+    {
+        get => AccountModeControl.SelectedIndex;
+        set => AccountModeControl.SelectedIndex = value;
+    }
+
+    internal void InitializeAccountControls(int initialMode, Action accountModeChanged, Action playerNameChanged, RoutedEventHandler manageAccount)
+    {
+        AccountModeControl.SelectedIndex = initialMode;
+        AccountModeControl.SelectionChanged += (_, _) => accountModeChanged();
+        PlayerNameControl.TextChanged += (_, _) => playerNameChanged();
+        ((StackPanel)AccountModeControl.Parent).Children.Add(ActionButton("管理正版账号", manageAccount));
+    }
+
+    internal void SetAccountStatusText(string text) => AccountStatusControl.Text = text;
+
+    T FindXamlControl<T>(string name) where T : FrameworkElement =>
+        FindName(name) as T ?? throw new InvalidOperationException($"XAML control '{name}' is missing or is not a {typeof(T).Name}.");
+
+    internal ComboBox AccountModeControl => FindXamlControl<ComboBox>("AccountMode");
+    internal Image SkinAvatarControl => FindXamlControl<Image>("SkinAvatar");
+    internal TextBox PlayerNameControl => FindXamlControl<TextBox>("PlayerName");
+    internal TextBlock AvatarPlayerNameControl => FindXamlControl<TextBlock>("AvatarPlayerName");
+    internal TextBlock AccountStatusControl => FindXamlControl<TextBlock>("AccountStatus");
+    internal TextBlock AvatarCaptionLabel => FindXamlControl<TextBlock>("AvatarCaption");
+    internal TextBox JavaPathInput => FindXamlControl<TextBox>("JavaPath");
+    internal TextBox MemoryInput => FindXamlControl<TextBox>("Memory");
+    internal TextBox GameWidthInput => FindXamlControl<TextBox>("GameWidth");
+    internal TextBox GameHeightInput => FindXamlControl<TextBox>("GameHeight");
+    internal CheckBox SnapshotFilterCheckBox => FindXamlControl<CheckBox>("Snapshots");
+    internal CheckBox PackOptionalCheckBox => FindXamlControl<CheckBox>("PackOptional");
+    internal TextBox LogTextBox => FindXamlControl<TextBox>("LogBox");
+
+    internal RadioButton ContentDiscoverNavigation => FindXamlControl<RadioButton>("DiscoverNav");
+    internal RadioButton ContentManageNavigation => FindXamlControl<RadioButton>("ManageNav");
+    internal RadioButton HomeNavigation => FindXamlControl<RadioButton>("HomeNav");
+    internal TextBlock PageTitleLabel => FindXamlControl<TextBlock>("PageTitle");
+    internal TextBlock PageSubtitleLabel => FindXamlControl<TextBlock>("PageSubtitle");
+    internal TabControl MainTabControl => FindXamlControl<TabControl>("MainTabs");
+    internal ComboBox VersionSelectorControl => FindXamlControl<ComboBox>("Versions");
+    internal Button LaunchGameButtonControl => FindXamlControl<Button>("LaunchGameButton");
+    internal TextBlock InstalledVersionsHintLabel => FindXamlControl<TextBlock>("InstalledVersionsHint");
+    internal TextBox GameRootInput => FindXamlControl<TextBox>("GameRoot");
+    internal WrapPanel InstallActionsPanel => FindXamlControl<WrapPanel>("InstallActions");
+    internal WrapPanel LoaderActionsPanel => FindXamlControl<WrapPanel>("LoaderActions");
+    internal ComboBox ContentKindSelector => FindXamlControl<ComboBox>("ContentType");
+    internal TextBlock ContentTargetLabel => FindXamlControl<TextBlock>("ContentTarget");
+    internal TextBlock LocalVersionCountLabel => FindXamlControl<TextBlock>("LocalCount");
+    internal TextBlock InstallTargetLabel => FindXamlControl<TextBlock>("InstallTarget");
+    internal TextBlock ManageTargetLabel => FindXamlControl<TextBlock>("ManageTarget");
+    internal ListBox ContentSearchResultsControl => FindXamlControl<ListBox>("SearchResults");
+    internal TextBlock ContentSearchHintControl => FindXamlControl<TextBlock>("SearchHint");
+    internal TextBox ContentSearchQueryInput => FindXamlControl<TextBox>("SearchQuery");
+    internal TextBlock ContentProjectTitleLabel => FindXamlControl<TextBlock>("ProjectTitle");
+    internal TextBlock ContentProjectDescriptionLabel => FindXamlControl<TextBlock>("ProjectDescription");
+    internal ComboBox ContentProjectVersionsControl => FindXamlControl<ComboBox>("ProjectVersions");
+    internal Button ContentInstallButtonControl => FindXamlControl<Button>("InstallContentButton");
+    internal TextBlock ContentSearchSummaryLabel => FindXamlControl<TextBlock>("SearchSummary");
+    internal TextBlock OperationStatusLabel => FindXamlControl<TextBlock>("Status");
+    internal ListBox InstalledContentListControl => FindXamlControl<ListBox>("InstalledContent");
+    internal Grid TaskStatusBarControl => FindXamlControl<Grid>("TaskStatusBar");
+    internal ProgressBar TaskProgressBarControl => FindXamlControl<ProgressBar>("Progress");
+    internal Button CancelTaskButtonControl => FindXamlControl<Button>("CancelTaskButton");
+    internal ListBox TaskHistoryListControl => FindXamlControl<ListBox>("TaskHistoryList");
+    internal Button StopGameButtonControl => FindXamlControl<Button>("StopGameButton");
+    internal TextBox GameLogViewControl => FindXamlControl<TextBox>("GameLogView");
+
     async void RefreshAvatarClick(object sender, RoutedEventArgs e)
     {
         if (busy)
             return;
-        if (AccountMode.SelectedIndex == 1 && savedAccount != null)
+        if (AccountModeControl.SelectedIndex == 1 && savedAccount != null)
             await Run(() => MicrosoftLogin(false), "刷新玩家档案与头像");
         playerIdentityController.Refresh(true);
     }
@@ -68,7 +136,7 @@ public partial class MainWindow : Window
     string? ConfirmPackImport(PackOverview overview, string root) => fileImportController.ConfirmPackImport(overview, root);
     string DropTargetDirectory() => fileImportController.DropTargetDirectory();
     internal void OpenJavaManager(string root, string profile, Action<string> select, object? owner = null) => javaManagerController.Open(root, profile, select, owner);
-    PlayerIdentityState GetPlayerIdentityState() => new(AccountMode.SelectedIndex, muaAccount, muaAccounts, savedAccount, online?.Username, PlayerName.Text, prefs.OfflineSkin, settingsDir, http);
+    PlayerIdentityState GetPlayerIdentityState() => new(AccountModeControl.SelectedIndex, muaAccount, muaAccounts, savedAccount, online?.Username, PlayerNameControl.Text, prefs.OfflineSkin, settingsDir, http);
 
     public MainWindow() : this(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), Brand.StorageDirectory))
     {
@@ -77,8 +145,10 @@ public partial class MainWindow : Window
     public MainWindow(string configurationDirectory)
     {
         settingsDir = Path.GetFullPath(configurationDirectory);
-        InitializeComponent();
-        inlinePageHost = new InlinePageHost(this, inlinePages, HomeNav, MainTabs);
+        // Load the compiled XAML without referencing its generated InitializeComponent method.
+        Application.LoadComponent(this, new Uri("/MCUGLauncher;component/mainwindow.xaml", UriKind.Relative));
+        xamlReady = true;
+        inlinePageHost = new InlinePageHost(this, inlinePages, HomeNavigation, MainTabControl);
         gameWindowBehaviorController = new GameWindowBehaviorController(this, Log);
         windowThemeStyler = new WindowThemeStyler(this);
         featureDialogBuilder = new FeatureDialogBuilder(this);
@@ -87,19 +157,19 @@ public partial class MainWindow : Window
         instanceUninstallationController = new InstanceUninstallationController(this);
         packUpgradeController = new PackUpgradeController(
             this,
-            key => Versions.SelectedValue = key,
-            () => HomeNav.IsChecked = true);
+            key => VersionSelectorControl.SelectedValue = key,
+            () => HomeNavigation.IsChecked = true);
         loaderController = new LoaderInstallationController(this);
         fileImportController = new FileImportController(this);
-        playerIdentityController = new PlayerIdentityController(PlayerName, SkinAvatar, AvatarCaption, AvatarPlayerName, GetPlayerIdentityState);
+        playerIdentityController = new PlayerIdentityController(PlayerNameControl, SkinAvatarControl, AvatarCaptionLabel, AvatarPlayerNameControl, GetPlayerIdentityState);
         instanceSearchController = new InstanceSearchController(instanceList, instanceQuery, instanceSearchSummary);
         Directory.CreateDirectory(settingsDir);
         settings = new SettingsStore(settingsDir);
         javaManagerController = new JavaManagerController(this);
         pageNavigationController = new PageNavigationController(
-            MainTabs,
-            PageTitle,
-            PageSubtitle,
+            MainTabControl,
+            PageTitleLabel,
+            PageSubtitleLabel,
             () => compactShellReady,
             () => ContentKind,
             () => downloadCategory,
@@ -135,15 +205,15 @@ public partial class MainWindow : Window
         {
             ApplyOperation(record);
             RefreshMiniDownloads(true);
-            if (MainTabs.SelectedIndex == 6)
+            if (MainTabControl.SelectedIndex == 6)
                 RefreshOperations();
         });
-        GameRoot.Text = prefs.Root;
-        JavaPath.Text = prefs.Java;
-        PlayerName.Text = prefs.Player;
-        Memory.Text = prefs.Ram.ToString();
-        GameWidth.Text = prefs.Width.ToString();
-        GameHeight.Text = prefs.Height.ToString();
+        GameRootInput.Text = prefs.Root;
+        JavaPathInput.Text = prefs.Java;
+        PlayerNameControl.Text = prefs.Player;
+        MemoryInput.Text = prefs.Ram.ToString();
+        GameWidthInput.Text = prefs.Width.ToString();
+        GameHeightInput.Text = prefs.Height.ToString();
         prefs.Network ??= new();
         runtimeNetwork = JsonSerializer.Deserialize<NetworkSettings>(JsonSerializer.Serialize(prefs.Network))!;
         http.Dispose();
@@ -160,7 +230,7 @@ public partial class MainWindow : Window
         BuildExperienceUI();
         BuildInlineHost();
         new WindowChromeBuilder(this).Build();
-        new LauncherTooltipInitializer(HomeNav, downloadNav, SearchQuery, vanillaQuery).Build();
+        new LauncherTooltipInitializer(HomeNavigation, downloadNav, ContentSearchQueryInput, vanillaQuery).Build();
         BuildSketchUI();
         BuildModernUI();
         Loaded += async (_, _) =>
@@ -185,7 +255,7 @@ public partial class MainWindow : Window
                 e.Cancel = true;
                 closeAfterTask = true;
                 operations.Cancel(operations.Current?.Record.Download != null, operations.Current?.Record.Download != null);
-                Status.Text = "正在清理当前任务，完成后自动关闭…";
+                OperationStatusLabel.Text = "正在清理当前任务，完成后自动关闭…";
             }
         };
         Closed += (_, _) => browseCancellation?.Cancel();
@@ -219,33 +289,33 @@ public partial class MainWindow : Window
             return;
         }
 
-        TaskStatusBar.Visibility = Visibility.Visible;
+        TaskStatusBarControl.Visibility = Visibility.Visible;
         busy = true;
-        Progress.IsIndeterminate = true;
+        TaskProgressBarControl.IsIndeterminate = true;
         SetInputs(false);
         try
         {
-            var result = await operations.Run(name ?? OperationName(action.Method.Name), prefs.Root, Versions.SelectedValue as string ?? "", async context =>
+            var result = await operations.Run(name ?? OperationName(action.Method.Name), prefs.Root, VersionSelectorControl.SelectedValue as string ?? "", async context =>
             {
                 context.Report("正在执行…");
                 await action();
             });
-            Status.Text = result.State == OperationState.Cancelled ? "已取消，可以重新执行原操作。" : "就绪";
+            OperationStatusLabel.Text = result.State == OperationState.Cancelled ? "已取消，可以重新执行原操作。" : "就绪";
         }
         catch (Exception ex)
         {
-            Status.Text = "操作失败，详情见运行日志";
+            OperationStatusLabel.Text = "操作失败，详情见运行日志";
             Log(ex.GetType().Name + ": " + ex.Message);
             InlineMessageBox.Show(ex.Message, "操作失败");
         }
         finally
         {
-            TaskStatusBar.Visibility = Visibility.Collapsed;
+            TaskStatusBarControl.Visibility = Visibility.Collapsed;
             busy = false;
-            Progress.IsIndeterminate = false;
-            Progress.Value = 0;
+            TaskProgressBarControl.IsIndeterminate = false;
+            TaskProgressBarControl.Value = 0;
             SetInputs(true);
-            CancelTaskButton.IsEnabled = false;
+            CancelTaskButtonControl.IsEnabled = false;
             RefreshOperations();
             if (closeAfterTask)
                 Close();
@@ -254,29 +324,29 @@ public partial class MainWindow : Window
 
     void SetInputs(bool enabled)
     {
-        LaunchGameButton.IsEnabled = enabled && Versions.SelectedItem != null;
-        StopGameButton.Visibility = game is
+        LaunchGameButtonControl.IsEnabled = enabled && VersionSelectorControl.SelectedItem != null;
+        StopGameButtonControl.Visibility = game is
         {
             HasExited: false
         } ? Visibility.Visible : Visibility.Collapsed;
-        LaunchGameButton.ToolTip = DownloadInProgress ? "请先暂停下载，再启动游戏，避免安装文件与游戏进程同时使用。" : "启动当前选择的已安装版本";
-        System.Windows.Controls.ToolTipService.SetShowOnDisabled(LaunchGameButton, true);
-        Versions.IsEnabled = enabled || DownloadInProgress;
-        Snapshots.IsEnabled = enabled;
-        AccountMode.IsEnabled = enabled || DownloadInProgress;
-        PlayerName.IsEnabled = enabled || DownloadInProgress;
-        GameRoot.IsEnabled = enabled;
-        JavaPath.IsEnabled = enabled;
-        Memory.IsEnabled = enabled;
-        GameWidth.IsEnabled = enabled;
-        GameHeight.IsEnabled = enabled;
+        LaunchGameButtonControl.ToolTip = DownloadInProgress ? "请先暂停下载，再启动游戏，避免安装文件与游戏进程同时使用。" : "启动当前选择的已安装版本";
+        System.Windows.Controls.ToolTipService.SetShowOnDisabled(LaunchGameButtonControl, true);
+        VersionSelectorControl.IsEnabled = enabled || DownloadInProgress;
+        SnapshotFilterCheckBox.IsEnabled = enabled;
+        AccountModeControl.IsEnabled = enabled || DownloadInProgress;
+        PlayerNameControl.IsEnabled = enabled || DownloadInProgress;
+        GameRootInput.IsEnabled = enabled;
+        JavaPathInput.IsEnabled = enabled;
+        MemoryInput.IsEnabled = enabled;
+        GameWidthInput.IsEnabled = enabled;
+        GameHeightInput.IsEnabled = enabled;
         var browse = enabled || operations.Current?.Record.Download != null;
-        SearchQuery.IsEnabled = browse;
-        ContentType.IsEnabled = browse;
-        SearchResults.IsEnabled = browse;
-        ProjectVersions.IsEnabled = browse;
-        InstalledContent.IsEnabled = enabled;
-        PackOptional.IsEnabled = enabled;
+        ContentSearchQueryInput.IsEnabled = browse;
+        ContentKindSelector.IsEnabled = browse;
+        ContentSearchResultsControl.IsEnabled = browse;
+        ContentProjectVersionsControl.IsEnabled = browse;
+        InstalledContentListControl.IsEnabled = enabled;
+        PackOptionalCheckBox.IsEnabled = enabled;
     }
 
     internal void Log(string text)
@@ -285,10 +355,10 @@ public partial class MainWindow : Window
         var line = $"[{DateTime.Now:HH:mm:ss}] {text}\n";
         void Append()
         {
-            LogBox.AppendText(LogPrivacy.Redact(line));
-            if (LogBox.Text.Length > 150000)
-                LogBox.Text = LogBox.Text[^100000..];
-            LogBox.ScrollToEnd();
+            LogTextBox.AppendText(LogPrivacy.Redact(line));
+            if (LogTextBox.Text.Length > 150000)
+                LogTextBox.Text = LogTextBox.Text[^100000..];
+            LogTextBox.ScrollToEnd();
         }
 
         if (Dispatcher.CheckAccess())

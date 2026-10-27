@@ -8,7 +8,7 @@ namespace BlockLaunch;
 
 public partial class MainWindow
 {
-    string ContentKind => ContentType.SelectedIndex switch
+    string ContentKind => ContentKindSelector.SelectedIndex switch
     {
         1 => "resourcepack",
         2 => "modpack",
@@ -79,15 +79,15 @@ public partial class MainWindow
     async Task ImportPack(string file)
     {
         RequireStopped();
-        var optional = PackOptional.IsChecked == true;
+        var optional = IncludeOptionalPackContent;
         var service = new PackService(http, CurrentToken);
         var result = await service.Import(file, prefs.Root, InstallPackGame, optional, text => operations.Current?.Report(text));
         new InstanceCatalog(prefs.Root).GetOrCreate(result.InstanceId);
         // New profiles must be read by a fresh core; previous manifests may have been cached.
         SetupLauncher();
         await Refresh();
-        Versions.SelectedValue = result.InstanceId;
-        HomeNav.IsChecked = true;
+        VersionSelectorControl.SelectedValue = result.InstanceId;
+        HomeNavigation.IsChecked = true;
         Log($"整合包安装完成：{result.Name} / {result.Minecraft} / {result.Loader} {result.LoaderVersion}");
         InlineMessageBox.Show("整合包已安装为独立版本，点击首页「启动游戏」即可运行。", "整合包安装完成");
     }
@@ -101,7 +101,7 @@ public partial class MainWindow
         var cache = Path.Combine(prefs.Root, ".blocklaunch-downloads");
         Directory.CreateDirectory(cache);
         var target = Path.Combine(cache, ContentService.SafeFile(file.Filename));
-        Status.Text = "下载并校验整合包…";
+        OperationStatusLabel.Text = "下载并校验整合包…";
         await new PackService(http, CurrentToken).Download(file.Url, target, file.Hashes.GetValueOrDefault("sha512") ?? "", text => operations.Current?.Report(text));
         await ImportPack(target);
     }

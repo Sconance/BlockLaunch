@@ -70,13 +70,13 @@ public partial class MainWindow
             GroupName = "Navigation",
             Tag = "7"
         };
-        var nav = (StackPanel)ManageNav.Parent;
-        nav.Children.Insert(nav.Children.IndexOf(ManageNav) + 1, instanceNav);
+        var nav = (StackPanel)ContentManageNavigation.Parent;
+        nav.Children.Insert(nav.Children.IndexOf(ContentManageNavigation) + 1, instanceNav);
         instanceNav.Checked += (_, _) =>
         {
-            MainTabs.SelectedIndex = 7;
-            PageTitle.Text = "版本管理";
-            PageSubtitle.Text = "收藏、分类、个性化与整合包导出。";
+            MainTabControl.SelectedIndex = 7;
+            PageTitleLabel.Text = "版本管理";
+            PageSubtitleLabel.Text = "收藏、分类、个性化与整合包导出。";
             RefreshInstanceViews();
         };
         var panel = new Grid();
@@ -152,9 +152,9 @@ public partial class MainWindow
         header.SetValue(TextBlock.MarginProperty, new Thickness(2, 10, 0, 10));
         groupTemplate.VisualTree = header;
         instanceList.GroupStyle.Add(new GroupStyle { HeaderTemplate = groupTemplate });
-        MainTabs.Items.Add(new TabItem { Header = "版本管理", Content = panel });
-        var installStack = (StackPanel)((ScrollViewer)((TabItem)MainTabs.Items[1]).Content).Content;
-        InstallActions.Children.Add(ActionButton("改为修复首页选中的已安装版本", (_, _) =>
+        MainTabControl.Items.Add(new TabItem { Header = "版本管理", Content = panel });
+        var installStack = (StackPanel)((ScrollViewer)((TabItem)MainTabControl.Items[1]).Content).Content;
+        InstallActionsPanel.Children.Add(ActionButton("改为修复首页选中的已安装版本", (_, _) =>
         {
             if (busy)
                 return;
@@ -170,13 +170,13 @@ public partial class MainWindow
         {
             var button = ActionButton("选择并自动安装 " + (loader == "forge" ? "Forge" : "NeoForge"), loaderController.AutomaticLoaderClick);
             button.Tag = loader;
-            LoaderActions.Children.Add(button);
+            LoaderActionsPanel.Children.Add(button);
         }
 
         BuildDownloadPage(installStack);
-        var settingsStack = (StackPanel)((ScrollViewer)((TabItem)MainTabs.Items[4]).Content).Content;
+        var settingsStack = (StackPanel)((ScrollViewer)((TabItem)MainTabControl.Items[4]).Content).Content;
         settingsStack.Children.Insert(0, ActionButton("高级启动选项、内存与个性化", GlobalOptionsClick));
-        var home = (StackPanel)((ScrollViewer)((TabItem)MainTabs.Items[0]).Content).Content;
+        var home = (StackPanel)((ScrollViewer)((TabItem)MainTabControl.Items[0]).Content).Content;
         AllowDrop = true;
         PreviewDrop += HandleFileDrop;
         fileImportController.Build();
@@ -190,16 +190,16 @@ public partial class MainWindow
         if (index >= 0 && index + 1 < args.Length && instance >= 0 && instance + 1 < args.Length)
         {
             await SwitchRoot(args[index + 1]);
-            Versions.SelectedValue = args[instance + 1];
+            VersionSelectorControl.SelectedValue = args[instance + 1];
             var account = Array.IndexOf(args, "--account");
             if (account >= 0 && account + 1 < args.Length)
-                AccountMode.SelectedIndex = args[account + 1] switch
+                AccountModeControl.SelectedIndex = args[account + 1] switch
                 {
                     "microsoft" => 1,
                     "mua" => 2,
                     _ => 0
                 };
-            if (Versions.SelectedValue != null)
+            if (VersionSelectorControl.SelectedValue != null)
                 await Run(Launch, "脚本启动");
             else
                 InlineMessageBox.Show("脚本指定的实例不存在，请重新选择。");
@@ -210,7 +210,7 @@ public partial class MainWindow
     {
         RequireStopped();
         prefs.Root = GameDefaults.ResolveRoot(root, true);
-        GameRoot.Text = prefs.Root;
+        GameRootInput.Text = prefs.Root;
         if (!prefs.GameRoots.Contains(prefs.Root))
             prefs.GameRoots.Add(prefs.Root);
         settings.Save(prefs);
@@ -254,7 +254,7 @@ public partial class MainWindow
         view.GroupDescriptions.Add(new PropertyGroupDescription("Group"));
         instanceList.ItemsSource = view;
         instanceSearchController.Apply();
-        instanceList.SelectedItem = result.FirstOrDefault(r => r.Key == Versions.SelectedValue as string) ?? result.FirstOrDefault();
+        instanceList.SelectedItem = result.FirstOrDefault(r => r.Key == VersionSelectorControl.SelectedValue as string) ?? result.FirstOrDefault();
         if (sketchHome != null)
             ShowSketchVersions();
     }
@@ -275,8 +275,8 @@ public partial class MainWindow
         {
             if (busy)
                 return;
-            Versions.SelectedValue = item.Key;
-            HomeNav.IsChecked = true;
+            VersionSelectorControl.SelectedValue = item.Key;
+            HomeNavigation.IsChecked = true;
             await Run(Launch);
         }));
         instanceDetail.Children.Add(FeatureCard(card));
@@ -293,7 +293,7 @@ public partial class MainWindow
             };
             if (picker.ShowDialog() != true)
                 return;
-            var account = AccountMode.SelectedIndex switch
+            var account = AccountModeControl.SelectedIndex switch
             {
                 1 => "microsoft",
                 2 => "mua",
@@ -333,6 +333,6 @@ public partial class MainWindow
 
     void PrepareOfflineSkin(string directory, string baseVersion)
     {
-        OfflineSkinPackBuilder.Prepare(prefs.Root, directory, prefs.OfflineSkin, baseVersion, AccountMode.SelectedIndex == 0);
+        OfflineSkinPackBuilder.Prepare(prefs.Root, directory, prefs.OfflineSkin, baseVersion, AccountModeControl.SelectedIndex == 0);
     }
 }

@@ -65,6 +65,8 @@ dotnet publish src/MCUGLauncher/MCUGLauncher.csproj -c Release -o artifacts/publ
 
 窗口 partial 和独立组件按职责归档；每个类/记录类型均有单独说明。查看[组件目录与逐类文档](docs/MainWindow/README.md)。
 
+重构分支变更记录见 [update_refactor.md](update_refactor.md)，后续拆分与主分支整合计划见 [TODO.md](TODO.md)。
+
 ```text
 src/       主程序与核心逻辑（2 个项目）
 test/      功能、界面与集成检查（22 个项目）

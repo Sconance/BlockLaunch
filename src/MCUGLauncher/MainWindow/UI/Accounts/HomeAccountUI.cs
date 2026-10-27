@@ -15,14 +15,14 @@ public partial class MainWindow
     void BuildHomeAccountPanel()
     {
         // Reuse the named XAML controls: existing bindings and authentication handlers stay attached.
-        var originalPanel = (StackPanel)AccountMode.Parent;
+        var originalPanel = (StackPanel)AccountModeControl.Parent;
         var card = (Border)originalPanel.Parent;
-        var avatar = (Border)SkinAvatar.Parent;
+        var avatar = (Border)SkinAvatarControl.Parent;
         var originalControls = new UIElement[] {
-            AccountMode,
-            PlayerName,
-            AvatarPlayerName,
-            AccountStatus,
+            AccountModeControl,
+            PlayerNameControl,
+            AvatarPlayerNameControl,
+            AccountStatusControl,
             avatar
         };
         foreach (var child in originalControls)
@@ -83,27 +83,27 @@ public partial class MainWindow
         };
         foreach (var chip in loginChips)
         {
-            chip.SetBinding(IsEnabledProperty, new Binding(nameof(AccountMode.IsEnabled)) { Source = AccountMode });
+            chip.SetBinding(IsEnabledProperty, new Binding(nameof(AccountModeControl.IsEnabled)) { Source = AccountModeControl });
             chips.Children.Add(chip);
         }
 
         microsoftChip.Checked += (_, _) =>
         {
-            if (AccountMode.SelectedIndex != 1)
-                AccountMode.SelectedIndex = 1;
+            if (AccountModeIndex != 1)
+                AccountModeIndex = 1;
         };
         offlineChip.Checked += (_, _) =>
         {
-            if (AccountMode.SelectedIndex != 0)
-                AccountMode.SelectedIndex = 0;
+            if (AccountModeIndex != 0)
+                AccountModeIndex = 0;
         };
         muaChip.Checked += (_, _) =>
         {
-            if (AccountMode.SelectedIndex != 2)
-                AccountMode.SelectedIndex = 2;
+            if (AccountModeIndex != 2)
+                AccountModeIndex = 2;
         };
-        AccountMode.Visibility = Visibility.Collapsed;
-        chips.Children.Add(AccountMode);
+        AccountModeControl.Visibility = Visibility.Collapsed;
+        chips.Children.Add(AccountModeControl);
         return chips;
     }
 
@@ -122,16 +122,16 @@ public partial class MainWindow
         avatar.ToolTip = "点击刷新角色头像";
         avatar.MouseLeftButtonUp += (_, _) => playerIdentityController.Refresh(true);
         identity.Children.Add(avatar);
-        AvatarPlayerName.FontSize = 20;
-        AvatarPlayerName.MaxWidth = 220;
-        AvatarPlayerName.TextTrimming = TextTrimming.CharacterEllipsis;
-        identity.Children.Add(AvatarPlayerName);
-        AccountStatus.FontSize = 11;
-        AccountStatus.TextWrapping = TextWrapping.Wrap;
-        AccountStatus.MaxWidth = 220;
-        AccountStatus.TextAlignment = TextAlignment.Center;
-        AccountStatus.Margin = new Thickness(0, 7, 0, 14);
-        identity.Children.Add(AccountStatus);
+        AvatarPlayerNameControl.FontSize = 20;
+        AvatarPlayerNameControl.MaxWidth = 220;
+        AvatarPlayerNameControl.TextTrimming = TextTrimming.CharacterEllipsis;
+        identity.Children.Add(AvatarPlayerNameControl);
+        AccountStatusControl.FontSize = 11;
+        AccountStatusControl.TextWrapping = TextWrapping.Wrap;
+        AccountStatusControl.MaxWidth = 220;
+        AccountStatusControl.TextAlignment = TextAlignment.Center;
+        AccountStatusControl.Margin = new Thickness(0, 7, 0, 14);
+        identity.Children.Add(AccountStatusControl);
         identity.Children.Add(BuildOfflineIdentity());
         identity.Children.Add(BuildMicrosoftIdentity());
         identity.Children.Add(BuildMuaIdentity());
@@ -142,8 +142,8 @@ public partial class MainWindow
     {
         offlineIdentity = new StackPanel();
         offlineIdentity.Children.Add(new TextBlock { Text = "离线角色名", FontSize = 11, Foreground = Brushes.SlateGray });
-        PlayerName.ToolTip = "离线模式使用的游戏名称：3–16 位英文字母、数字或下划线";
-        offlineIdentity.Children.Add(PlayerName);
+        PlayerNameControl.ToolTip = "离线模式使用的游戏名称：3–16 位英文字母、数字或下划线";
+        offlineIdentity.Children.Add(PlayerNameControl);
         offlineIdentity.Children.Add(new TextBlock { Text = "仅用于离线游戏，不影响正版角色。", FontSize = 10, Foreground = Brushes.SlateGray, TextWrapping = TextWrapping.Wrap });
         return offlineIdentity;
     }
@@ -174,7 +174,7 @@ public partial class MainWindow
 
     void ConfigureHomeWelcome(Border card)
     {
-        var home = (Grid)((TabItem)MainTabs.Items[0]).Content;
+        var home = (Grid)((TabItem)MainTabControl.Items[0]).Content;
         var banner = home.Children.OfType<Border>().FirstOrDefault(b => b != card && Grid.GetColumn(b) == 2);
         if (banner != null && !File.Exists(prefs.BackgroundPath))
         {
@@ -199,8 +199,8 @@ public partial class MainWindow
     {
         if (microsoftChip == null || offlineChip == null || offlineIdentity == null || microsoftIdentity == null)
             return;
-        var onlineMode = AccountMode.SelectedIndex == 1;
-        var muaMode = AccountMode.SelectedIndex == 2;
+        var onlineMode = AccountModeIndex == 1;
+        var muaMode = AccountModeIndex == 2;
         microsoftChip.IsChecked = onlineMode;
         offlineChip.IsChecked = !onlineMode && !muaMode;
         if (muaChip != null)

@@ -34,14 +34,14 @@ public partial class MainWindow
         if (active == null || active.Record.Id != record.Id)
             return;
         if (record.Download != null)
-            TaskStatusBar.Visibility = Visibility.Collapsed;
-        Status.Text = record.Committing ? "正在提交安装结果，此阶段暂不可取消…" : $"{record.Name} · {record.Message}";
-        Progress.IsIndeterminate = record.Percent == null && record.State is OperationState.Running or OperationState.Cancelling or OperationState.Pausing;
+            TaskStatusBarControl.Visibility = Visibility.Collapsed;
+        OperationStatusLabel.Text = record.Committing ? "正在提交安装结果，此阶段暂不可取消…" : $"{record.Name} · {record.Message}";
+        TaskProgressBarControl.IsIndeterminate = record.Percent == null && record.State is OperationState.Running or OperationState.Cancelling or OperationState.Pausing;
         if (record.Percent is
             {
             } percent)
-            Progress.Value = Math.Clamp(percent, 0, 100);
-        CancelTaskButton.IsEnabled = record.State == OperationState.Running && !record.Committing;
+            TaskProgressBarControl.Value = Math.Clamp(percent, 0, 100);
+        CancelTaskButtonControl.IsEnabled = record.State == OperationState.Running && !record.Committing;
     }
 
     async Task StartupRecovery()
@@ -79,17 +79,17 @@ public partial class MainWindow
     void CancelTaskClick(object s, RoutedEventArgs e)
     {
         if (!operations.Cancel())
-            Status.Text = "当前正在提交文件，完成后可以继续操作。";
+            OperationStatusLabel.Text = "当前正在提交文件，完成后可以继续操作。";
     }
 
     void RefreshOperations()
     {
-        if (TaskHistoryList == null)
+        if (TaskHistoryListControl == null)
             return;
-        var id = (TaskHistoryList.SelectedItem as OperationRecord)?.Id;
+        var id = (TaskHistoryListControl.SelectedItem as OperationRecord)?.Id;
         var records = operations.History().OrderBy(r => r.Id == operations.Current?.Record.Id ? 0 : r.State == OperationState.Queued ? 1 : 2).ThenBy(r => r.State == OperationState.Queued ? (r.QueueOrder == 0 ? r.Started.UtcTicks : r.QueueOrder) : 0).ThenByDescending(r => r.Started).ToList();
-        TaskHistoryList.ItemsSource = records;
-        TaskHistoryList.SelectedItem = records.FirstOrDefault(r => r.Id == id);
+        TaskHistoryListControl.ItemsSource = records;
+        TaskHistoryListControl.SelectedItem = records.FirstOrDefault(r => r.Id == id);
     }
 
     void RefreshOperationsClick(object s, RoutedEventArgs e) => RefreshOperations();
@@ -98,7 +98,7 @@ public partial class MainWindow
     {
         if (busy)
             return;
-        if (TaskHistoryList.SelectedItem is not OperationRecord record)
+        if (TaskHistoryListControl.SelectedItem is not OperationRecord record)
             return;
         if (record.Download is
             {
@@ -116,8 +116,8 @@ public partial class MainWindow
 
         if (rows.Any(r => r.Id == record.Target))
         {
-            Versions.SelectedValue = record.Target;
-            HomeNav.IsChecked = true;
+            VersionSelectorControl.SelectedValue = record.Target;
+            HomeNavigation.IsChecked = true;
         }
 
         InlineMessageBox.Show("游戏下载任务：选择原版本后再次下载 / 修复。\n整合包任务：重新导入原文件或再次安装项目。\n内容任务：再次安装原项目；启动时会检查并回滚可恢复的未提交事务。\n下载任务可在此页暂停、继续或失败重试；支持续传的资源会保留部分文件，游戏安装重新执行时会校验已有文件。", "恢复说明");
@@ -131,7 +131,7 @@ public partial class MainWindow
             throw new IOException("请先完成所选版本安装。");
         var key = new InstanceCatalog(prefs.Root).Create(target.GameVersion + " 独立实例 " + DateTime.Now.ToString("HH:mm:ss"), SelectedLaunchVersion(), target.GameVersion);
         await Refresh();
-        Versions.SelectedValue = key;
+        VersionSelectorControl.SelectedValue = key;
         Log("已建立新实例，配置、模组与存档均独立；未复制原实例内容。");
     }, "新建独立实例");
 
@@ -157,7 +157,7 @@ public partial class MainWindow
         {
             var result = await session.Completion;
             if (gameSession == session)
-                StopGameButton.Visibility = Visibility.Collapsed;
+                StopGameButtonControl.Visibility = Visibility.Collapsed;
             var completedContext = context with
             {
                 Exit = result
@@ -171,7 +171,7 @@ public partial class MainWindow
                 if (gameSession != session)
                     return;
                 ShowDiagnosticSnapshot(snapshot);
-                Status.Text = "游戏异常退出，可在「诊断与反馈」查看日志证据和建议。";
+                OperationStatusLabel.Text = "游戏异常退出，可在「诊断与反馈」查看日志证据和建议。";
                 Log($"诊断已完成：命中 {snapshot.Findings.Count} 条可能原因，请在「诊断与反馈」查看证据。未上传任何日志。");
             }
         }
@@ -186,11 +186,11 @@ public partial class MainWindow
         try
         {
             var directory = lastGameDirectory ?? Instance();
-            GameLogView.Text = await Task.Run(() => SharedLogs.ReadTail(Path.Combine(directory, "logs", "latest.log")));
+            GameLogViewControl.Text = await Task.Run(() => SharedLogs.ReadTail(Path.Combine(directory, "logs", "latest.log")));
         }
         catch (IOException ex)
         {
-            GameLogView.Text = "日志暂时不可读，可以稍后刷新：" + ex.Message;
+            GameLogViewControl.Text = "日志暂时不可读，可以稍后刷新：" + ex.Message;
         }
     }
 

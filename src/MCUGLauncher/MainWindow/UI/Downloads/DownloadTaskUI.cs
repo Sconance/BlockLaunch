@@ -160,7 +160,7 @@ public partial class MainWindow
         }
 
         if (!changed)
-            Status.Text = "任务正在提交或状态已变化，请刷新后重试。";
+            OperationStatusLabel.Text = "任务正在提交或状态已变化，请刷新后重试。";
         RefreshMiniDownloads(true);
         RefreshDownloadTasks(true);
         RefreshOperations();

@@ -16,19 +16,19 @@ public partial class MainWindow
 
     void BuildDiagnosticsUI()
     {
-        diagnosticTabIndex = MainTabs.Items.Count;
+        diagnosticTabIndex = MainTabControl.Items.Count;
         var nav = new RadioButton
         {
             Style = (Style)FindResource("Nav"),
             Content = "◇     诊断与反馈",
             GroupName = "Navigation"
         };
-        ((StackPanel)ManageNav.Parent).Children.Add(nav);
+        ((StackPanel)ContentManageNavigation.Parent).Children.Add(nav);
         nav.Checked += (_, _) =>
         {
-            MainTabs.SelectedIndex = diagnosticTabIndex;
-            PageTitle.Text = "诊断与反馈";
-            PageSubtitle.Text = "本地分析 · 日志证据 · 导出前预览";
+            MainTabControl.SelectedIndex = diagnosticTabIndex;
+            PageTitleLabel.Text = "诊断与反馈";
+            PageSubtitleLabel.Text = "本地分析 · 日志证据 · 导出前预览";
         };
         var body = new StackPanel();
         body.Children.Add(Heading("游戏退出排查"));
@@ -60,8 +60,8 @@ public partial class MainWindow
         body.Children.Add(actions);
         body.Children.Add(diagnosticState);
         body.Children.Add(diagnosticResults);
-        MainTabs.Items.Add(new TabItem { Header = "诊断与反馈", Content = new ScrollViewer { Content = body, VerticalScrollBarVisibility = ScrollBarVisibility.Auto } });
-        var logActions = ((Grid)GameLogView.Parent).Children.OfType<WrapPanel>().Single();
+        MainTabControl.Items.Add(new TabItem { Header = "诊断与反馈", Content = new ScrollViewer { Content = body, VerticalScrollBarVisibility = ScrollBarVisibility.Auto } });
+        var logActions = ((Grid)GameLogViewControl.Parent).Children.OfType<WrapPanel>().Single();
         logActions.Children.Add(ActionButton("诊断与反馈", (_, _) => nav.IsChecked = true));
     }
 

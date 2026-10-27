@@ -56,13 +56,13 @@ public partial class MainWindow
             Log("资源收藏暂不可用，原文件已保留：" + ex.Message);
         }
 
-        var projectPanel = (StackPanel)ProjectTitle.Parent;
-        projectPanel.Children.Insert(projectPanel.Children.IndexOf(ProjectDescription) + 1, ActionButton("★ 一键收藏", (_, _) => FavoriteSelected()));
-        projectPanel.Children.Insert(projectPanel.Children.IndexOf(ProjectDescription) + 2, ActionButton("打开资源收藏夹", (_, _) => ShowBookmarks()));
-        var resourceFilters = (StackPanel)((Grid)SearchQuery.Parent).Parent;
+        var projectPanel = (StackPanel)ContentProjectTitleLabel.Parent;
+        projectPanel.Children.Insert(projectPanel.Children.IndexOf(ContentProjectDescriptionLabel) + 1, ActionButton("★ 一键收藏", (_, _) => FavoriteSelected()));
+        projectPanel.Children.Insert(projectPanel.Children.IndexOf(ContentProjectDescriptionLabel) + 2, ActionButton("打开资源收藏夹", (_, _) => ShowBookmarks()));
+        var resourceFilters = (StackPanel)((Grid)ContentSearchQueryInput.Parent).Parent;
         // The resource filters are a runtime StackPanel containing the original search Grid.
         resourceFilters.Children.Add(ActionButton("★ 我的收藏夹", (_, _) => ShowBookmarks()));
-        var grid = (Grid)InstalledContent.Parent;
+        var grid = (Grid)InstalledContentListControl.Parent;
         var row = grid.Children.OfType<WrapPanel>().First(p => Grid.GetRow(p) == 1);
         grid.Children.Remove(row);
         var tools = new StackPanel();
@@ -79,7 +79,7 @@ public partial class MainWindow
         search.Children.Add(localKind);
         search.Children.Add(localState);
         search.Children.Add(localSummary);
-        var resourceTab = (TabItem)MainTabs.Items[2];
+        var resourceTab = (TabItem)MainTabControl.Items[2];
         resourceSearchPage = (UIElement)resourceTab.Content;
         resourceTab.Content = null;
         var pages = new Grid();
@@ -108,10 +108,10 @@ public partial class MainWindow
             2 => "已禁用",
             _ => "全部"
         };
-        var selected = (InstalledContent.SelectedItem as LocalContent)?.Path;
+        var selected = (InstalledContentListControl.SelectedItem as LocalContent)?.Path;
         var result = LocalContentSearch.Filter(localSnapshot, localQuery.Text, kind, state);
-        InstalledContent.ItemsSource = result;
-        InstalledContent.SelectedItem = result.FirstOrDefault(i => i.Path == selected);
+        InstalledContentListControl.ItemsSource = result;
+        InstalledContentListControl.SelectedItem = result.FirstOrDefault(i => i.Path == selected);
         localSummary.Text = $"显示 {result.Count} / {localSnapshot.Count} 项";
     }
 
@@ -130,7 +130,7 @@ public partial class MainWindow
 
     void FavoriteSelected()
     {
-        if (busy || SearchResults.SelectedItem is not ContentProject project || bookmarks == null)
+        if (busy || ContentSearchResultsControl.SelectedItem is not ContentProject project || bookmarks == null)
             return;
         try
         {
@@ -138,27 +138,27 @@ public partial class MainWindow
             if (old == null)
                 bookmarks.Save(project, ContentKind, "");
             RefreshBookmarkDecoration();
-            SearchSummary.Text = old == null ? "已加入默认收藏夹" : "已收藏，可在我的收藏夹中管理";
+            ContentSearchSummaryLabel.Text = old == null ? "已加入默认收藏夹" : "已收藏，可在我的收藏夹中管理";
         }
         catch (Exception ex)
         {
-            SearchSummary.Text = "收藏失败：" + ex.Message;
+            ContentSearchSummaryLabel.Text = "收藏失败：" + ex.Message;
         }
     }
 
     void RefreshBookmarkDecoration()
     {
-        var items = SearchResults.Items.Cast<ContentProject>().ToList();
-        var selectedId = (SearchResults.SelectedItem as ContentProject)?.Id;
-        SearchResults.SelectionChanged -= ProjectChanged;
+        var items = ContentSearchResultsControl.Items.Cast<ContentProject>().ToList();
+        var selectedId = (ContentSearchResultsControl.SelectedItem as ContentProject)?.Id;
+        ContentSearchResultsControl.SelectionChanged -= ProjectChanged;
         try
         {
-            SearchResults.ItemsSource = DecorateProjects(items);
-            SearchResults.SelectedItem = SearchResults.Items.Cast<ContentProject>().FirstOrDefault(p => p.Id == selectedId);
+            ContentSearchResultsControl.ItemsSource = DecorateProjects(items);
+            ContentSearchResultsControl.SelectedItem = ContentSearchResultsControl.Items.Cast<ContentProject>().FirstOrDefault(p => p.Id == selectedId);
         }
         finally
         {
-            SearchResults.SelectionChanged += ProjectChanged;
+            ContentSearchResultsControl.SelectionChanged += ProjectChanged;
         }
     }
 
@@ -166,7 +166,7 @@ public partial class MainWindow
 
     StackPanel BookmarkLayout(string title)
     {
-        DiscoverNav.IsChecked = true;
+        ContentDiscoverNavigation.IsChecked = true;
         resourceSearchPage.Visibility = Visibility.Collapsed;
         bookmarkPage.Visibility = Visibility.Visible;
         bookmarkPage.Children.Clear();
@@ -192,7 +192,7 @@ public partial class MainWindow
     {
         if (bookmarks == null)
         {
-            SearchSummary.Text = "收藏数据无法读取，请查看运行日志。";
+            ContentSearchSummaryLabel.Text = "收藏数据无法读取，请查看运行日志。";
             return;
         }
 
@@ -236,7 +236,7 @@ public partial class MainWindow
         }
         catch (Exception ex)
         {
-            SearchSummary.Text = "收藏读取失败：" + ex.Message;
+            ContentSearchSummaryLabel.Text = "收藏读取失败：" + ex.Message;
         }
     }
 
@@ -362,7 +362,7 @@ public partial class MainWindow
                 });
             bookmarkPage.Visibility = Visibility.Collapsed;
             resourceSearchPage.Visibility = Visibility.Visible;
-            ContentType.SelectedIndex = item.Kind switch
+            ContentKindSelector.SelectedIndex = item.Kind switch
             {
                 "resourcepack" => 1,
                 "modpack" => 2,
@@ -370,10 +370,10 @@ public partial class MainWindow
                 "datapack" => 4,
                 _ => 0
             };
-            SearchResults.ItemsSource = DecorateProjects([item.Project]);
-            SearchHint.Visibility = Visibility.Collapsed;
-            SearchSummary.Text = "来自收藏夹";
-            SearchResults.SelectedIndex = 0;
+            ContentSearchResultsControl.ItemsSource = DecorateProjects([item.Project]);
+            ContentSearchHintControl.Visibility = Visibility.Collapsed;
+            ContentSearchSummaryLabel.Text = "来自收藏夹";
+            ContentSearchResultsControl.SelectedIndex = 0;
         }));
         var edit = new StackPanel();
         body.Children.Add(FeatureCard(edit));
@@ -488,7 +488,7 @@ public partial class MainWindow
                     RequireStopped();
                     var newKey = await Task.Run(() => InstanceCloner.Copy(prefs.Root, key, source, requirements.Minecraft, chosenName, effective, options, text => operations.Current?.Report(text), CurrentToken));
                     await Refresh();
-                    Versions.SelectedValue = newKey;
+                    VersionSelectorControl.SelectedValue = newKey;
                     RefreshInstanceViews();
                     Log("独立实例已复制：" + chosenName);
                 }, "复制实例");

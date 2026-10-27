@@ -61,10 +61,7 @@ internal sealed class LaunchOptionsDialog(
                     host.prefs.Java = updated.Java;
                     host.prefs.Width = updated.Width;
                     host.prefs.Height = updated.Height;
-                    host.Memory.Text = host.prefs.Ram.ToString();
-                    host.JavaPath.Text = host.prefs.Java;
-                    host.GameWidth.Text = host.prefs.Width.ToString();
-                    host.GameHeight.Text = host.prefs.Height.ToString();
+                    host.RefreshLaunchSettingsFields();
                     host.settings.Save(host.prefs);
                 }
 

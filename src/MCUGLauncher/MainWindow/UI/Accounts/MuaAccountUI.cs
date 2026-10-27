@@ -22,8 +22,8 @@ public partial class MainWindow
             Log("MUA 账号缓存暂不可用，请在 MUA 账号设置中清除后重新登录。原文件已保留。");
         }
 
-        if (AccountMode.Items.Count < 3)
-            AccountMode.Items.Add(new ComboBoxItem { Content = "MUA 联合认证" });
+        if (AccountModeControl.Items.Count < 3)
+            AccountModeControl.Items.Add(new ComboBoxItem { Content = "MUA 联合认证" });
         PreviewDragOver += (_, e) =>
         {
             if (e.Data.GetDataPresent(DataFormats.UnicodeText) && MuaAccountService.IsMuaConfiguration(e.Data.GetData(DataFormats.UnicodeText) as string ?? ""))
@@ -39,7 +39,7 @@ public partial class MainWindow
             e.Handled = true;
             if (InlineMessageBox.Show(this, "使用 MUA 用户中心作为认证服务器？\n" + MuaAccountService.Api, "添加 MUA 认证", MessageBoxButton.OKCancel) == MessageBoxResult.OK)
             {
-                AccountMode.SelectedIndex = 2;
+                AccountModeIndex = 2;
                 UpdateAccountBadge();
             }
         };
@@ -135,7 +135,7 @@ public partial class MainWindow
             var credential = await muaAccounts.Login(account.Text, secret, SelectMuaRole, CurrentToken);
             muaAccount = credential;
             muaValidated = true;
-            AccountMode.SelectedIndex = 2;
+            AccountModeIndex = 2;
             prefs.PreferMua = true;
             prefs.PreferMicrosoft = false;
             settings.Save(prefs);
@@ -204,7 +204,7 @@ public partial class MainWindow
                 muaAccount = null;
                 muaValidated = false;
                 prefs.PreferMua = false;
-                AccountMode.SelectedIndex = 0;
+                AccountModeIndex = 0;
                 settings.Save(prefs);
                 UpdateAccountBadge();
                 Log(revoked ? "已退出 MUA 并撤销当前会话。" : "已清除本地 MUA 登录，认证站撤销未确认；可在 MUA 用户中心管理会话。");

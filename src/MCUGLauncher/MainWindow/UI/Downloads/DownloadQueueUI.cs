@@ -28,14 +28,14 @@ public partial class MainWindow
         request.Java = prefs.Java;
         operations.Enqueue(name, prefs.Root, target, request);
         RefreshOperations();
-        Status.Text = "已加入下载队列：" + name;
+        OperationStatusLabel.Text = "已加入下载队列：" + name;
     }
 
     async Task QueuePackImport(string file)
     {
         var root = prefs.Root;
         var java = prefs.Java;
-        var optional = PackOptional.IsChecked == true;
+        var optional = IncludeOptionalPackContent;
         var overview = await Task.Run(() => PackService.ReadOverview(file));
         var displayName = ConfirmPackImport(overview, root);
         if (displayName == null)
@@ -51,7 +51,7 @@ public partial class MainWindow
             PackDisplayName = displayName
         });
         RefreshOperations();
-        Status.Text = overview.Format + " 整合包已识别并加入下载队列";
+        OperationStatusLabel.Text = overview.Format + " 整合包已识别并加入下载队列";
     }
 
     async Task PumpDownloads()
@@ -64,7 +64,7 @@ public partial class MainWindow
         var record = operations.History().Where(r => r.State == OperationState.Queued && r.Download != null).OrderBy(r => r.QueueOrder == 0 ? r.Started.UtcTicks : r.QueueOrder).ThenBy(r => r.Started).FirstOrDefault();
         if (record == null)
             return;
-        TaskStatusBar.Visibility = Visibility.Collapsed;
+        TaskStatusBarControl.Visibility = Visibility.Collapsed;
         busy = true;
         try
         {
@@ -73,21 +73,21 @@ public partial class MainWindow
                 SetInputs(false);
                 return ExecuteDownload(record, context);
             }, record);
-            Status.Text = result.Name + " · " + result.StateLabel;
+            OperationStatusLabel.Text = result.Name + " · " + result.StateLabel;
         }
         catch (Exception ex)
         {
             Log("下载任务失败，可在任务页重试：" + ex.Message);
-            Status.Text = "下载失败，可在任务与恢复中重试";
+            OperationStatusLabel.Text = "下载失败，可在任务与恢复中重试";
         }
         finally
         {
-            TaskStatusBar.Visibility = Visibility.Collapsed;
+            TaskStatusBarControl.Visibility = Visibility.Collapsed;
             busy = false;
             SetInputs(true);
-            Progress.IsIndeterminate = false;
-            Progress.Value = 0;
-            CancelTaskButton.IsEnabled = false;
+            TaskProgressBarControl.IsIndeterminate = false;
+            TaskProgressBarControl.Value = 0;
+            CancelTaskButtonControl.IsEnabled = false;
             RefreshOperations();
             if (closeAfterTask)
                 Close();
@@ -182,7 +182,7 @@ public partial class MainWindow
                 SetupLauncher();
                 await Refresh();
                 if (installed != null)
-                    Versions.SelectedValue = installed;
+                    VersionSelectorControl.SelectedValue = installed;
                 RefreshLocalContent();
                 RefreshInstanceViews();
             }
@@ -201,9 +201,9 @@ public partial class MainWindow
 
     void ChangeDownload(OperationState state)
     {
-        if (TaskHistoryList.SelectedItem is not OperationRecord record || record.Download == null)
+        if (TaskHistoryListControl.SelectedItem is not OperationRecord record || record.Download == null)
         {
-            Status.Text = "请选择一个下载任务。";
+            OperationStatusLabel.Text = "请选择一个下载任务。";
             return;
         }
 
@@ -220,7 +220,7 @@ public partial class MainWindow
         }
 
         if (!changed)
-            Status.Text = "当前状态不能执行此操作；提交文件阶段请等待完成。";
+            OperationStatusLabel.Text = "当前状态不能执行此操作；提交文件阶段请等待完成。";
         RefreshOperations();
     }
 

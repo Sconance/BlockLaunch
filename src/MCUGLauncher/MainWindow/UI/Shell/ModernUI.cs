@@ -71,15 +71,15 @@ public partial class MainWindow
                 var identity = (StackPanel)account.Children[1];
                 identity.VerticalAlignment = VerticalAlignment.Top;
                 identity.Margin = new Thickness(0, 5, 0, 0);
-                var avatar = (Border)SkinAvatar.Parent;
+                var avatar = (Border)SkinAvatarControl.Parent;
                 avatar.Width = 64;
                 avatar.Height = 64;
                 avatar.Margin = new Thickness(0, 4, 0, 8);
-                AvatarPlayerName.FontSize = 17;
-                AvatarPlayerName.MaxWidth = 196;
-                AvatarPlayerName.ToolTip = AvatarPlayerName.Text;
-                AccountStatus.Margin = new Thickness(0, 4, 0, 9);
-                AccountStatus.MaxWidth = 196;
+                AvatarPlayerNameControl.FontSize = 17;
+                AvatarPlayerNameControl.MaxWidth = 196;
+                AvatarPlayerNameControl.ToolTip = AvatarPlayerNameControl.Text;
+                AccountStatusControl.Margin = new Thickness(0, 4, 0, 9);
+                AccountStatusControl.MaxWidth = 196;
                 foreach (var chip in new[] {
                     microsoftChip,
                     offlineChip,
@@ -94,13 +94,13 @@ public partial class MainWindow
                     }
             }
 
-            LaunchGameButton.Padding = new Thickness(10, 9, 10, 9);
-            LaunchGameButton.MinHeight = 70;
-            LaunchGameButton.Margin = new Thickness(0);
+            LaunchGameButtonControl.Padding = new Thickness(10, 9, 10, 9);
+            LaunchGameButtonControl.MinHeight = 70;
+            LaunchGameButtonControl.Margin = new Thickness(0);
             homeSelectedLabel.MaxWidth = 125;
             homeSelectedLabel.TextTrimming = TextTrimming.CharacterEllipsis;
             homeSelectedLabel.TextWrapping = TextWrapping.NoWrap;
-            homeSelectedLabel.ToolTip = Versions.SelectedItem is VersionRow selected ? selected.Label : "尚未选择版本";
+            homeSelectedLabel.ToolTip = VersionSelectorControl.SelectedItem is VersionRow selected ? selected.Label : "尚未选择版本";
         }
 
         SizeChanged += (_, _) =>

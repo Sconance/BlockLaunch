@@ -9,7 +9,7 @@ namespace BlockLaunch;
 
 internal sealed class InstanceLibraryDialog(MainWindow host, string? key = null)
 {
-    readonly string selectedKey = key ?? (host.Versions.SelectedValue as string ?? throw new InvalidOperationException("请先选择一个游戏版本。"));
+    readonly string selectedKey = key ?? host.Selected();
 
     public void Show()
     {

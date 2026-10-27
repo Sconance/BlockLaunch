@@ -31,9 +31,9 @@ public partial class MainWindow
     void NavigateDownloads(string category)
     {
         downloadNav.IsChecked = true;
-        MainTabs.SelectedIndex = 1;
+        MainTabControl.SelectedIndex = 1;
         SelectDownloadCategory(category);
-        PageTitle.Text = "下载";
+        PageTitleLabel.Text = "下载";
     }
 
     void BuildCompactShell()
@@ -41,7 +41,7 @@ public partial class MainWindow
         var root = (Grid)Content;
         var main = (Grid)root.Children[1];
         root.Children.Remove(main);
-        var oldNavigation = (StackPanel)HomeNav.Parent;
+        var oldNavigation = (StackPanel)HomeNavigation.Parent;
         var radios = oldNavigation.Children.OfType<RadioButton>().ToList();
         foreach (var radio in radios)
             oldNavigation.Children.Remove(radio);
@@ -118,8 +118,8 @@ public partial class MainWindow
         root.Children.Add(header);
         main.Margin = new Thickness(16, 0, 16, 10);
         main.RowDefinitions[0].Height = new GridLength(56);
-        PageTitle.FontSize = 20;
-        PageSubtitle.FontSize = 11;
+        PageTitleLabel.FontSize = 20;
+        PageSubtitleLabel.FontSize = 11;
         Grid.SetColumn(main, 0);
         Grid.SetRow(main, 1);
         root.Children.Add(main);
@@ -162,13 +162,13 @@ public partial class MainWindow
         BuildCompactResourcePage();
         BuildHomeVersionEntry();
         compactShellReady = true;
-        PageTitle.Text = "启动";
-        PageSubtitle.Text = "选择账号和已安装版本，开始游戏。";
+        PageTitleLabel.Text = "启动";
+        PageSubtitleLabel.Text = "选择账号和已安装版本，开始游戏。";
     }
 
     void BuildHomeVersionEntry()
     {
-        var home = (StackPanel)((ScrollViewer)((TabItem)MainTabs.Items[0]).Content).Content;
+        var home = (StackPanel)((ScrollViewer)((TabItem)MainTabControl.Items[0]).Content).Content;
         var banner = (Border)home.Children[0];
         var oldGrid = (Grid)home.Children[1];
         var launchCard = (Border)oldGrid.Children[0];
@@ -176,16 +176,16 @@ public partial class MainWindow
         home.Children.Clear();
         oldGrid.Children.Clear();
         var launchPanel = (StackPanel)launchCard.Child;
-        launchPanel.Children.Remove(LaunchGameButton);
-        launchPanel.Children.Remove(StopGameButton);
-        launchPanel.Children.Remove(Versions);
+        launchPanel.Children.Remove(LaunchGameButtonControl);
+        launchPanel.Children.Remove(StopGameButtonControl);
+        launchPanel.Children.Remove(VersionSelectorControl);
         var left = new DockPanel();
         var launch = new StackPanel();
         DockPanel.SetDock(launch, Dock.Bottom);
-        LaunchGameButton.Margin = new Thickness(0, 8, 0, 4);
-        LaunchGameButton.Padding = new Thickness(14, 12, 14, 12);
-        launch.Children.Add(LaunchGameButton);
-        launch.Children.Add(StopGameButton);
+        LaunchGameButtonControl.Margin = new Thickness(0, 8, 0, 4);
+        LaunchGameButtonControl.Padding = new Thickness(14, 12, 14, 12);
+        launch.Children.Add(LaunchGameButtonControl);
+        launch.Children.Add(StopGameButtonControl);
         var buttons = new Grid();
         buttons.ColumnDefinitions.Add(new());
         buttons.ColumnDefinitions.Add(new());
@@ -207,24 +207,24 @@ public partial class MainWindow
         buttons.Children.Add(choose);
         buttons.Children.Add(settingsButton);
         launch.Children.Add(buttons);
-        Versions.Visibility = Visibility.Collapsed;
-        launch.Children.Insert(0, Versions);
+        VersionSelectorControl.Visibility = Visibility.Collapsed;
+        launch.Children.Insert(0, VersionSelectorControl);
         var launchTitle = new StackPanel();
         launchTitle.Children.Add(new TextBlock { Text = "▷  启动游戏", FontSize = 17, FontWeight = FontWeights.SemiBold, Foreground = Brushes.White, HorizontalAlignment = HorizontalAlignment.Center });
         launchTitle.Children.Add(homeSelectedLabel);
-        LaunchGameButton.ContentTemplate = null;
-        LaunchGameButton.Content = launchTitle;
+        LaunchGameButtonControl.ContentTemplate = null;
+        LaunchGameButtonControl.Content = launchTitle;
         UpdateHomeLaunchLabel();
         left.Children.Add(launch);
         Grid.SetColumn(accountCard, 0);
         accountCard.Margin = new Thickness(0);
         accountCard.Padding = new Thickness(12);
-        var accountPanel = (StackPanel)AccountMode.Parent;
-        accountPanel.Children.Remove(AccountMode);
-        accountPanel.Children.Insert(0, AccountMode);
+        var accountPanel = (StackPanel)AccountModeControl.Parent;
+        accountPanel.Children.Remove(AccountModeControl);
+        accountPanel.Children.Insert(0, AccountModeControl);
         accountPanel.Children.OfType<TextBlock>().First(t => t.Text == "玩家档案").Visibility = Visibility.Collapsed;
-        AvatarCaption.Visibility = Visibility.Collapsed;
-        var avatarBorder = (Border)SkinAvatar.Parent;
+        AvatarCaptionLabel.Visibility = Visibility.Collapsed;
+        var avatarBorder = (Border)SkinAvatarControl.Parent;
         avatarBorder.Width = 72;
         avatarBorder.Height = 72;
         avatarBorder.Margin = new Thickness(0, 14, 0, 8);
@@ -257,8 +257,8 @@ public partial class MainWindow
         }
 
         layout.Children.Add(banner);
-        ((TabItem)MainTabs.Items[0]).Content = layout;
-        var chooser = (Grid)((TabItem)MainTabs.Items[7]).Content;
+        ((TabItem)MainTabControl.Items[0]).Content = layout;
+        var chooser = (Grid)((TabItem)MainTabControl.Items[7]).Content;
         var existingLeft = (DockPanel)chooser.Children[0];
         var toolbar = (StackPanel)existingLeft.Children[0];
         existingLeft.Children.Clear();
@@ -267,16 +267,16 @@ public partial class MainWindow
         toolbar.Margin = new Thickness(0, 0, 12, 0);
         toolbar.Children.Insert(0, ActionButton("← 返回启动", (_, _) =>
         {
-            MainTabs.SelectedIndex = 0;
-            PageTitle.Text = "启动";
+            MainTabControl.SelectedIndex = 0;
+            PageTitleLabel.Text = "启动";
         }));
         toolbar.Children.Add(ActionButton("使用所选版本", (_, _) =>
         {
             if (instanceList.SelectedItem is not InstanceView item || busy)
                 return;
-            Versions.SelectedValue = item.Key;
-            MainTabs.SelectedIndex = 0;
-            PageTitle.Text = "启动";
+            VersionSelectorControl.SelectedValue = item.Key;
+            MainTabControl.SelectedIndex = 0;
+            PageTitleLabel.Text = "启动";
         }));
         toolbar.Children.Add(ActionButton("所选版本设置", (_, _) =>
         {
@@ -296,10 +296,10 @@ public partial class MainWindow
     void ShowHomeVersions()
     {
         sketchExpanded = true;
-        HomeNav.IsChecked = true;
-        MainTabs.SelectedIndex = 0;
-        PageTitle.Text = "启动";
-        PageSubtitle.Text = "选择账号和已安装版本，开始游戏。";
+        HomeNavigation.IsChecked = true;
+        MainTabControl.SelectedIndex = 0;
+        PageTitleLabel.Text = "启动";
+        PageSubtitleLabel.Text = "选择账号和已安装版本，开始游戏。";
         RefreshInstanceViews();
         ShowSketchVersions();
     }
@@ -312,8 +312,8 @@ public partial class MainWindow
         resourceLoader.Width = 125;
         resourceSource.Width = 110;
         releaseChannel.Width = 95;
-        InstallContentButton.Content = "↓ 下载所选文件";
-        var filters = (StackPanel)((Grid)SearchQuery.Parent).Parent;
+        ContentInstallButtonControl.Content = "↓ 下载所选文件";
+        var filters = (StackPanel)((Grid)ContentSearchQueryInput.Parent).Parent;
         foreach (var text in filters.Children.OfType<TextBlock>())
             text.Visibility = Visibility.Collapsed;
         var favorite = filters.Children.OfType<Button>().FirstOrDefault();
@@ -348,16 +348,16 @@ public partial class MainWindow
             Directory.CreateDirectory(prefs.ResourceDownloadDirectory);
             System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(prefs.ResourceDownloadDirectory) { UseShellExecute = true });
         }));
-        var directoryBar = (Border)ContentTarget.Parent;
+        var directoryBar = (Border)ContentTargetLabel.Parent;
         var directoryLayout = new DockPanel();
         directoryBar.Child = null;
         DockPanel.SetDock(directoryButtons, Dock.Right);
         directoryLayout.Children.Add(directoryButtons);
-        directoryLayout.Children.Add(ContentTarget);
+        directoryLayout.Children.Add(ContentTargetLabel);
         directoryBar.Child = directoryLayout;
-        ContentTarget.TextTrimming = TextTrimming.CharacterEllipsis;
-        ContentTarget.TextWrapping = TextWrapping.NoWrap;
-        ContentTarget.VerticalAlignment = VerticalAlignment.Center;
+        ContentTargetLabel.TextTrimming = TextTrimming.CharacterEllipsis;
+        ContentTargetLabel.TextWrapping = TextWrapping.NoWrap;
+        ContentTargetLabel.VerticalAlignment = VerticalAlignment.Center;
         directoryBar.Padding = new Thickness(8, 3, 8, 3);
         foreach (var button in directoryButtons.Children.OfType<Button>())
         {
@@ -366,28 +366,28 @@ public partial class MainWindow
             button.Margin = new Thickness(4, 0, 0, 0);
         }
 
-        var details = (Border)((ScrollViewer)((StackPanel)ProjectTitle.Parent).Parent).Parent;
+        var details = (Border)((ScrollViewer)((StackPanel)ContentProjectTitleLabel.Parent).Parent).Parent;
         var resultGrid = (Grid)details.Parent;
-        var oldPanel = (StackPanel)ProjectTitle.Parent;
-        var detailActions = oldPanel.Children.OfType<Button>().Where(b => b != InstallContentButton).ToList();
-        oldPanel.Children.Remove(ProjectTitle);
-        oldPanel.Children.Remove(ProjectDescription);
-        oldPanel.Children.Remove(ProjectVersions);
-        oldPanel.Children.Remove(InstallContentButton);
+        var oldPanel = (StackPanel)ContentProjectTitleLabel.Parent;
+        var detailActions = oldPanel.Children.OfType<Button>().Where(b => b != ContentInstallButtonControl).ToList();
+        oldPanel.Children.Remove(ContentProjectTitleLabel);
+        oldPanel.Children.Remove(ContentProjectDescriptionLabel);
+        oldPanel.Children.Remove(ContentProjectVersionsControl);
+        oldPanel.Children.Remove(ContentInstallButtonControl);
         foreach (var button in detailActions)
             oldPanel.Children.Remove(button);
         var detail = new StackPanel();
-        detail.Children.Add(ProjectTitle);
-        ProjectTitle.FontSize = 14;
-        ProjectTitle.Margin = new Thickness(0, 0, 0, 3);
-        ProjectDescription.MaxHeight = 32;
-        ProjectDescription.Margin = new Thickness(0);
-        detail.Children.Add(ProjectDescription);
+        detail.Children.Add(ContentProjectTitleLabel);
+        ContentProjectTitleLabel.FontSize = 14;
+        ContentProjectTitleLabel.Margin = new Thickness(0, 0, 0, 3);
+        ContentProjectDescriptionLabel.MaxHeight = 32;
+        ContentProjectDescriptionLabel.Margin = new Thickness(0);
+        detail.Children.Add(ContentProjectDescriptionLabel);
         var actions = new WrapPanel();
-        ProjectVersions.Width = 260;
-        ProjectVersions.Margin = new Thickness(0, 4, 8, 0);
-        actions.Children.Add(ProjectVersions);
-        actions.Children.Add(InstallContentButton);
+        ContentProjectVersionsControl.Width = 260;
+        ContentProjectVersionsControl.Margin = new Thickness(0, 4, 8, 0);
+        actions.Children.Add(ContentProjectVersionsControl);
+        actions.Children.Add(ContentInstallButtonControl);
         foreach (var button in detailActions.Take(3))
         {
             button.Margin = new Thickness(5, 4, 0, 0);
@@ -408,21 +408,21 @@ public partial class MainWindow
         });
         Grid.SetColumn(details, 0);
         Grid.SetRow(details, 1);
-        SearchResults.ItemTemplate = (DataTemplate)System.Windows.Markup.XamlReader.Parse("<DataTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'><Grid><Grid.ColumnDefinitions><ColumnDefinition Width='42'/><ColumnDefinition/></Grid.ColumnDefinitions><Image Width='34' Height='34' Source='{Binding IconUrl}'/><StackPanel Grid.Column='1'><TextBlock Text='{Binding DisplayTitle}' FontWeight='SemiBold' FontSize='13' TextTrimming='CharacterEllipsis'/><TextBlock Text='{Binding Description}' FontSize='11' Foreground='#647782' TextTrimming='CharacterEllipsis' Margin='0,2,0,2'/><TextBlock Text='{Binding Meta}' FontSize='10' Foreground='#647782' TextTrimming='CharacterEllipsis' MaxHeight='14'/></StackPanel></Grid></DataTemplate>");
+        ContentSearchResultsControl.ItemTemplate = (DataTemplate)System.Windows.Markup.XamlReader.Parse("<DataTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'><Grid><Grid.ColumnDefinitions><ColumnDefinition Width='42'/><ColumnDefinition/></Grid.ColumnDefinitions><Image Width='34' Height='34' Source='{Binding IconUrl}'/><StackPanel Grid.Column='1'><TextBlock Text='{Binding DisplayTitle}' FontWeight='SemiBold' FontSize='13' TextTrimming='CharacterEllipsis'/><TextBlock Text='{Binding Description}' FontSize='11' Foreground='#647782' TextTrimming='CharacterEllipsis' Margin='0,2,0,2'/><TextBlock Text='{Binding Meta}' FontSize='10' Foreground='#647782' TextTrimming='CharacterEllipsis' MaxHeight='14'/></StackPanel></Grid></DataTemplate>");
         var rowStyle = new Style(typeof(ListBoxItem), (Style)FindResource(typeof(ListBoxItem)));
         rowStyle.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(8, 6, 8, 6)));
         rowStyle.Setters.Add(new Setter(FrameworkElement.MarginProperty, new Thickness(0, 0, 0, 4)));
-        SearchResults.ItemContainerStyle = rowStyle;
+        ContentSearchResultsControl.ItemContainerStyle = rowStyle;
         rowStyle.Setters.Add(new Setter(Control.TemplateProperty, System.Windows.Markup.XamlReader.Parse("<ControlTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' TargetType='ListBoxItem'><Border Name='Surface' Background='{DynamicResource ThemeSurfaceBrush}' BorderBrush='{DynamicResource ThemeBorderBrush}' BorderThickness='1' CornerRadius='6' Padding='{TemplateBinding Padding}'><ContentPresenter/></Border><ControlTemplate.Triggers><Trigger Property='IsSelected' Value='True'><Setter TargetName='Surface' Property='Background' Value='{DynamicResource ThemeSelectedBrush}'/></Trigger><Trigger Property='IsMouseOver' Value='True'><Setter TargetName='Surface' Property='BorderBrush' Value='#9ABAE8'/></Trigger></ControlTemplate.Triggers></ControlTemplate>")));
-        SearchResults.SelectionChanged += (_, _) => details.Visibility = SearchResults.SelectedItem == null ? Visibility.Collapsed : Visibility.Visible;
+        ContentSearchResultsControl.SelectionChanged += (_, _) => details.Visibility = ContentSearchResultsControl.SelectedItem == null ? Visibility.Collapsed : Visibility.Visible;
         details.Visibility = Visibility.Collapsed;
     }
 
     void UpdateHomeLaunchLabel()
     {
-        homeSelectedLabel.Text = Versions.SelectedItem is VersionRow selected ? selected.Label : "尚未安装游戏，请前往下载";
+        homeSelectedLabel.Text = VersionSelectorControl.SelectedItem is VersionRow selected ? selected.Label : "尚未安装游戏，请前往下载";
         homeSelectedLabel.ToolTip = homeSelectedLabel.Text;
-        if (LaunchGameButton != null)
-            LaunchGameButton.ToolTip = homeSelectedLabel.Text;
+        if (LaunchGameButtonControl != null)
+            LaunchGameButtonControl.ToolTip = homeSelectedLabel.Text;
     }
 }

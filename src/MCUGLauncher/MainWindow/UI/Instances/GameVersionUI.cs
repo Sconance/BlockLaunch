@@ -8,7 +8,7 @@ public partial class MainWindow
 {
     internal async Task Refresh()
     {
-        Status.Text = "读取版本列表…";
+        OperationStatusLabel.Text = "读取版本列表…";
         var local = LocalVersions();
         var known = ProfileKeys();
         try
@@ -46,22 +46,22 @@ public partial class MainWindow
 
     void Filter()
     {
-        var previous = Versions.SelectedValue as string;
+        var previous = VersionSelectorControl.SelectedValue as string;
         var local = LocalVersions();
-        Versions.ItemsSource = rows.Where(r => local.Contains(r.Id)).ToList();
+        VersionSelectorControl.ItemsSource = rows.Where(r => local.Contains(r.Id)).ToList();
         if (previous != null)
-            Versions.SelectedValue = previous;
+            VersionSelectorControl.SelectedValue = previous;
         else if (rows.Any(r => r.Id == prefs.LastVersion))
-            Versions.SelectedValue = prefs.LastVersion;
+            VersionSelectorControl.SelectedValue = prefs.LastVersion;
         else if (rows.Any(r => r.Id == "1.21.1"))
-            Versions.SelectedValue = "1.21.1";
-        if (Versions.SelectedIndex < 0 && Versions.Items.Count > 0)
-            Versions.SelectedIndex = 0;
-        InstalledVersionsHint.Text = local.Count == 0 ? "尚未安装游戏，请到「游戏安装」选择版本并下载。" : "这里只显示已安装版本；其他版本请到「游戏安装」下载。";
-        LaunchGameButton.IsEnabled = !busy && Versions.SelectedItem != null;
+            VersionSelectorControl.SelectedValue = "1.21.1";
+        if (VersionSelectorControl.SelectedIndex < 0 && VersionSelectorControl.Items.Count > 0)
+            VersionSelectorControl.SelectedIndex = 0;
+        InstalledVersionsHintLabel.Text = local.Count == 0 ? "尚未安装游戏，请到「游戏安装」选择版本并下载。" : "这里只显示已安装版本；其他版本请到「游戏安装」下载。";
+        LaunchGameButtonControl.IsEnabled = !busy && VersionSelectorControl.SelectedItem != null;
     }
 
-    string Selected() => Versions.SelectedValue as string ?? throw new InvalidOperationException("请先选择一个游戏版本。");
+    internal string Selected() => VersionSelectorControl.SelectedValue as string ?? throw new InvalidOperationException("请先选择一个游戏版本。");
 
     internal string Instance()
     {
@@ -85,7 +85,7 @@ public partial class MainWindow
         var id = downloadVersion ?? Selected();
         if (!rows.Any(r => r.Id == id && (r.Type.Equals("release", StringComparison.OrdinalIgnoreCase) || r.Type.Equals("snapshot", StringComparison.OrdinalIgnoreCase))))
             throw new Exception("请选择一个官方原版版本。");
-        Status.Text = "读取 Fabric 加载器…";
+        OperationStatusLabel.Text = "读取 Fabric 加载器…";
         using var list = JsonDocument.Parse(await http.GetStringAsync("https://meta.fabricmc.net/v2/versions/loader/" + Uri.EscapeDataString(id), CurrentToken));
         var item = list.RootElement.EnumerateArray().FirstOrDefault(e => e.GetProperty("loader").GetProperty("stable").GetBoolean());
         if (item.ValueKind == JsonValueKind.Undefined)
@@ -121,7 +121,7 @@ public partial class MainWindow
 
     void FilterChanged(object s, RoutedEventArgs e)
     {
-        if (Versions != null)
+        if (xamlReady && VersionSelectorControl != null)
             Filter();
     }
 }

@@ -35,8 +35,8 @@ public partial class MainWindow
         {
             if (generation == browseGeneration)
             {
-                SearchHint.Text = "读取失败，可重新搜索：" + ex.Message;
-                SearchHint.Visibility = Visibility.Visible;
+                ContentSearchHintControl.Text = "读取失败，可重新搜索：" + ex.Message;
+                ContentSearchHintControl.Visibility = Visibility.Visible;
                 Log("资源浏览失败：" + ex.Message);
             }
         }
@@ -52,12 +52,26 @@ public partial class MainWindow
 
     void Navigate(object sender, RoutedEventArgs e)
     {
-        if (MainTabs != null)
+        if (xamlReady && MainTabControl != null)
             pageNavigationController?.Navigate(sender, e);
     }
 
-    void GoDiscover(object s, RoutedEventArgs e) => DiscoverNav.IsChecked = true;
-    void GoManage(object s, RoutedEventArgs e) => ManageNav.IsChecked = true;
+    void GoDiscover(object s, RoutedEventArgs e) => ContentDiscoverNavigation.IsChecked = true;
+    void GoManage(object s, RoutedEventArgs e) => ContentManageNavigation.IsChecked = true;
+
+    internal void OpenModSearch(string key, InlineDialog owner)
+    {
+        if (!LocalVersions().Contains(key))
+        {
+            InlineMessageBox.Show(owner, "请先完成版本安装。");
+            return;
+        }
+
+        VersionSelectorControl.SelectedValue = key;
+        ContentKindSelector.SelectedIndex = 0;
+        owner.Close();
+        ContentDiscoverNavigation.IsChecked = true;
+    }
 
     internal InstanceTarget Target()
     {
@@ -71,8 +85,10 @@ public partial class MainWindow
 
     void VersionChanged(object s, SelectionChangedEventArgs e)
     {
+        if (!xamlReady)
+            return;
         managedWorld = null;
-        if (ContentTarget == null)
+        if (ContentTargetLabel == null)
             return;
         ResetSearch();
         UpdateTargets();
@@ -81,31 +97,33 @@ public partial class MainWindow
     void UpdateTargets()
     {
         UpdateHomeLaunchLabel();
-        LocalCount.Text = "本地版本  " + LocalVersions().Count;
-        InstallTarget.Text = downloadVersion ?? (Versions.SelectedItem is VersionRow selected ? "修复：" + selected.Label : "请先选择要下载的游戏版本");
+        LocalVersionCountLabel.Text = "本地版本  " + LocalVersions().Count;
+        InstallTargetLabel.Text = downloadVersion ?? (VersionSelectorControl.SelectedItem is VersionRow selected ? "修复：" + selected.Label : "请先选择要下载的游戏版本");
         try
         {
             var target = Target();
-            ContentTarget.Text = $"安装目标：{target.Version}   /   Minecraft {target.GameVersion} · {target.Loader}";
-            ManageTarget.Text = "当前实例：" + target.Version;
+            ContentTargetLabel.Text = $"安装目标：{target.Version}   /   Minecraft {target.GameVersion} · {target.Loader}";
+            ManageTargetLabel.Text = "当前实例：" + target.Version;
         }
         catch
         {
-            ContentTarget.Text = "请在首页选择一个可识别的游戏版本";
-            ManageTarget.Text = "请先选择游戏版本";
+            ContentTargetLabel.Text = "请在首页选择一个可识别的游戏版本";
+            ManageTargetLabel.Text = "请先选择游戏版本";
         }
 
-        ContentTarget.Text = "下载目录：" + prefs.ResourceDownloadDirectory;
+        ContentTargetLabel.Text = "下载目录：" + prefs.ResourceDownloadDirectory;
         RefreshLocalContent();
     }
 
     void ContentTypeChanged(object s, SelectionChangedEventArgs e)
     {
-        if (SearchResults == null)
+        if (!xamlReady)
+            return;
+        if (ContentSearchResultsControl == null)
             return;
         ResetSearch();
         UpdateTargets();
-        InstallContentButton.Content = "↓  下载所选文件";
+        ContentInstallButtonControl.Content = "↓  下载所选文件";
     }
 
     void ResetSearch()
@@ -113,14 +131,14 @@ public partial class MainWindow
         browseCancellation?.Cancel();
         browseCancellation = null;
         browseGeneration++;
-        SearchResults.ItemsSource = null;
-        ProjectVersions.ItemsSource = null;
-        InstallContentButton.IsEnabled = false;
-        ProjectTitle.Text = "选择一个项目";
-        ProjectDescription.Text = "选择左侧项目，查看与当前游戏匹配的版本。";
-        SearchHint.Text = "搜一搜，发现新的玩法。";
-        SearchHint.Visibility = Visibility.Visible;
-        SearchSummary.Text = "内容来自 Modrinth";
+        ContentSearchResultsControl.ItemsSource = null;
+        ContentProjectVersionsControl.ItemsSource = null;
+        ContentInstallButtonControl.IsEnabled = false;
+        ContentProjectTitleLabel.Text = "选择一个项目";
+        ContentProjectDescriptionLabel.Text = "选择左侧项目，查看与当前游戏匹配的版本。";
+        ContentSearchHintControl.Text = "搜一搜，发现新的玩法。";
+        ContentSearchHintControl.Visibility = Visibility.Visible;
+        ContentSearchSummaryLabel.Text = "内容来自 Modrinth";
         searchOffset = 0;
         searchTotal = 0;
     }
@@ -129,20 +147,20 @@ public partial class MainWindow
     {
         var token = browseCancellation?.Token ?? CancellationToken.None;
         var target = SearchTarget();
-        Status.Text = "搜索 Modrinth…";
+        OperationStatusLabel.Text = "搜索 Modrinth…";
         if (resourceSource.SelectedIndex == 1)
             throw new NotSupportedException("CurseForge 未启用：当前没有 API Key。请使用 Modrinth。");
-        var page = await new ContentService(http, token).Search(SearchQuery.Text.Trim(), target.GameVersion, target.Loader, ContentKind, searchOffset);
+        var page = await new ContentService(http, token).Search(ContentSearchQueryInput.Text.Trim(), target.GameVersion, target.Loader, ContentKind, searchOffset);
         token.ThrowIfCancellationRequested();
-        SearchResults.ItemsSource = DecorateProjects(page.Items);
+        ContentSearchResultsControl.ItemsSource = DecorateProjects(page.Items);
         searchTotal = page.Total;
-        ProjectVersions.ItemsSource = null;
-        InstallContentButton.IsEnabled = false;
-        ProjectTitle.Text = "选择一个项目";
-        ProjectDescription.Text = "点击项目，选择需要下载的版本。";
-        SearchSummary.Text = page.Total == 0 ? "没有匹配的项目" : $"{searchOffset + 1}–{searchOffset + page.Items.Count} / {page.Total:N0} 个项目 · Modrinth · 本页收藏优先";
-        SearchHint.Text = "没有找到匹配内容，试试其他关键词。";
-        SearchHint.Visibility = page.Items.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+        ContentProjectVersionsControl.ItemsSource = null;
+        ContentInstallButtonControl.IsEnabled = false;
+        ContentProjectTitleLabel.Text = "选择一个项目";
+        ContentProjectDescriptionLabel.Text = "点击项目，选择需要下载的版本。";
+        ContentSearchSummaryLabel.Text = page.Total == 0 ? "没有匹配的项目" : $"{searchOffset + 1}–{searchOffset + page.Items.Count} / {page.Total:N0} 个项目 · Modrinth · 本页收藏优先";
+        ContentSearchHintControl.Text = "没有找到匹配内容，试试其他关键词。";
+        ContentSearchHintControl.Visibility = page.Items.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
     async void SearchClick(object s, RoutedEventArgs e)
@@ -178,27 +196,27 @@ public partial class MainWindow
 
     async void ProjectChanged(object s, SelectionChangedEventArgs e)
     {
-        if (SearchResults.SelectedItem is not ContentProject project)
+        if (ContentSearchResultsControl.SelectedItem is not ContentProject project)
             return;
         await RunBrowse(async () =>
         {
             var token = browseCancellation?.Token ?? CancellationToken.None;
             var target = SearchTarget();
-            ProjectTitle.Text = project.Title;
-            ProjectDescription.Text = project.Description;
-            ProjectVersions.ItemsSource = null;
-            InstallContentButton.IsEnabled = false;
+            ContentProjectTitleLabel.Text = project.Title;
+            ContentProjectDescriptionLabel.Text = project.Description;
+            ContentProjectVersionsControl.ItemsSource = null;
+            ContentInstallButtonControl.IsEnabled = false;
             var type = ContentKind;
-            Status.Text = "读取兼容版本…";
+            OperationStatusLabel.Text = "读取兼容版本…";
             var list = await new ContentService(http, token).Versions(project.Id, target.GameVersion, target.Loader, type);
             token.ThrowIfCancellationRequested();
             if (releaseChannel.SelectedIndex > 0)
                 list = list.Where(v => v.VersionType == new[] { "", "release", "beta", "alpha" }[releaseChannel.SelectedIndex]).ToList();
-            ProjectVersions.ItemsSource = list;
-            ProjectVersions.SelectedIndex = list.Count > 0 ? 0 : -1;
-            InstallContentButton.IsEnabled = list.Count > 0;
+            ContentProjectVersionsControl.ItemsSource = list;
+            ContentProjectVersionsControl.SelectedIndex = list.Count > 0 ? 0 : -1;
+            ContentInstallButtonControl.IsEnabled = list.Count > 0;
             if (list.Count == 0)
-                ProjectDescription.Text += "\n\n没有符合筛选条件的可下载版本。";
+                ContentProjectDescriptionLabel.Text += "\n\n没有符合筛选条件的可下载版本。";
         });
     }
 
@@ -217,7 +235,7 @@ public partial class MainWindow
         var target = Target();
         if (!LocalVersions().Contains(target.Version))
             throw new IOException("请先安装并选择本地游戏版本。");
-        Status.Text = "解析必需依赖…";
+        OperationStatusLabel.Text = "解析必需依赖…";
         var plan = await Modrinth.Resolve(version, target.GameVersion, ContentKind == "datapack" ? "datapack" : target.Loader);
         var destination = Instance();
         if (plan.Types.Values.Contains("datapack"))
@@ -245,34 +263,34 @@ public partial class MainWindow
 
     async void InstallContentClick(object s, RoutedEventArgs e)
     {
-        if (ProjectVersions.SelectedItem is ContentVersion version)
+        if (ContentProjectVersionsControl.SelectedItem is ContentVersion version)
             QueueContent(version);
         await Task.CompletedTask;
     }
 
     void ProjectPageClick(object s, RoutedEventArgs e)
     {
-        if (SearchResults.SelectedItem is ContentProject project)
+        if (ContentSearchResultsControl.SelectedItem is ContentProject project)
             Process.Start(new ProcessStartInfo("https://modrinth.com/project/" + Uri.EscapeDataString(project.Id)) { UseShellExecute = true });
     }
 
     internal void RefreshLocalContent()
     {
-        if (InstalledContent == null)
+        if (InstalledContentListControl == null)
             return;
         try
         {
             localSnapshot = ContentService.ListLocal(ManagedDirectory());
             ApplyLocalSearch();
             if (managedWorld != null)
-                ManageTarget.Text = "数据包目标存档：" + managedWorld;
+                ManageTargetLabel.Text = "数据包目标存档：" + managedWorld;
         }
         catch (Exception ex)
         {
             localSnapshot = [];
-            InstalledContent.ItemsSource = null;
+            InstalledContentListControl.ItemsSource = null;
             localSummary.Text = "";
-            if (Versions.SelectedValue != null)
+            if (VersionSelectorControl.SelectedValue != null)
                 Log("内容列表读取失败：" + ex.Message);
         }
     }
@@ -281,7 +299,7 @@ public partial class MainWindow
     async void ToggleContentClick(object s, RoutedEventArgs e) => await Run(() =>
     {
         RequireStopped();
-        if (InstalledContent.SelectedItem is LocalContent item)
+        if (InstalledContentListControl.SelectedItem is LocalContent item)
         {
             ContentService.Toggle(item);
             Log("切换内容状态：" + item.Name);
@@ -293,7 +311,7 @@ public partial class MainWindow
     async void RemoveContentClick(object s, RoutedEventArgs e) => await Run(() =>
     {
         RequireStopped();
-        if (InstalledContent.SelectedItem is LocalContent item)
+        if (InstalledContentListControl.SelectedItem is LocalContent item)
         {
             ContentService.MoveToBackup(ManagedDirectory(), item);
             Log("已移至备份：" + item.Name + "。其他模组可能依赖此项目，请检查依赖。");
@@ -309,7 +327,7 @@ public partial class MainWindow
             return;
         try
         {
-            if (InstalledContent.SelectedItem is not LocalContent
+            if (InstalledContentListControl.SelectedItem is not LocalContent
                 {
                     Managed:
                     {
@@ -398,7 +416,7 @@ public partial class MainWindow
 
         var output = Drain(installer.StandardOutput);
         var error = Drain(installer.StandardError);
-        Status.Text = "正在后台运行官方安装器…";
+        OperationStatusLabel.Text = "正在后台运行官方安装器…";
         try
         {
             await installer.WaitForExitAsync(CurrentToken);

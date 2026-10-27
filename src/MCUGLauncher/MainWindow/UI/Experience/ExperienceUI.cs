@@ -26,13 +26,13 @@ public partial class MainWindow
         {
             Header = "Java 管理"
         };
-        tools.Click += (_, _) => OpenJavaManager(prefs.Root, Versions.SelectedValue as string ?? "", path =>
+        tools.Click += (_, _) => OpenJavaManager(prefs.Root, VersionSelectorControl.SelectedValue as string ?? "", path =>
         {
             if (busy)
                 throw new IOException("请等待任务完成再更改 Java。");
             prefs.Java = path;
             prefs.Launch.Java = path;
-            JavaPath.Text = path;
+            JavaPathInput.Text = path;
             settings.Save(prefs);
         });
         moreMenu.Items.Add(tools);
@@ -54,7 +54,7 @@ public partial class MainWindow
         };
         appearance.Click += (_, _) => OpenAppearance();
         moreMenu.Items.Add(appearance);
-        var queue = (WrapPanel)((Grid)((TabItem)MainTabs.Items[6]).Content).Children.OfType<WrapPanel>().Single();
+        var queue = (WrapPanel)((Grid)((TabItem)MainTabControl.Items[6]).Content).Children.OfType<WrapPanel>().Single();
         foreach (var pair in new[] {
             ("上移", -1),
             ("下移", 1)
@@ -63,7 +63,7 @@ public partial class MainWindow
         )
             queue.Children.Add(ActionButton(pair.Item1, (_, _) =>
             {
-                if (TaskHistoryList.SelectedItem is OperationRecord record)
+                if (TaskHistoryListControl.SelectedItem is OperationRecord record)
                 {
                     operations.MovePending(record.Id, pair.Item2);
                     RefreshOperations();
@@ -287,7 +287,7 @@ public partial class MainWindow
         var profiles = new ComboBox
         {
             ItemsSource = LocalVersions().Order().ToList(),
-            SelectedItem = Versions.SelectedValue as string
+            SelectedItem = VersionSelectorControl.SelectedValue as string
         };
         body.Children.Add(Hint("名称 / 地址 / 启动实例"));
         body.Children.Add(name);
@@ -375,7 +375,7 @@ public partial class MainWindow
                 return;
             }
 
-            Versions.SelectedValue = item.Profile;
+            VersionSelectorControl.SelectedValue = item.Profile;
             dialog.Close();
             nextServerAddress = item.Address;
             try

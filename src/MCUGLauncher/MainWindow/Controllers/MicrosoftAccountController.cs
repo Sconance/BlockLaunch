@@ -42,7 +42,7 @@ internal sealed class MicrosoftAccountController(MainWindow host, string setting
         host.prefs.PreferMicrosoft = true;
         host.prefs.PreferMua = false;
         host.settings.Save(host.prefs);
-        host.AccountMode.SelectedIndex = 1;
+        host.SelectAccountMode(1);
         host.UpdateAccountBadge();
         host.Log(interactive
             ? "正版登录完成，已验证 Java 版档案和授权；凭据按当前 Windows 用户加密保存。"
@@ -93,7 +93,7 @@ internal sealed class MicrosoftAccountController(MainWindow host, string setting
                 accounts.Forget();
                 host.online = null;
                 SavedAccount = null;
-                host.AccountMode.SelectedIndex = 0;
+                host.SelectAccountMode(0);
                 host.prefs.PreferMicrosoft = false;
                 host.settings.Save(host.prefs);
                 host.UpdateAccountBadge();
