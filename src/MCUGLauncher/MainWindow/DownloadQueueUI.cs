@@ -23,7 +23,7 @@ public partial class MainWindow
         };
     }
 
-    void EnqueueDownload(string name, string target, DownloadRequest request)
+    internal void EnqueueDownload(string name, string target, DownloadRequest request)
     {
         request.Java = prefs.Java;
         operations.Enqueue(name, prefs.Root, target, request);

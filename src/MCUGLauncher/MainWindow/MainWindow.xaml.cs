@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Windows;
+using System.Windows.Controls;
 using CmlLib.Core;
 using CmlLib.Core.Auth;
 using CmlLib.Core.Auth.Microsoft;
@@ -17,27 +18,50 @@ public record VersionRow(string Id, string Label, string Type, DateTimeOffset? P
 public partial class MainWindow : Window
 {
     readonly string settingsDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), Brand.StorageDirectory);
-    HttpClient http = new()
+    internal HttpClient http = new()
     {
         Timeout = TimeSpan.FromMinutes(3)
     };
-    Preferences prefs = new();
+    internal Preferences prefs = new();
     NetworkSettings runtimeNetwork = new();
     MinecraftLauncher launcher = null!;
     List<VersionRow> rows = new();
-    string? downloadVersion;
+    internal string? downloadVersion;
     MSession? online;
     Process? game;
-    bool busy;
+    internal bool busy;
     bool closeAfterTask;
-    SettingsStore settings = null!;
+    LoaderInstallationController loaderController = null!;
+    FileDropController fileDropController = null!;
+    AvatarController avatarController = null!;
+    InstanceSearchController instanceSearchController = null!;
+    JavaManagerController javaManagerController = null!;
+    internal Border? dropFeedback;
+    internal string? sketchManagerKey;
+    internal Action? refreshSketchManager;
+    internal SettingsStore settings = null!;
     OperationCoordinator operations = null!;
     GameSession? gameSession;
     string? lastGameDirectory;
 
-    CancellationToken CurrentToken => operations?.Current?.Token ?? CancellationToken.None;
+    internal CancellationToken CurrentToken => operations?.Current?.Token ?? CancellationToken.None;
 
     DateTime lastProgress;
+
+    void NetworkClick(object sender, RoutedEventArgs e) => new NetworkSettingsController(this).Open();
+    async void RefreshAvatarClick(object sender, RoutedEventArgs e)
+    {
+        if (busy)
+            return;
+        if (AccountMode.SelectedIndex == 1 && savedAccount != null)
+            await Run(() => MicrosoftLogin(false), "刷新玩家档案与头像");
+        avatarController.Refresh(true);
+    }
+
+    string? ConfirmPackImport(PackOverview overview, string root) => fileDropController.ConfirmPackImport(overview, root);
+    string DropTargetDirectory() => fileDropController.DropTargetDirectory();
+    void OpenJavaManager(string root, string profile, Action<string> select, object? owner = null) => javaManagerController.Open(root, profile, select, owner);
+    AvatarState GetAvatarState() => new(AccountMode.SelectedIndex, muaAccount, muaAccounts, savedAccount, online?.Username, PlayerName.Text, prefs.OfflineSkin, settingsDir, http);
 
     public MainWindow() : this(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), Brand.StorageDirectory))
     {
@@ -47,8 +71,13 @@ public partial class MainWindow : Window
     {
         settingsDir = Path.GetFullPath(configurationDirectory);
         InitializeComponent();
+        loaderController = new LoaderInstallationController(this);
+        fileDropController = new FileDropController(this);
+        avatarController = new AvatarController(PlayerName, SkinAvatar, AvatarCaption, AvatarPlayerName, GetAvatarState);
+        instanceSearchController = new InstanceSearchController(instanceList, instanceQuery, instanceSearchSummary);
         Directory.CreateDirectory(settingsDir);
         settings = new SettingsStore(settingsDir);
+        javaManagerController = new JavaManagerController(this);
         try
         {
             prefs = settings.Load();
@@ -98,8 +127,8 @@ public partial class MainWindow : Window
         BuildMiniDownloads();
         BuildExperienceUI();
         BuildInlineHost();
-        BuildWindowChrome();
-        BuildKeyboardNavigation();
+        new WindowChromeController(this).Build();
+        new LauncherTooltipsController(HomeNav, downloadNav, SearchQuery, vanillaQuery).Build();
         BuildSketchUI();
         BuildModernUI();
         Loaded += async (_, _) =>
@@ -150,7 +179,7 @@ public partial class MainWindow : Window
         };
     }
 
-    async Task Run(Func<Task> action, string? name = null)
+    internal async Task Run(Func<Task> action, string? name = null)
     {
         if (busy)
         {
@@ -293,7 +322,7 @@ public partial class MainWindow : Window
 
     string Selected() => Versions.SelectedValue as string ?? throw new InvalidOperationException("请先选择一个游戏版本。");
 
-    string Instance()
+    internal string Instance()
     {
         var catalog = new InstanceCatalog(prefs.Root);
         var descriptor = catalog.GetOrCreate(Selected());

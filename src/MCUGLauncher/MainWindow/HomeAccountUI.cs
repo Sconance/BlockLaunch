@@ -120,7 +120,7 @@ public partial class MainWindow
         avatar.Margin = new Thickness(0, 6, 0, 12);
         avatar.CornerRadius = new CornerRadius(11);
         avatar.ToolTip = "点击刷新角色头像";
-        avatar.MouseLeftButtonUp += (_, _) => RefreshAvatar(true);
+        avatar.MouseLeftButtonUp += (_, _) => avatarController.Refresh(true);
         identity.Children.Add(avatar);
         AvatarPlayerName.FontSize = 20;
         AvatarPlayerName.MaxWidth = 220;

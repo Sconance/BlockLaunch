@@ -28,21 +28,11 @@ public partial class MainWindow
         Margin = new Thickness(0, 3, 0, 8)
     };
 
-    void FilterInstanceViews()
-    {
-        var view = instanceList.ItemsSource as System.ComponentModel.ICollectionView;
-        if (view == null)
-            return;
-        var terms = instanceQuery.Text.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        view.Filter = item => item is InstanceView instance && terms.All(t => (instance.Name + " " + instance.Key + " " + instance.Detail).Contains(t, StringComparison.OrdinalIgnoreCase));
-        instanceSearchSummary.Text = $"显示 {view.Cast<object>().Count()} 个已安装版本";
-    }
-
     ComboBox rootList = new();
     StackPanel instanceDetail = new();
     RadioButton instanceNav = null!;
 
-    static TextBlock Heading(string text) => new()
+    internal static TextBlock Heading(string text) => new()
     {
         Text = text,
         FontSize = 17,
@@ -50,7 +40,7 @@ public partial class MainWindow
         Margin = new Thickness(0, 5, 0, 12),
         TextWrapping = TextWrapping.Wrap
     };
-    static TextBlock Hint(string text) => new()
+    internal static TextBlock Hint(string text) => new()
     {
         Text = text,
         TextWrapping = TextWrapping.Wrap,
@@ -58,7 +48,7 @@ public partial class MainWindow
         Margin = new Thickness(0, 5, 0, 10)
     };
 
-    static Button ActionButton(string title, RoutedEventHandler action)
+    internal static Button ActionButton(string title, RoutedEventHandler action)
     {
         var b = new Button
         {
@@ -114,7 +104,7 @@ public partial class MainWindow
                 return;
             await SwitchRoot(root);
         };
-        instanceQuery.TextChanged += (_, _) => FilterInstanceViews();
+        instanceQuery.TextChanged += (_, _) => instanceSearchController.Apply();
         rootList.ToolTip = prefs.Root;
         rootList.SelectionChanged += (_, _) => rootList.ToolTip = rootList.SelectedItem;
         toolbar.Children.Add(rootList);
@@ -184,7 +174,7 @@ public partial class MainWindow
 
         )
         {
-            var button = ActionButton("选择并自动安装 " + (loader == "forge" ? "Forge" : "NeoForge"), AutomaticLoaderClick);
+            var button = ActionButton("选择并自动安装 " + (loader == "forge" ? "Forge" : "NeoForge"), loaderController.AutomaticLoaderClick);
             button.Tag = loader;
             LoaderActions.Children.Add(button);
         }
@@ -195,7 +185,7 @@ public partial class MainWindow
         var home = (StackPanel)((ScrollViewer)((TabItem)MainTabs.Items[0]).Content).Content;
         AllowDrop = true;
         PreviewDrop += HandleFileDrop;
-        BuildDropFeedback();
+        fileDropController.Build();
     }
 
     async Task HandleScriptLaunch()
@@ -269,7 +259,7 @@ public partial class MainWindow
         var view = CollectionViewSource.GetDefaultView(result.OrderBy(r => r.Group.StartsWith('★') ? 0 : 1).ThenBy(r => r.Group).ThenBy(r => r.Name).ToList());
         view.GroupDescriptions.Add(new PropertyGroupDescription("Group"));
         instanceList.ItemsSource = view;
-        FilterInstanceViews();
+        instanceSearchController.Apply();
         instanceList.SelectedItem = result.FirstOrDefault(r => r.Key == Versions.SelectedValue as string) ?? result.FirstOrDefault();
         if (sketchHome != null)
             ShowSketchVersions();
@@ -379,7 +369,7 @@ public partial class MainWindow
         dialog.ShowDialog();
     }
 
-    InlineDialog FeatureDialog(string title, StackPanel content)
+    internal InlineDialog FeatureDialog(string title, StackPanel content)
     {
         var window = new InlineDialog
         {
@@ -579,7 +569,7 @@ public partial class MainWindow
         var accent = AccentColor(prefs.Accent);
         Application.Current.Resources["AccentBrush"] = new SolidColorBrush((Color)ColorConverter.ConvertFromString(accent));
         ApplyBackground();
-        RefreshAvatar();
+        avatarController.Refresh();
     }
 
     [DllImport("user32.dll", CharSet = CharSet.Unicode)]

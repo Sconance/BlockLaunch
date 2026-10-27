@@ -24,12 +24,8 @@ public partial class MainWindow
         BuildMuaAccountUI();
         AccountMode.SelectedIndex = prefs.PreferMua ? 2 : prefs.PreferMicrosoft && savedAccount != null ? 1 : 0;
         AccountMode.SelectionChanged += (_, _) => UpdateAccountBadge();
-        PlayerName.TextChanged += (_, _) => UpdateAvatarName();
-        Closed += (_, _) =>
-        {
-            avatarCancellation?.Cancel();
-            avatarCancellation?.Dispose();
-        };
+        PlayerName.TextChanged += (_, _) => avatarController.UpdateName();
+        Closed += (_, _) => avatarController.Cancel();
         ((StackPanel)AccountMode.Parent).Children.Add(ActionButton("管理正版账号", AccountManagementClick));
         UpdateAccountBadge();
     }
@@ -38,7 +34,7 @@ public partial class MainWindow
     {
         AccountStatus.Text = AccountMode.SelectedIndex == 2 ? muaAccount == null ? "MUA 联合认证 · 尚未登录" : muaValidated ? "MUA 角色 · 会话已验证" : "MUA 账号已保存 · 启动时验证" : AccountMode.SelectedIndex != 1 ? "离线游戏" : online != null ? "正版角色 · 本次会话已验证" : savedAccount != null ? "账号已保存 · 启动时验证" : "登录后显示你的正版角色";
         UpdateAccountPanel();
-        RefreshAvatar();
+        avatarController.Refresh();
     }
 
     async Task MicrosoftLogin(bool interactive)

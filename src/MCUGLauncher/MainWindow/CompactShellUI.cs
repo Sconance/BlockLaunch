@@ -18,7 +18,7 @@ public partial class MainWindow
     RadioButton downloadNav = null!;
     MenuItem moreMenu = null!;
 
-    static IEnumerable<DependencyObject> Elements(DependencyObject parent)
+    internal static IEnumerable<DependencyObject> Elements(DependencyObject parent)
     {
         foreach (var child in LogicalTreeHelper.GetChildren(parent).OfType<DependencyObject>())
         {

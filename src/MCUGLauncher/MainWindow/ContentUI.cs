@@ -116,7 +116,7 @@ public partial class MainWindow
     void GoDiscover(object s, RoutedEventArgs e) => DiscoverNav.IsChecked = true;
     void GoManage(object s, RoutedEventArgs e) => ManageNav.IsChecked = true;
 
-    InstanceTarget Target()
+    internal InstanceTarget Target()
     {
         var selected = Selected();
         if (!File.Exists(Path.Combine(prefs.Root, "versions", selected, selected + ".json")) && rows.Any(r => r.Id == selected && (r.Type.Equals("release", StringComparison.OrdinalIgnoreCase) || r.Type.Equals("snapshot", StringComparison.OrdinalIgnoreCase))))
@@ -259,7 +259,7 @@ public partial class MainWindow
         });
     }
 
-    void RequireStopped()
+    internal void RequireStopped()
     {
         if (game is
             {

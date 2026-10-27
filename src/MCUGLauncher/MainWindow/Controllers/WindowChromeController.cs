@@ -2,20 +2,26 @@ using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
-using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shell;
 
 namespace BlockLaunch;
 
-public partial class MainWindow
+internal sealed class WindowChromeController(MainWindow host)
 {
-    void BuildWindowChrome()
+    public void Build()
     {
-        WindowStyle = WindowStyle.None;
-        ResizeMode = ResizeMode.CanResize;
-        WindowChrome.SetWindowChrome(this, new WindowChrome { CaptionHeight = 48, ResizeBorderThickness = new Thickness(6), GlassFrameThickness = new Thickness(0), CornerRadius = new CornerRadius(10), UseAeroCaptionButtons = false });
-        var header = (DockPanel)((Grid)Content).Children[0];
+        host.WindowStyle = WindowStyle.None;
+        host.ResizeMode = ResizeMode.CanResize;
+        WindowChrome.SetWindowChrome(host, new WindowChrome
+        {
+            CaptionHeight = 48,
+            ResizeBorderThickness = new Thickness(6),
+            GlassFrameThickness = new Thickness(0),
+            CornerRadius = new CornerRadius(10),
+            UseAeroCaptionButtons = false
+        });
+        var header = (DockPanel)((Grid)host.Content).Children[0];
         var navigation = header.Children[header.Children.Count - 1];
         header.Children.Remove(navigation);
         var controls = new StackPanel
@@ -31,8 +37,9 @@ public partial class MainWindow
         WindowChrome.SetIsHitTestVisibleInChrome(controls, true);
         // Leave empty title-bar space to the native caption hit test. Windows then
         // owns drag-to-restore, snap, double-click maximize and monitor transitions.
-        foreach (var control in Elements(navigation).Prepend(navigation).OfType<FrameworkElement>().Where(c => c is RadioButton or Menu or MenuItem))
+        foreach (var control in MainWindow.Elements(navigation).Prepend(navigation).OfType<FrameworkElement>().Where(c => c is RadioButton or Menu or MenuItem))
             WindowChrome.SetIsHitTestVisibleInChrome(control, true);
+
         Button Caption(string symbol, string name, RoutedEventHandler click, bool danger = false)
         {
             var button = new Button
@@ -57,11 +64,11 @@ public partial class MainWindow
                 Focusable = false
             };
             button.ClearValue(Control.BackgroundProperty);
-            var style = new Style(typeof(Button), (Style)FindResource(typeof(Button)));
+            var style = new Style(typeof(Button), (Style)host.FindResource(typeof(Button)));
             style.Setters.Add(new Setter(Control.BackgroundProperty, Brushes.Transparent));
             var hover = new Trigger
             {
-                Property = IsMouseOverProperty,
+                Property = UIElement.IsMouseOverProperty,
                 Value = true
             };
             hover.Setters.Add(new Setter(Control.BackgroundProperty, danger ? new SolidColorBrush(Color.FromRgb(218, 55, 68)) : new SolidColorBrush(Color.FromArgb(48, 255, 255, 255))));
@@ -73,10 +80,10 @@ public partial class MainWindow
             return button;
         }
 
-        Caption("\uE921", "最小化", (_, _) => WindowState = WindowState.Minimized);
-        var maximize = Caption("\uE922", "最大化或还原", (_, _) => WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized);
-        Caption("\uE8BB", "关闭启动器", (_, _) => Close(), true);
-        StateChanged += (_, _) => ((TextBlock)maximize.Content).Text = WindowState == WindowState.Maximized ? "\uE923" : "\uE922";
+        Caption("\uE921", "最小化", (_, _) => host.WindowState = WindowState.Minimized);
+        var maximize = Caption("\uE922", "最大化或还原", (_, _) => host.WindowState = host.WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized);
+        Caption("\uE8BB", "关闭启动器", (_, _) => host.Close(), true);
+        host.StateChanged += (_, _) => ((TextBlock)maximize.Content).Text = host.WindowState == WindowState.Maximized ? "\uE923" : "\uE922";
         // WindowChrome calculates the work area on the active monitor; do not cap
         // the window to the primary display's height.
     }

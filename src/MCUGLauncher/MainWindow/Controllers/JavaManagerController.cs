@@ -1,18 +1,19 @@
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using Microsoft.Win32;
 
 namespace BlockLaunch;
 
-public partial class MainWindow
+internal sealed class JavaManagerController(MainWindow host)
 {
-    void OpenJavaManager(string root, string profile, Action<string> select, object? owner = null)
+    public void Open(string root, string profile, Action<string> select, object? owner = null)
     {
         var panel = new StackPanel();
         var required = profile.Length > 0 ? JavaDiscovery.RequiredMajor(root, profile) : 0;
-        panel.Children.Add(Heading("Java 管理"));
-        panel.Children.Add(Hint(required > 0 ? $"当前版本需要 Java {required}。自动选择优先匹配大版本与 x64；手动选择在启动前再次校验。" : "选择实例后可显示 Java 版本要求；未选择时可以浏览、搜索和手动指定。"));
-        panel.Children.Add(Hint("筛选 Java · 输入版本、发行商或路径"));
+        panel.Children.Add(MainWindow.Heading("Java 管理"));
+        panel.Children.Add(MainWindow.Hint(required > 0 ? $"当前版本需要 Java {required}。自动选择优先匹配大版本与 x64；手动选择在启动前再次校验。" : "选择实例后可显示 Java 版本要求；未选择时可以浏览、搜索和手动指定。"));
+        panel.Children.Add(MainWindow.Hint("筛选 Java · 输入版本、发行商或路径"));
         var filters = new WrapPanel();
         var query = new TextBox
         {
@@ -37,10 +38,10 @@ public partial class MainWindow
         };
         ScrollViewer.SetCanContentScroll(list, false);
         panel.Children.Add(list);
-        var state = Hint("常见位置扫描包括环境变量、安装目录、已保存路径和游戏 runtime。全盘搜索仅遍历本地固定磁盘，跳过无权限目录与目录链接，最多搜索两分钟。遇到上限会明确提示。");
+        var state = MainWindow.Hint("常见位置扫描包括环境变量、安装目录、已保存路径和游戏 runtime。全盘搜索仅遍历本地固定磁盘，跳过无权限目录与目录链接，最多搜索两分钟。遇到上限会明确提示。");
         panel.Children.Add(state);
-        var dialog = FeatureDialog("Java 管理", panel);
-        dialog.Owner = owner ?? this;
+        var dialog = host.FeatureDialog("Java 管理", panel);
+        dialog.Owner = owner ?? host;
         using var lifetime = new CancellationTokenSource();
         CancellationTokenSource? active = null;
         dialog.Closed += (_, _) =>
@@ -69,14 +70,14 @@ public partial class MainWindow
                 return;
             active = CancellationTokenSource.CreateLinkedTokenSource(lifetime.Token);
             var scanToken = active.Token;
-            foreach (var b in starts)
-                b.IsEnabled = false;
+            foreach (var button in starts)
+                button.IsEnabled = false;
             state.Text = "正在搜索 Java…";
             try
             {
                 JavaSearchResult? found = null;
                 if (directories == null)
-                    items = await Task.Run(() => JavaDiscovery.Scan(root, prefs.ExtraJavaPaths.Append(prefs.Java), scanToken), scanToken);
+                    items = await Task.Run(() => JavaDiscovery.Scan(root, host.prefs.ExtraJavaPaths.Append(host.prefs.Java), scanToken), scanToken);
                 else
                 {
                     var progress = new Progress<JavaSearchProgress>(p =>
@@ -110,14 +111,14 @@ public partial class MainWindow
                 active = null;
                 completed?.Dispose();
                 if (!lifetime.IsCancellationRequested)
-                    foreach (var b in starts)
-                        b.IsEnabled = true;
+                    foreach (var button in starts)
+                        button.IsEnabled = true;
             }
         }
 
         void StartButton(string label, RoutedEventHandler action)
         {
-            var button = ActionButton(label, action);
+            var button = MainWindow.ActionButton(label, action);
             starts.Add(button);
             tools.Children.Add(button);
         }
@@ -133,7 +134,7 @@ public partial class MainWindow
             if (picker.ShowDialog(dialog) == true)
                 await Scan([picker.FolderName]);
         });
-        tools.Children.Add(ActionButton("取消搜索", (_, _) => active?.Cancel()));
+        tools.Children.Add(MainWindow.ActionButton("取消搜索", (_, _) => active?.Cancel()));
         StartButton("添加 Java 路径", async (_, _) =>
         {
             var picker = new OpenFileDialog
@@ -147,9 +148,9 @@ public partial class MainWindow
                 var inspected = await JavaDiscovery.InspectCandidates([picker.FileName], lifetime.Token);
                 if (inspected.Count == 0 || inspected[0].Error.Length > 0)
                     throw new IOException(inspected.FirstOrDefault()?.Error ?? "无效 Java 路径。");
-                if (!prefs.ExtraJavaPaths.Contains(picker.FileName, StringComparer.OrdinalIgnoreCase))
-                    prefs.ExtraJavaPaths.Add(picker.FileName);
-                settings.Save(prefs);
+                if (!host.prefs.ExtraJavaPaths.Contains(picker.FileName, StringComparer.OrdinalIgnoreCase))
+                    host.prefs.ExtraJavaPaths.Add(picker.FileName);
+                host.settings.Save(host.prefs);
                 items = items.Where(j => !j.Path.Equals(inspected[0].Path, StringComparison.OrdinalIgnoreCase)).Concat(inspected).ToList();
                 Filter();
                 state.Text = "Java 路径已校验并保存，请选择后应用。";
@@ -162,7 +163,7 @@ public partial class MainWindow
                 state.Text = ex.Message;
             }
         });
-        panel.Children.Add(ActionButton("使用所选 Java", (_, _) =>
+        panel.Children.Add(MainWindow.ActionButton("使用所选 Java", (_, _) =>
         {
             try
             {
@@ -178,7 +179,7 @@ public partial class MainWindow
                 state.Text = ex.Message;
             }
         }));
-        panel.Children.Add(ActionButton("恢复自动选择", (_, _) =>
+        panel.Children.Add(MainWindow.ActionButton("恢复自动选择", (_, _) =>
         {
             try
             {

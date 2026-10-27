@@ -61,6 +61,23 @@ dotnet publish src/MCUGLauncher/MCUGLauncher.csproj -c Release -o artifacts/publ
 
 详见 [构建与目录说明](docs/BUILD.md)。历史版本源码仍保留在各 Release 的手动 Source.zip 附件中；旧标签未移动，旧版自动生成的 Source code 归档可能仅含原仓库文件。
 
+### 窗口控制器索引
+
+窗口功能正从 `partial MainWindow` 逐步迁移为独立控制器。当前已拆分的类及职责：
+
+| 类 | 功能简介 |
+| --- | --- |
+| [`AvatarController`](src/MCUGLauncher/MainWindow/Controllers/AvatarController.cs) | 更新离线、微软和 MUA 角色名称与皮肤头像，管理缓存及取消。 |
+| [`FileDropController`](src/MCUGLauncher/MainWindow/Controllers/FileDropController.cs) | 展示拖放反馈、确认整合包名称并确定导入目标目录。 |
+| [`InstanceSearchController`](src/MCUGLauncher/MainWindow/Controllers/InstanceSearchController.cs) | 筛选主页实例并显示匹配数量。 |
+| [`JavaManagerController`](src/MCUGLauncher/MainWindow/Controllers/JavaManagerController.cs) | 扫描、筛选、校验及选择 Java 运行时。 |
+| [`LauncherTooltipsController`](src/MCUGLauncher/MainWindow/Controllers/LauncherTooltipsController.cs) | 设置导航和搜索控件的提示文本。 |
+| [`LoaderInstallationController`](src/MCUGLauncher/MainWindow/Controllers/LoaderInstallationController.cs) | 选择 Forge / NeoForge 版本并提交安装任务。 |
+| [`NetworkSettingsController`](src/MCUGLauncher/MainWindow/Controllers/NetworkSettingsController.cs) | 编辑并保存代理和游戏下载源设置。 |
+| [`WindowChromeController`](src/MCUGLauncher/MainWindow/Controllers/WindowChromeController.cs) | 配置原生窗口边框、标题栏按钮和窗口状态。 |
+
+职责边界、入口及与 `MainWindow` 的依赖关系见[窗口控制器文档](docs/CONTROLLERS.md)。拆分尚未完成，其他窗口功能仍由 `partial MainWindow` 实现。
+
 ```text
 src/       主程序与核心逻辑（2 个项目）
 test/      功能、界面与集成检查（22 个项目）
