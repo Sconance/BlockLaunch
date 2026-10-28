@@ -143,6 +143,70 @@ public static class Program
                 if (new SettingsStore(settings).Load().Network.DownloadSource != "仅官方")
                     throw new Exception("Network save failed");
                 Console.WriteLine("PASS in-process WPF network source selection and persistence");
+                void DriveDialog(string title, Action open, Action<InlineDialog> check)
+                {
+                    Exception? failure = null;
+                    var until = DateTime.UtcNow.AddSeconds(20);
+                    var probe = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
+                    probe.Tick += (_, _) =>
+                    {
+                        try
+                        {
+                            var pages = ((IEnumerable<InlineDialog>)LauncherTestAccess.Get(window, "inlinePages")).ToList();
+                            if (DateTime.UtcNow > until)
+                                throw new Exception("Dialog workflow timed out: " + title);
+                            if (pages.LastOrDefault() is not { } page || page.Title != title)
+                                return;
+                            probe.Stop();
+                            check(page);
+                        }
+                        catch (Exception ex)
+                        {
+                            failure = ex;
+                            probe.Stop();
+                            foreach (var page in ((IEnumerable<InlineDialog>)LauncherTestAccess.Get(window, "inlinePages")).Reverse().ToList())
+                                page.Close();
+                        }
+                    };
+                    probe.Start();
+                    try
+                    {
+                        open();
+                    }
+                    finally { probe.Stop(); }
+                    if (failure != null)
+                        throw failure;
+                }
+                DriveDialog("启动设置", () => LauncherTestAccess.Invoke(window, "EditLaunchOptions", [null]), page =>
+                {
+                    TextBox FieldAfter(string label)
+                    {
+                        var caption = Descendants(page).OfType<TextBlock>().Single(t => t.Text == label);
+                        var stack = (StackPanel)caption.Parent;
+                        return (TextBox)stack.Children[stack.Children.IndexOf(caption) + 1];
+                    }
+                    FieldAfter("游戏窗口标题（留空使用默认）").Text = "Global options fixture";
+                    FieldAfter("自定义内存 MB（关闭自动分配后生效）").Text = "5120";
+                    FieldAfter("窗口宽度").Text = "1512";
+                    Descendants(page).OfType<Button>().Single(b => Equals(b.Content, "保存设置"))
+                        .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                });
+                var saved = new SettingsStore(settings).Load();
+                if (saved.Launch.WindowTitle != "Global options fixture" || saved.Ram != 5120 || saved.Width != 1512
+                    || ((TextBox)LauncherTestAccess.Get(window, "Memory")).Text != "5120"
+                    || ((TextBox)LauncherTestAccess.Get(window, "GameWidth")).Text != "1512")
+                    throw new Exception("Global launch options lost persistence or linked field updates");
+                Console.WriteLine("PASS reference launch-options dialog persists global settings and linked controls");
+                DriveDialog("导出整合包", () => LauncherTestAccess.Invoke(window, "ExportPackDialog", ["1.21.1"]), page =>
+                {
+                    var options = Descendants(page).OfType<CheckBox>().ToList();
+                    if (options.Count != 5 || options.Count(c => c.IsChecked == true) != 3
+                        || !options.Any(c => Equals(c.Content, "包含存档") && c.IsChecked == false)
+                        || !Descendants(page).OfType<Button>().Any(b => Equals(b.Content, "选择保存位置并导出")))
+                        throw new Exception("Pack export options or conservative save defaults changed");
+                    page.Close();
+                });
+                Console.WriteLine("PASS reference pack-export dialog preserves options and excludes worlds by default");
                 var packPreview = new PackUpgradePreview
                 {
                     Pack = new("UI fixture", "1.21.1", "fabric", "0.19.5", "base", "pack-123456abcdef"),

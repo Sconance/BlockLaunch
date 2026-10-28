@@ -59,7 +59,13 @@
 
 页面构建器不接收整个工作区，也不通过反射查找应用操作。新增的检查限制协调器大小，并防止独立页面重新依赖 MainWindow 或 LauncherWorkspace。
 
-## 验证范围
+## 按 refactor 延续的第三轮组件整理
+
+原内容管理约 603 行的 `SketchController` 缩减为约 285 行，内容管理对话框迁入 `Presentation/SketchContentManagerDialog`。原约 553 行的 `InstancePagesController` 缩减为约 322 行，启动设置、整合包导出和公共对话框构造分别迁入同名参考组件。更新选择/预览、工具提示、工具窗口初始化及导航样式直接复用参考实现。
+
+完整相同的文件、适配的文件及保留差异见 [refactor 延续记录](REFACTOR_CONTINUATION.md)。没有把整个 MainWindow 改名后交给新组件；独立对话框与更新模块不持有 LauncherWorkspace。
+
+## 验证范围与限制
 
 测试仅在 `test/Support/LauncherTestAccess.cs` 中使用模块检查适配器，原有功能断言继续执行，不在生产窗口保留用于兼容测试的私有字段或业务方法。该适配器仅链接到检查/预览项目。
 

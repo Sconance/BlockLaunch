@@ -25,7 +25,7 @@ def main():
     # These adapters have explicit dependencies. Keep the composition root out of them.
     isolated = ('AvatarController', 'HomeAccountController', 'KeyboardNavigationController',
                 'LoaderOverviewController', 'NetworkController', 'WindowChromeController',
-                'GameWindowBehaviorController', 'InstanceSearchController', 'VersionIdentityEditor')
+                'GameWindowBehaviorController', 'InstanceSearchController', 'VersionIdentityEditor', 'UpdatesController')
     for name in isolated:
         source = app / 'Components' / f'{name}.cs'
         if re.search(r'\bLauncherWorkspace\b', source.read_text(encoding='utf-8-sig')):
@@ -34,6 +34,10 @@ def main():
         for source in (app / folder).glob('*.cs'):
             if re.search(r'\bLauncherWorkspace\b', source.read_text(encoding='utf-8-sig')):
                 errors.append(f'{source.relative_to(root)} depends on the full workspace')
+    for name in ('SketchContentManagerDialog', 'LaunchOptionsDialog', 'InstancePackExportDialog', 'FeatureDialogBuilder'):
+        source = app / 'Presentation' / f'{name}.cs'
+        if re.search(r'\b(LauncherWorkspace|MainWindow)\b', source.read_text(encoding='utf-8-sig')):
+            errors.append(f'{name} must receive scoped dependencies instead of a complete window/workspace')
     version_pages = app / 'Views/VersionSettings'
     for name in ('VersionOverviewPage', 'VersionLaunchPage', 'VersionLoaderPage', 'VersionModPage', 'VersionExportPage'):
         source = version_pages / f'{name}.cs'

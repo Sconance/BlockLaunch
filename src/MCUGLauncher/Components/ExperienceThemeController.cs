@@ -63,17 +63,10 @@ internal sealed class ExperienceThemeController
         workspace.AppearanceController.ApplyBackground();
     }
 
-    internal void ConfigureUtilityWindow(Window window)
-    {
-        window.MaxWidth = Math.Max(620, SystemParameters.WorkArea.Width - 24);
-        window.MaxHeight = Math.Max(420, SystemParameters.WorkArea.Height - 24);
-        window.MinWidth = Math.Min(window.MinWidth, window.MaxWidth);
-        window.MinHeight = Math.Min(window.MinHeight, window.MaxHeight);
-        window.Loaded += (_, _) => ThemeWindow(window);
-    }
+    internal void ConfigureUtilityWindow(Window window) => UtilityWindowInitializer.Configure(window, () => ThemeWindow(window));
 
     internal void ConfigureUtilityWindow(InlineDialog page)
     {
-        page.Loaded += (_, _) => ThemeWindow(workspace.Window);
+        UtilityWindowInitializer.Configure(page, () => ThemeWindow(workspace.Window));
     }
 }

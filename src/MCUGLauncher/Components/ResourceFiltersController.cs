@@ -10,79 +10,20 @@ internal sealed class ResourceFiltersController
         this.workspace = workspace;
     }
 
-    internal readonly TextBox resourceGame = new()
-    {
-        Width = 130,
-        Text = "跟随实例",
-        ToolTip = "游戏版本：跟随实例 / 全部 / 自行输入版本号"
-    };
-    internal readonly ComboBox resourceLoader = new()
-    {
-        Width = 135,
-        ItemsSource = new[]
-        {
-            "跟随实例",
-            "全部加载器",
-            "fabric",
-            "forge",
-            "neoforge",
-            "quilt"
-        },
-        SelectedIndex = 0
-    };
-    internal readonly ComboBox resourceSource = new()
-    {
-        Width = 140,
-        ItemsSource = new[]
-        {
-            "Modrinth",
-            "CurseForge（未启用）"
-        },
-        SelectedIndex = 0
-    };
-    internal readonly ComboBox releaseChannel = new()
-    {
-        Width = 100,
-        ItemsSource = new[]
-        {
-            "全部类型",
-            "正式版",
-            "测试版",
-            "开发版"
-        },
-        SelectedIndex = 0
-    };
+    readonly ContentSearchFilterBuilder searchFilters = new();
+    internal TextBox resourceGame => searchFilters.GameVersion;
+    internal ComboBox resourceLoader => searchFilters.Loader;
+    internal ComboBox resourceSource => searchFilters.Source;
+    internal ComboBox releaseChannel => searchFilters.ReleaseChannel;
+
     internal void BuildResourceFilters()
     {
-        workspace.Controls.ContentType.Items.Add(new ComboBoxItem { Content = "光影包" });
-        workspace.Controls.ContentType.Items.Add(new ComboBoxItem { Content = "数据包" });
-        var old = (Grid)workspace.Controls.SearchQuery.Parent;
-        var parent = (Grid)old.Parent;
-        parent.Children.Remove(old);
-        var filters = new StackPanel();
-        Grid.SetRow(filters, 1);
-        parent.Children.Add(filters);
-        filters.Children.Add(old);
-        Grid.SetRow(old, 0);
-        var row = new WrapPanel();
-        row.Children.Add(new TextBlock { Text = "游戏版本", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) });
-        row.Children.Add(resourceGame);
-        row.Children.Add(resourceLoader);
-        row.Children.Add(resourceSource);
-        row.Children.Add(releaseChannel);
-        row.Children.Add(FeatureUiElements.ActionButton("重置条件", (_, _) =>
-        {
-            if (workspace.LaunchCoordinator.busy)
-                return;
-            workspace.Controls.SearchQuery.Clear();
-            resourceGame.Text = "全部";
-            resourceLoader.SelectedIndex = 1;
-            resourceSource.SelectedIndex = 0;
-            releaseChannel.SelectedIndex = 0;
-            workspace.ResourceFavoritesController.ResetResourceDisplayFilters();
-            workspace.ContentController.ResetSearch();
-        }));
-        filters.Children.Add(row);
+        var filters = searchFilters.Build(workspace.Controls.SearchQuery, workspace.Controls.ContentType,
+            () => workspace.LaunchCoordinator.busy, () =>
+            {
+                workspace.ResourceFavoritesController.ResetResourceDisplayFilters();
+                workspace.ContentController.ResetSearch();
+            });
         var manage = (Grid)workspace.Controls.InstalledContent.Parent;
         var toolbar = manage.Children.OfType<WrapPanel>().First(p => Grid.GetRow(p) == 1);
         toolbar.Children.Add(FeatureUiElements.ActionButton("导入光影", async (_, _) => await workspace.LaunchCoordinator.Import("shaderpacks", "光影包|*.zip")));

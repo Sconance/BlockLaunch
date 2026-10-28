@@ -1,12 +1,9 @@
 using static BlockLaunch.FeatureUiElements;
-using System.Text.Json;
-using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using Microsoft.Win32;
 
 namespace BlockLaunch;
@@ -300,101 +297,10 @@ internal sealed class InstancePagesController
         }
     }
 
-    internal void ExportPackDialog(string key)
-    {
-        if (workspace.LaunchCoordinator.busy)
-            return;
-        var d = new InstanceCatalog(workspace.LaunchCoordinator.prefs.Root).GetOrCreate(key);
-        var body = new StackPanel();
-        body.Children.Add(Heading("导出 MultiMC / Prism 兼容整合包"));
-        body.Children.Add(Hint("按所选内容打包当前实例，自动生成组件清单。关闭游戏后导出；分享模组本体前请确认分发许可。"));
-        CheckBox Check(string title, bool selected)
-        {
-            var c = new CheckBox
-            {
-                Content = title,
-                IsChecked = selected,
-                Margin = new Thickness(0, 9, 0, 9)
-            };
-            body.Children.Add(c);
-            return c;
-        }
+    internal void ExportPackDialog(string key) => workspace.CreateInstancePackExportDialog().Show(key);
 
-        var mods = Check("包含模组本体（不勾选时仅导出配置）", true);
-        var servers = Check("包含服务器列表 servers.dat", false);
-        var shaders = Check("包含光影", true);
-        var resources = Check("包含资源包", true);
-        var saves = Check("包含存档", false);
-        var dialog = FeatureDialog("导出整合包", body);
-        body.Children.Add(ActionButton("选择保存位置并导出", async (_, _) =>
-        {
-            var picker = new SaveFileDialog
-            {
-                Filter = "整合包 ZIP|*.zip",
-                FileName = "BlockLaunch-Pack.zip"
-            };
-            if (picker.ShowDialog() != true)
-                return;
-            var options = new ExportOptions(mods.IsChecked == true, servers.IsChecked == true, shaders.IsChecked == true, resources.IsChecked == true, saves.IsChecked == true);
-            dialog.Close();
-            await workspace.LaunchCoordinator.Run(async () =>
-            {
-                workspace.ContentController.RequireStopped();
-                var requirements = RequirementsFor(d.LaunchProfileId);
-                var directory = (d.Launch ?? workspace.LaunchCoordinator.prefs.Launch).Isolation == "共享根目录" ? workspace.LaunchCoordinator.prefs.Root : new InstanceCatalog(workspace.LaunchCoordinator.prefs.Root).DirectoryFor(key);
-                await InstanceManagement.Export(directory, picker.FileName, d.DisplayName, requirements, options, workspace.LaunchCoordinator.CurrentToken);
-                workspace.LaunchCoordinator.Log("整合包已导出：" + picker.FileName);
-            }, "导出整合包");
-        }));
-        dialog.ShowDialog();
-    }
-
-    internal InlineDialog FeatureDialog(string title, StackPanel content)
-    {
-        var window = new InlineDialog
-        {
-            Owner = workspace.Window,
-            Title = title,
-            Width = 700,
-            Height = 700,
-            MinWidth = 540,
-            MinHeight = 300,
-            SizeToContent = SizeToContent.Height,
-            Background = new SolidColorBrush(Color.FromRgb(243, 247, 249)),
-            WindowStartupLocation = WindowStartupLocation.CenterOwner,
-            Content = new ScrollViewer
-            {
-                Content = content,
-                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-                Margin = new Thickness(16)
-            }
-        };
-        window.PrepareContent = () =>
-        {
-            content.MaxWidth = 920;
-            if (content.Children.OfType<TextBlock>().FirstOrDefault() is { } heading && heading.Text == title)
-                heading.Visibility = Visibility.Collapsed;
-            for (var i = 0; i < content.Children.Count; i++)
-                if (content.Children[i] is Button)
-                {
-                    var actions = new WrapPanel
-                    {
-                        Margin = new Thickness(0, 6, 0, 0)
-                    };
-                    while (i < content.Children.Count && content.Children[i] is Button button)
-                    {
-                        content.Children.RemoveAt(i);
-                        button.MinWidth = Math.Max(button.MinWidth, 145);
-                        button.HorizontalAlignment = HorizontalAlignment.Left;
-                        actions.Children.Add(button);
-                    }
-
-                    content.Children.Insert(i, actions);
-                }
-        };
-        workspace.ExperienceThemeController.ConfigureUtilityWindow(window);
-        return window;
-    }
+    internal InlineDialog FeatureDialog(string title, StackPanel content) =>
+        new FeatureDialogBuilder(workspace.Window, workspace.ExperienceThemeController.ConfigureUtilityWindow).Build(title, content);
 
     internal void GlobalOptionsClick(object s, RoutedEventArgs e)
     {
@@ -402,146 +308,7 @@ internal sealed class InstancePagesController
             EditLaunchOptions(null);
     }
 
-    internal void EditLaunchOptions(InstanceDescriptor? descriptor)
-    {
-        if (workspace.LaunchCoordinator.busy)
-            return;
-        var original = descriptor?.Launch ?? workspace.LaunchCoordinator.prefs.Launch;
-        var value = JsonSerializer.Deserialize<LaunchSettings>(JsonSerializer.Serialize(original))!;
-        var body = new StackPanel();
-        body.Children.Add(Heading(descriptor == null ? "全局启动与个性化" : "版本设置 · " + descriptor.DisplayName));
-        body.Children.Add(Hint("版本独立设置保存后覆盖全局启动选项。共享根目录会共享 mods/config/saves；独立实例为推荐默认值。"));
-        var options = new LaunchOptionsForm(value);
-        body.Children.Add(options.Panel);
-        var dialog = FeatureDialog("启动设置", body);
-        if (descriptor == null)
-            AddPersonalization(body);
-        else
-            body.Children.Add(ActionButton("恢复跟随全局设置", (_, _) =>
-            {
-                try
-                {
-                    workspace.ContentController.RequireStopped();
-                    descriptor.Launch = null;
-                    new InstanceCatalog(workspace.LaunchCoordinator.prefs.Root).Save(descriptor);
-                    dialog.Close();
-                }
-                catch (Exception ex)
-                {
-                    InlineMessageBox.Show(ex.Message);
-                }
-            }));
-        body.Children.Add(ActionButton("保存设置", (_, _) =>
-        {
-            try
-            {
-                workspace.ContentController.RequireStopped();
-                var updated = options.Read();
-                updated.Validate();
-                if (descriptor != null)
-                {
-                    descriptor.Launch = updated;
-                    new InstanceCatalog(workspace.LaunchCoordinator.prefs.Root).Save(descriptor);
-                }
-                else
-                {
-                    workspace.LaunchCoordinator.prefs.Launch = updated;
-                    workspace.LaunchCoordinator.prefs.Ram = updated.RamMb;
-                    workspace.LaunchCoordinator.prefs.Java = updated.Java;
-                    workspace.LaunchCoordinator.prefs.Width = updated.Width;
-                    workspace.LaunchCoordinator.prefs.Height = updated.Height;
-                    workspace.Controls.Memory.Text = workspace.LaunchCoordinator.prefs.Ram.ToString();
-                    workspace.Controls.JavaPath.Text = workspace.LaunchCoordinator.prefs.Java;
-                    workspace.Controls.GameWidth.Text = workspace.LaunchCoordinator.prefs.Width.ToString();
-                    workspace.Controls.GameHeight.Text = workspace.LaunchCoordinator.prefs.Height.ToString();
-                    workspace.LaunchCoordinator.settings.Save(workspace.LaunchCoordinator.prefs);
-                }
-
-                dialog.Close();
-            }
-            catch (Exception ex)
-            {
-                InlineMessageBox.Show(ex.Message, "设置未保存");
-            }
-        }));
-        dialog.ShowDialog();
-    }
-
-    internal void AddPersonalization(StackPanel body)
-    {
-        body.Children.Add(Heading("个性化"));
-        body.Children.Add(ActionButton("背景填充、透明度与主题", (_, _) => workspace.AppearanceController.OpenAppearance()));
-        var colors = new ComboBox
-        {
-            ItemsSource = new[]
-            {
-                "地大蓝",
-                "青绿",
-                "石墨",
-                "紫罗兰"
-            },
-            SelectedItem = "地大蓝"
-        };
-        body.Children.Add(colors);
-        body.Children.Add(ActionButton("应用主题色", (_, _) =>
-        {
-            workspace.LaunchCoordinator.prefs.Accent = colors.SelectedItem as string ?? "蓝色";
-            workspace.LaunchCoordinator.settings.Save(workspace.LaunchCoordinator.prefs);
-            ApplyPersonalization();
-        }));
-        body.Children.Add(ActionButton("选择自定义背景", (_, _) =>
-        {
-            var picker = new OpenFileDialog
-            {
-                Filter = "背景图片|*.png;*.jpg;*.jpeg"
-            };
-            if (picker.ShowDialog() != true)
-                return;
-            workspace.LaunchCoordinator.prefs.BackgroundPath = picker.FileName;
-            workspace.LaunchCoordinator.settings.Save(workspace.LaunchCoordinator.prefs);
-            ApplyPersonalization();
-        }));
-        body.Children.Add(ActionButton("恢复默认背景", (_, _) =>
-        {
-            workspace.LaunchCoordinator.prefs.BackgroundPath = "";
-            workspace.LaunchCoordinator.settings.Save(workspace.LaunchCoordinator.prefs);
-            ApplyPersonalization();
-        }));
-        body.Children.Add(Heading("离线皮肤"));
-        body.Children.Add(Hint("本地 PNG 通过资源包覆盖默认玩家皮肤，需要在游戏内启用“BlockLaunch Offline Skin”。只影响本机显示，不提供服务器皮肤认证，其他使用默认皮肤的玩家也可能显示相同贴图。"));
-        body.Children.Add(ActionButton("选择离线皮肤 PNG", (_, _) =>
-        {
-            var picker = new OpenFileDialog
-            {
-                Filter = "Minecraft 皮肤|*.png"
-            };
-            if (picker.ShowDialog() != true)
-                return;
-            try
-            {
-                var image = new BitmapImage(new Uri(picker.FileName));
-                if (image.PixelWidth != 64 || image.PixelHeight is not (32 or 64))
-                    throw new IOException("请选择 64×64 或 64×32 皮肤。");
-                var file = Path.Combine(workspace.LaunchCoordinator.settingsDir, "offline-skin.png");
-                File.Copy(picker.FileName, file, true);
-                workspace.LaunchCoordinator.prefs.OfflineSkin = file;
-                workspace.LaunchCoordinator.settings.Save(workspace.LaunchCoordinator.prefs);
-                ApplyPersonalization();
-                InlineMessageBox.Show("离线启动时会生成皮肤资源包，请在游戏内启用。");
-            }
-            catch (Exception ex)
-            {
-                InlineMessageBox.Show(ex.Message);
-            }
-        }));
-        body.Children.Add(ActionButton("停止生成离线皮肤资源包", (_, _) =>
-        {
-            workspace.LaunchCoordinator.prefs.OfflineSkin = "";
-            workspace.LaunchCoordinator.settings.Save(workspace.LaunchCoordinator.prefs);
-            ApplyPersonalization();
-            InlineMessageBox.Show("已停止生成；已有资源包可在游戏内停用。");
-        }));
-    }
+    internal void EditLaunchOptions(InstanceDescriptor? descriptor) => workspace.CreateLaunchOptionsDialog().Show(descriptor);
 
     internal void ApplyPersonalization()
     {

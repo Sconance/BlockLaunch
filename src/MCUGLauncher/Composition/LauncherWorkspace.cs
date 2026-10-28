@@ -216,7 +216,11 @@ internal sealed partial class LauncherWorkspace
         SketchController = new SketchController(this);
         StabilityController = new StabilityController(this);
         UninstallController = new UninstallController(this);
-        UpdatesController = new UpdatesController(this);
+        UpdatesController = new UpdatesController(new(
+            window, () => LaunchCoordinator.busy, () => LaunchCoordinator.http, () => LaunchCoordinator.CurrentToken,
+            (action, name) => LaunchCoordinator.Run(action, name), ContentController.RequireStopped,
+            InstancePagesController.FeatureDialog, DownloadQueueController.EnqueueDownload,
+            ContentController.Target, ContentController.ManagedDirectory, ContentController.RefreshLocalContent, LaunchCoordinator.Log));
         VersionSettingsController = new VersionSettingsController(this);
         WindowChromeController = new WindowChromeController(window);
         AvatarController = new AvatarController(Controls.SkinAvatar, Controls.AvatarCaption, Controls.AvatarPlayerName,
@@ -236,11 +240,8 @@ internal sealed partial class LauncherWorkspace
             () => (AccountController.savedAccount != null || LaunchCoordinator.online != null, MuaAccountController.muaAccount != null),
             card => HomeWelcomePresenter.Configure((System.Windows.Controls.Grid)((System.Windows.Controls.TabItem)window.MainTabs.Items[0]).Content,
                 card, LaunchCoordinator.prefs.BackgroundPath));
-        KeyboardNavigationController = new KeyboardNavigationController(window, () => new (System.Windows.FrameworkElement, string)[]
-        {
-            (Controls.HomeNav, "启动首页"), (CompactShellController.downloadNav, "下载"),
-            (Controls.SearchQuery, "搜索资源"), (DownloadPageController.vanillaQuery, "搜索游戏版本")
-        });
+        KeyboardNavigationController = new KeyboardNavigationController(window, () =>
+            new LauncherTooltipInitializer(Controls.HomeNav, CompactShellController.downloadNav, Controls.SearchQuery, DownloadPageController.vanillaQuery));
         LoaderOverviewController = new LoaderOverviewController(window, () => LaunchCoordinator.http,
             () => (LaunchCoordinator.rows, LaunchCoordinator.downloadVersion), selection =>
             {
