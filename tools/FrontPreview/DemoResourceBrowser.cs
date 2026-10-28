@@ -1,3 +1,4 @@
+using System.IO;
 using BlockLaunch.Contracts;
 
 internal sealed class DemoResourceBrowser : IFrontResourceBrowser

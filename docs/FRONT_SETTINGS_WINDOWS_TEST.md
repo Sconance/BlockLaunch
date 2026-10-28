@@ -254,3 +254,15 @@ AGENT.md：全部完成并记录后删除；未完成时保留
 | 环境 | 状态 | 证据 |
 | --- | --- | --- |
 | 开发端 Linux，无 dotnet | 本轮 Windows 编译、控制台检查、GUI 验收均未执行 | 等待 Windows agent 填写，不允许预先勾选通过 |
+
+### 2026-10-28 Windows x64 执行记录
+
+- Windows 11 x64，版本 10.0.22631；.NET SDK 8.0.426；当前分支 `refactor-dcg`，提交 `399a36b6f054486ca2a02d8285fc192c1e43bd2c`。
+- 起始工作区干净。修复：`CollectionsUI.cs` 将不存在的 `Modrinth` provider 改为 `new ContentService(http, CurrentToken)`；`DemoResourceBrowser.cs` 补 `System.IO`，以解析模拟错误路径的 `IOException`。
+- `dotnet build src/MCUGLauncher/MCUGLauncher.csproj -c Release`：退出码 0，0 警告、0 错误。
+- `dotnet build tools/FrontPreview/FrontPreview.csproj -c Release`：首次因 `DemoResourceBrowser.cs` 缺少 `System.IO` 失败（退出码 1）；修复后重跑退出码 0，0 警告、0 错误。
+- `dotnet build test/CompatibilityChecks/CompatibilityChecks.csproj -c Release`：退出码 0，0 警告、0 错误。
+- `dotnet run --project test/CompatibilityChecks/CompatibilityChecks.csproj -c Release --no-build -- --front-settings`：退出码 0，出现 `ALL_FRONT_SETTINGS_CHECKS_PASSED`。
+- 回归命令及结果：`--business-services`、`--launch-controller`、`--front`、`--management`、`--content-update-controller` 均以退出码 0 通过；`dotnet run --project test/QueueChecks/QueueChecks.csproj -c Release -- --queue-service` 退出码 0。
+- 产物：主程序 `src/MCUGLauncher/bin/Release/net8.0-windows/win-x64/MCUGLauncher.exe`；预览完整输出目录 `tools/FrontPreview/bin/Release/net8.0-windows/win-x64/`；设置检查 `test/CompatibilityChecks/bin/Release/net8.0-windows/`。未运行预览 GUI；Computer Use native pipe 不可用，因此 GUI 表格第 3 节所有原生交互项目仍为“未测”。门禁、目录独占/拒绝、高版本配置及资源导航 GUI 回归亦未测。
+- 本机没有建立 transcript 或截图证据。`git diff --check` 通过。结论：构建与自动化部分通过，整体验收部分完成；保留根目录 `AGENT.md`，不删除旧 UI。提交情况以本轮 Git 历史为准。

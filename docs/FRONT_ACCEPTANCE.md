@@ -119,4 +119,5 @@ Builders 中还包括脚本和离线皮肤包生成，不能按目录名判断�
 
 | 日期 / 环境 | 项目 / 命令 | 结果与证据 |
 | --- | --- | --- |
+| 2026-10-28 / Windows 11 x64 / .NET SDK 8.0.426 | 主程序、FrontPreview、CompatibilityChecks Release 构建；`--front-settings` 及 business-services、launch-controller、front、management、content-update-controller、queue-service 检查 | 三项构建与七项控制台检查均通过；详情见 [Windows 设置页验收记录](FRONT_SETTINGS_WINDOWS_TEST.md)。修复 `CollectionsUI.cs` provider 引用及 `DemoResourceBrowser.cs` 缺少 `System.IO`。GUI、运行门禁和目录隔离手工流程未测；本轮结论为部分完成。 |
 | 待填写 | 待填写 | 尚未执行 Windows 编译、自动化运行与界面验收 |

@@ -320,7 +320,7 @@ public partial class MainWindow
             var errors = new List<string>();
             await Run(async () =>
             {
-                var resolved = await BookmarkBatch.Resolve(Modrinth, selected, target.GameVersion, target.Loader, CurrentToken);
+                var resolved = await BookmarkBatch.Resolve(new ContentService(http, CurrentToken), selected, target.GameVersion, target.Loader, CurrentToken);
                 prepared = true;
                 foreach (var result in resolved)
                 {
