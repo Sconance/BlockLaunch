@@ -4,4 +4,4 @@
 
 - **主要入口：** `Open(...)`。
 - **协作：** 使用 Core 升级规划/迁移服务，并通过传入的回调选择目标实例和返回主页。
-- **源码：** [`PackUpgradeController.cs`](../../../src/MCUGLauncher/MainWindow/Controllers/PackUpgradeController.cs)。
+- **源码：** [`PackUpgradeController.cs`](../../../src/MCUGLauncher/Controllers/PackUpgradeController.cs)。

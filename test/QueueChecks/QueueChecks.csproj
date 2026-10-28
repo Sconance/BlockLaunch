@@ -7,5 +7,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../../src/MCUGLauncher.Core/MCUGLauncher.Core.csproj" />
+    <Compile Include="../../src/MCUGLauncher/Downloads/DownloadTaskExecutor.cs" Link="Downloads/DownloadTaskExecutor.cs" />
+    <Compile Include="../../src/MCUGLauncher/Downloads/DownloadQueueService.cs" Link="Downloads/DownloadQueueService.cs" />
   </ItemGroup>
 </Project>

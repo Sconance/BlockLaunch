@@ -1,6 +1,7 @@
 # MainWindow 组件目录
 
-本文档列出 `src/MCUGLauncher/MainWindow/` 中的所有类和记录类型。每个类型均有独立说明页，介绍其职责、主要入口/协作关系及源码位置。
+本文档索引主窗口及其协作组件。`Controllers/` 与 `Presentation/` 已移到 `src/MCUGLauncher/` 下，与 `MainWindow/` 同级；本文保留原说明页入口并更新源码链接。
+每个类型均有独立说明页，介绍其职责、主要入口/协作关系及源码位置。
 
 ## 分类结构
 
@@ -18,13 +19,13 @@ MainWindow/
 │   ├── Settings/     设置页面
 │   ├── Shell/        主窗口壳层及导航显示
 │   └── Support/      诊断和稳定性界面
-├── Controllers/      交互流程协调
 ├── Builders/         控件与页面构造
 ├── Models/           窗口侧展示状态
-├── Presentation/     窗口、对话框及页面视图
 ├── Styling/          主题和导航样式
 └── Initialization/   窗口生命周期与提示初始化
 ```
+
+同级目录：`../Controllers/` 为交互流程协调，`../Presentation/` 为窗口、对话框及页面视图。
 
 `MainWindow.xaml` 与 `MainWindow.xaml.cs` 保持原位置。`UI/` 下的文件仍是同一个 `partial MainWindow`，不是独立窗口；其他组件通过显式依赖或现有窗口入口协作。
 
@@ -57,34 +58,34 @@ MainWindow/
 
 | 类型 | 说明页 | 源码 |
 |---|---|---|
-| ContentUpdateController | [职责](Classes/ContentUpdateController.md) | [`ContentUpdateController.cs`](../../src/MCUGLauncher/MainWindow/Controllers/ContentUpdateController.cs) |
-| FileImportController | [职责](Classes/FileImportController.md) | [`FileImportController.cs`](../../src/MCUGLauncher/MainWindow/Controllers/FileImportController.cs) |
-| GameWindowBehaviorController | [职责](Classes/GameWindowBehaviorController.md) | [`GameWindowBehaviorController.cs`](../../src/MCUGLauncher/MainWindow/Controllers/GameWindowBehaviorController.cs) |
-| InstanceSearchController | [职责](Classes/InstanceSearchController.md) | [`InstanceSearchController.cs`](../../src/MCUGLauncher/MainWindow/Controllers/InstanceSearchController.cs) |
-| InstanceUninstallationController | [职责](Classes/InstanceUninstallationController.md) | [`InstanceUninstallationController.cs`](../../src/MCUGLauncher/MainWindow/Controllers/InstanceUninstallationController.cs) |
-| JavaManagerController | [职责](Classes/JavaManagerController.md) | [`JavaManagerController.cs`](../../src/MCUGLauncher/MainWindow/Controllers/JavaManagerController.cs) |
-| LoaderInstallationController | [职责](Classes/LoaderInstallationController.md) | [`LoaderInstallationController.cs`](../../src/MCUGLauncher/MainWindow/Controllers/LoaderInstallationController.cs) |
-| MicrosoftAccountController | [职责](Classes/MicrosoftAccountController.md) | [`MicrosoftAccountController.cs`](../../src/MCUGLauncher/MainWindow/Controllers/MicrosoftAccountController.cs) |
-| NetworkSettingsController | [职责](Classes/NetworkSettingsController.md) | [`NetworkSettingsController.cs`](../../src/MCUGLauncher/MainWindow/Controllers/NetworkSettingsController.cs) |
-| PackUpgradeController | [职责](Classes/PackUpgradeController.md) | [`PackUpgradeController.cs`](../../src/MCUGLauncher/MainWindow/Controllers/PackUpgradeController.cs) |
-| PageNavigationController | [职责](Classes/PageNavigationController.md) | [`PageNavigationController.cs`](../../src/MCUGLauncher/MainWindow/Controllers/PageNavigationController.cs) |
-| PlayerIdentityController | [职责](Classes/PlayerIdentityController.md) | [`PlayerIdentityController.cs`](../../src/MCUGLauncher/MainWindow/Controllers/PlayerIdentityController.cs) |
+| ContentUpdateController | [职责](Classes/ContentUpdateController.md) | [`ContentUpdateController.cs`](../../src/MCUGLauncher/Controllers/ContentUpdateController.cs) |
+| FileImportController | [职责](Classes/FileImportController.md) | [`FileImportController.cs`](../../src/MCUGLauncher/Controllers/FileImportController.cs) |
+| GameWindowBehaviorController | [职责](Classes/GameWindowBehaviorController.md) | [`GameWindowBehaviorController.cs`](../../src/MCUGLauncher/Controllers/GameWindowBehaviorController.cs) |
+| InstanceSearchController | [职责](Classes/InstanceSearchController.md) | [`InstanceSearchController.cs`](../../src/MCUGLauncher/Controllers/InstanceSearchController.cs) |
+| InstanceUninstallationController | [职责](Classes/InstanceUninstallationController.md) | [`InstanceUninstallationController.cs`](../../src/MCUGLauncher/Controllers/InstanceUninstallationController.cs) |
+| JavaManagerController | [职责](Classes/JavaManagerController.md) | [`JavaManagerController.cs`](../../src/MCUGLauncher/Controllers/JavaManagerController.cs) |
+| LoaderInstallationController | [职责](Classes/LoaderInstallationController.md) | [`LoaderInstallationController.cs`](../../src/MCUGLauncher/Controllers/LoaderInstallationController.cs) |
+| MicrosoftAccountController | [职责](Classes/MicrosoftAccountController.md) | [`MicrosoftAccountController.cs`](../../src/MCUGLauncher/Controllers/MicrosoftAccountController.cs) |
+| NetworkSettingsController | [职责](Classes/NetworkSettingsController.md) | [`NetworkSettingsController.cs`](../../src/MCUGLauncher/Controllers/NetworkSettingsController.cs) |
+| PackUpgradeController | [职责](Classes/PackUpgradeController.md) | [`PackUpgradeController.cs`](../../src/MCUGLauncher/Controllers/PackUpgradeController.cs) |
+| PageNavigationController | [职责](Classes/PageNavigationController.md) | [`PageNavigationController.cs`](../../src/MCUGLauncher/Controllers/PageNavigationController.cs) |
+| PlayerIdentityController | [职责](Classes/PlayerIdentityController.md) | [`PlayerIdentityController.cs`](../../src/MCUGLauncher/Controllers/PlayerIdentityController.cs) |
 
 ### Presentation
 
 | 类型 | 说明页 | 源码 |
 |---|---|---|
-| ContentUpdatePreviewView | [职责](Classes/ContentUpdatePreviewView.md) | [`ContentUpdatePreviewView.cs`](../../src/MCUGLauncher/MainWindow/Presentation/ContentUpdatePreviewView.cs) |
-| ContentUpdateSelectionView | [职责](Classes/ContentUpdateSelectionView.md) | [`ContentUpdateSelectionView.cs`](../../src/MCUGLauncher/MainWindow/Presentation/ContentUpdateSelectionView.cs) |
-| FeatureDialogBuilder | [职责](Classes/FeatureDialogBuilder.md) | [`FeatureDialogBuilder.cs`](../../src/MCUGLauncher/MainWindow/Presentation/FeatureDialogBuilder.cs) |
-| InlinePageHost | [职责](Classes/InlinePageHost.md) | [`InlinePageHost.cs`](../../src/MCUGLauncher/MainWindow/Presentation/InlinePageHost.cs) |
-| InstanceLibraryDialog | [职责](Classes/InstanceLibraryDialog.md) | [`InstanceLibraryDialog.cs`](../../src/MCUGLauncher/MainWindow/Presentation/InstanceLibraryDialog.cs) |
-| InstancePackExportDialog | [职责](Classes/InstancePackExportDialog.md) | [`InstancePackExportDialog.cs`](../../src/MCUGLauncher/MainWindow/Presentation/InstancePackExportDialog.cs) |
-| LaunchOptionsDialog | [职责](Classes/LaunchOptionsDialog.md) | [`LaunchOptionsDialog.cs`](../../src/MCUGLauncher/MainWindow/Presentation/LaunchOptionsDialog.cs) |
-| SketchContentManagerDialog | [职责](Classes/SketchContentManagerDialog.md) | [`SketchContentManagerDialog.cs`](../../src/MCUGLauncher/MainWindow/Presentation/SketchContentManagerDialog.cs) |
-| VersionSettingsDialog | [职责](Classes/VersionSettingsDialog.md) | [`VersionSettingsDialog.cs`](../../src/MCUGLauncher/MainWindow/Presentation/VersionSettingsDialog.cs) |
-| VersionSettingsPageContext | [职责](Classes/VersionSettingsPageContext.md) | [`VersionSettingsPageContext.cs`](../../src/MCUGLauncher/MainWindow/Presentation/VersionSettingsPageContext.cs) |
-| VersionSettingsWindowView | [职责](Classes/VersionSettingsWindowView.md) | [`VersionSettingsWindowView.cs`](../../src/MCUGLauncher/MainWindow/Presentation/VersionSettingsWindowView.cs) |
+| ContentUpdatePreviewView | [职责](Classes/ContentUpdatePreviewView.md) | [`ContentUpdatePreviewView.cs`](../../src/MCUGLauncher/Presentation/ContentUpdatePreviewView.cs) |
+| ContentUpdateSelectionView | [职责](Classes/ContentUpdateSelectionView.md) | [`ContentUpdateSelectionView.cs`](../../src/MCUGLauncher/Presentation/ContentUpdateSelectionView.cs) |
+| FeatureDialogBuilder | [职责](Classes/FeatureDialogBuilder.md) | [`FeatureDialogBuilder.cs`](../../src/MCUGLauncher/Presentation/FeatureDialogBuilder.cs) |
+| InlinePageHost | [职责](Classes/InlinePageHost.md) | [`InlinePageHost.cs`](../../src/MCUGLauncher/Presentation/InlinePageHost.cs) |
+| InstanceLibraryDialog | [职责](Classes/InstanceLibraryDialog.md) | [`InstanceLibraryDialog.cs`](../../src/MCUGLauncher/Presentation/InstanceLibraryDialog.cs) |
+| InstancePackExportDialog | [职责](Classes/InstancePackExportDialog.md) | [`InstancePackExportDialog.cs`](../../src/MCUGLauncher/Presentation/InstancePackExportDialog.cs) |
+| LaunchOptionsDialog | [职责](Classes/LaunchOptionsDialog.md) | [`LaunchOptionsDialog.cs`](../../src/MCUGLauncher/Presentation/LaunchOptionsDialog.cs) |
+| SketchContentManagerDialog | [职责](Classes/SketchContentManagerDialog.md) | [`SketchContentManagerDialog.cs`](../../src/MCUGLauncher/Presentation/SketchContentManagerDialog.cs) |
+| VersionSettingsDialog | [职责](Classes/VersionSettingsDialog.md) | [`VersionSettingsDialog.cs`](../../src/MCUGLauncher/Presentation/VersionSettingsDialog.cs) |
+| VersionSettingsPageContext | [职责](Classes/VersionSettingsPageContext.md) | [`VersionSettingsPageContext.cs`](../../src/MCUGLauncher/Presentation/VersionSettingsPageContext.cs) |
+| VersionSettingsWindowView | [职责](Classes/VersionSettingsWindowView.md) | [`VersionSettingsWindowView.cs`](../../src/MCUGLauncher/Presentation/VersionSettingsWindowView.cs) |
 
 ### Builders
 
@@ -108,13 +109,13 @@ MainWindow/
 |---|---|---|
 | BookmarkView | [职责](Classes/BookmarkView.md) | [`BookmarkView.cs`](../../src/MCUGLauncher/MainWindow/Models/BookmarkView.cs) |
 | DownloadCategoryIcon | [职责](Classes/DownloadNavigation.md) | [`DownloadNavigation.cs`](../../src/MCUGLauncher/MainWindow/Models/DownloadNavigation.cs) |
-| InstanceTarget | [职责](Classes/InstanceTarget.md) | [`InstanceTarget.cs`](../../src/MCUGLauncher/MainWindow/Models/InstanceTarget.cs) |
+| InstanceTarget（已迁入 Versions） | [职责](Classes/InstanceTarget.md) | [`VersionManagementModels.cs`](../../src/MCUGLauncher/Versions/VersionManagementModels.cs) |
 | InstanceView | [职责](Classes/InstanceView.md) | [`InstanceView.cs`](../../src/MCUGLauncher/MainWindow/Models/InstanceView.cs) |
 | LauncherMenuArea、LauncherMenuContext、LauncherMenuPage、LauncherMenuRegistry | [职责](Classes/LauncherMenuRegistry.md) | [`LauncherMenuRegistry.cs`](../../src/MCUGLauncher/MainWindow/Models/LauncherMenuRegistry.cs) |
 | PlayerIdentityState | [职责](Classes/PlayerIdentityState.md) | [`PlayerIdentityState.cs`](../../src/MCUGLauncher/MainWindow/Models/PlayerIdentityState.cs) |
 | SaveChoice | [职责](Classes/SaveChoice.md) | [`SaveChoice.cs`](../../src/MCUGLauncher/MainWindow/Models/SaveChoice.cs) |
 | VersionModView | [职责](Classes/VersionModView.md) | [`VersionModView.cs`](../../src/MCUGLauncher/MainWindow/Models/VersionModView.cs) |
-| VersionRow | [职责](Classes/VersionRow.md) | [`VersionRow.cs`](../../src/MCUGLauncher/MainWindow/Models/VersionRow.cs) |
+| VersionRow（已迁入 Versions） | [职责](Classes/VersionRow.md) | [`VersionManagementModels.cs`](../../src/MCUGLauncher/Versions/VersionManagementModels.cs) |
 
 ### Styling 与 Initialization
 

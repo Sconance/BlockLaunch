@@ -5,4 +5,4 @@
 - **主要入口：** `Build(title, content)`。
 - **协作：** 由 `MainWindow.FeatureDialog` 提供共享入口；内容准备与窗口主题配置委托给现有内嵌页面及窗口初始化流程。
 - **检查：** `InlineUiChecks` 验证标题处理、按钮分组、按钮尺寸及内嵌页面交互。
-- **源码：** [`FeatureDialogBuilder.cs`](../../../src/MCUGLauncher/MainWindow/Presentation/FeatureDialogBuilder.cs)。
+- **源码：** [`FeatureDialogBuilder.cs`](../../../src/MCUGLauncher/Presentation/FeatureDialogBuilder.cs)。

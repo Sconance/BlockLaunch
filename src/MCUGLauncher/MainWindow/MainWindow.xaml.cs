@@ -30,6 +30,14 @@ public partial class MainWindow : Window
     LoaderInstallationController loaderController = null!;
     FileImportController fileImportController = null!;
     GameWindowBehaviorController gameWindowBehaviorController = null!;
+    GameLaunchController gameLaunchController = null!;
+    DownloadTaskExecutor downloadTaskExecutor = null!;
+    DownloadQueueService downloadQueue = null!;
+    LauncherSettingsService launcherSettings = null!;
+    internal AccountSessionService accountSessions = null!;
+    internal GameSessionMonitor gameSessionMonitor = new();
+    internal VersionManagementService versionManagement = null!;
+    internal ResourceManagementService resourceManagement = null!;
     FeatureDialogBuilder featureDialogBuilder = null!;
     LaunchOptionsDialog launchOptionsDialog = null!;
     PlayerIdentityController playerIdentityController = null!;
@@ -150,10 +158,10 @@ public partial class MainWindow : Window
         xamlReady = true;
         inlinePageHost = new InlinePageHost(this, inlinePages, HomeNavigation, MainTabControl);
         gameWindowBehaviorController = new GameWindowBehaviorController(this, Log);
+        gameLaunchController = new GameLaunchController(this);
         windowThemeStyler = new WindowThemeStyler(this);
         featureDialogBuilder = new FeatureDialogBuilder(this);
         launchOptionsDialog = new LaunchOptionsDialog(this, settingsDir, ApplyPersonalization, OpenAppearance);
-        contentUpdateController = new ContentUpdateController(this);
         instanceUninstallationController = new InstanceUninstallationController(this);
         packUpgradeController = new PackUpgradeController(
             this,
@@ -165,6 +173,7 @@ public partial class MainWindow : Window
         instanceSearchController = new InstanceSearchController(instanceList, instanceQuery, instanceSearchSummary);
         Directory.CreateDirectory(settingsDir);
         settings = new SettingsStore(settingsDir);
+        launcherSettings = new LauncherSettingsService(settings);
         javaManagerController = new JavaManagerController(this);
         pageNavigationController = new PageNavigationController(
             MainTabControl,
@@ -201,6 +210,7 @@ public partial class MainWindow : Window
         }
 
         operations = new OperationCoordinator(Path.Combine(settingsDir, "tasks"));
+        downloadQueue = new DownloadQueueService(operations);
         operations.Changed += record => Dispatcher.BeginInvoke(() =>
         {
             ApplyOperation(record);
@@ -219,6 +229,17 @@ public partial class MainWindow : Window
         http.Dispose();
         http = NetworkPolicyHandler.Create(runtimeNetwork);
         http.DefaultRequestHeaders.UserAgent.ParseAdd("MCUGLauncher/0.21.0 (Windows-desktop-launcher)");
+        versionManagement = new VersionManagementService(http);
+        resourceManagement = new ResourceManagementService(http);
+        contentUpdateController = new ContentUpdateController(resourceManagement, this);
+        downloadTaskExecutor = new DownloadTaskExecutor(new(
+            http,
+            runtimeNetwork,
+            ProtectDownloadWorlds,
+            () => prefs.Launch,
+            root => Path.GetFullPath(prefs.Root).Equals(root, StringComparison.OrdinalIgnoreCase),
+            RefreshAfterDownload,
+            Log));
         SetupLauncher();
         BuildFeaturePages();
         ApplyPersonalization();

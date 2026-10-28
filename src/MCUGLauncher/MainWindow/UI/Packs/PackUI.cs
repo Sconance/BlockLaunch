@@ -19,54 +19,7 @@ public partial class MainWindow
 
     string SelectedLaunchVersion()
     {
-        return new InstanceCatalog(prefs.Root).GetOrCreate(Selected()).LaunchProfileId;
-    }
-
-    string VersionLabel(string id, HashSet<string> local)
-    {
-        var customFile = Path.Combine(prefs.Root, "instances", id, ".blocklaunch-instance.json");
-        if (File.Exists(customFile))
-        {
-            try
-            {
-                var custom = AtomicFile.ReadJson<InstanceDescriptor>(customFile);
-                if (custom.DisplayName != id || custom.Favorite)
-                    return (custom.Favorite ? "★ " : "") + custom.DisplayName + (VersionInstallation.IsReady(prefs.Root, id) ? "" : " · 需修复");
-            }
-            catch
-            {
-            }
-        }
-
-        var record = Path.Combine(prefs.Root, "instances", id, ".blocklaunch-pack.json");
-        if (File.Exists(record))
-        {
-            try
-            {
-                var pack = JsonSerializer.Deserialize<InstalledPack>(File.ReadAllText(record));
-                if (pack != null)
-                    return $"▦ {pack.Name} · {pack.Minecraft} · {pack.Loader}";
-            }
-            catch
-            {
-            }
-        }
-
-        var identity = Path.Combine(prefs.Root, "instances", id, ".blocklaunch-instance.json");
-        if (File.Exists(identity))
-        {
-            try
-            {
-                var instance = AtomicFile.ReadJson<InstanceDescriptor>(identity);
-                if (instance.DisplayName != id)
-                    return instance.DisplayName + (VersionInstallation.IsReady(prefs.Root, id) ? "" : " · 需修复");
-            }
-            catch
-            {
-            }
-        }
-
-        return id + (local.Contains(id) ? "   · 已安装" : !VersionInstallation.IsReady(prefs.Root, id) ? " · 未完成，需修复" : "");
+        return versionManagement.LaunchProfile(prefs.Root, Selected());
     }
 
     internal async Task<string> InstallPackGame(PackRequirements requirements)

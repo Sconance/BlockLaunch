@@ -17,6 +17,38 @@ if (args.Contains("--emit"))
     return;
 }
 
+if (args.Contains("--front"))
+{
+    await FrontResourceBrowserChecks.Run();
+    return;
+}
+
+if (args.Contains("--content-update-controller"))
+{
+    await ContentUpdateControllerChecks.Run();
+    return;
+}
+
+if (args.Contains("--management"))
+{
+    await ManagementServiceChecks.Run();
+    return;
+}
+
+await BusinessServiceChecks.Run();
+if (args.Contains("--business-services"))
+    return;
+
+await GameLaunchControllerChecks.Run();
+if (args.Contains("--launch-controller"))
+    return;
+
+await ManagementServiceChecks.Run();
+
+await ContentUpdateControllerChecks.Run();
+
+await FrontResourceBrowserChecks.Run();
+
 var root = Path.Combine(Path.GetTempPath(), "BlockLaunch 兼容与恢复 " + Guid.NewGuid().ToString("N"));
 Directory.CreateDirectory(root);
 void Check(bool value, string name)

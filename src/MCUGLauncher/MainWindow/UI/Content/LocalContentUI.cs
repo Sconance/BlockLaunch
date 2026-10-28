@@ -27,11 +27,7 @@ public partial class MainWindow
         await Run(async () =>
         {
             RequireStopped();
-            if (!LocalVersions().Contains(Selected()))
-                throw new IOException("请先完成游戏安装。");
-            if (child == "mods" && Target().Loader == "vanilla")
-                throw new IOException("请先选择已安装加载器的实例。");
-            var count = await new ContentService(http, CurrentToken).ImportFiles(Instance(), child, dialog.FileNames);
+            var count = await resourceManagement.Import(ResourceTarget(), child, dialog.FileNames, IsGameRunning, CurrentToken);
             Log($"已导入 {count} 个文件；同名文件已跳过。");
             RefreshLocalContent();
         }, "导入本地内容");

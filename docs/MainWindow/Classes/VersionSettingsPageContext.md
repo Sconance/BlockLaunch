@@ -4,4 +4,4 @@
 
 - **主要成员：** `DataDirectory()`、`VersionCard(...)`、`Button(...)`、`Field(...)`、`Card(...)`、`SaveIdentity()`。
 - **协作：** 由 `VersionSettingsDialog` 创建并交给各版本设置页面构建器；`Render` 委托用于请求重绘。
-- **源码：** [`VersionSettingsPageContext.cs`](../../../src/MCUGLauncher/MainWindow/Presentation/VersionSettingsPageContext.cs)。
+- **源码：** [`VersionSettingsPageContext.cs`](../../../src/MCUGLauncher/Presentation/VersionSettingsPageContext.cs)。

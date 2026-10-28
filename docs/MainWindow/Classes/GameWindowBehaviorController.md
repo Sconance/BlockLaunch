@@ -5,4 +5,4 @@
 - **主要入口：** `Apply(process, settings, session)`。
 - **协作：** 由游戏启动 UI 调用；使用 `GameSession` 跟踪游戏进程完成状态，通过窗口 Dispatcher 安全更新可见性，并通过日志回调报告失败。
 - **检查：** `VersionUiChecks` 使用短时子进程验证隐藏及退出后恢复行为。
-- **源码：** [`GameWindowBehaviorController.cs`](../../../src/MCUGLauncher/MainWindow/Controllers/GameWindowBehaviorController.cs)。
+- **源码：** [`GameWindowBehaviorController.cs`](../../../src/MCUGLauncher/Controllers/GameWindowBehaviorController.cs)。

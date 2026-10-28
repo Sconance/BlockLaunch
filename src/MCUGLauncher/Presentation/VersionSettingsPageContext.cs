@@ -84,7 +84,7 @@ internal sealed class VersionSettingsPageContext(
         if (Host.busy)
             throw new IOException("请等待当前任务完成。");
         Host.RequireStopped();
-        Catalog.Save(Descriptor);
+        Host.versionManagement.Save(Root, Descriptor);
         Title.Text = "版本设置 · " + Descriptor.DisplayName;
         Window.Title = Title.Text;
     }

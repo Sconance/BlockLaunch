@@ -4,4 +4,4 @@
 
 - **主要入口：** `Apply()`，由查询文本变化和实例列表刷新触发。
 - **协作：** 接收列表、搜索框和摘要控件；识别 [InstanceView](InstanceView.md) 项。
-- **源码：** [`InstanceSearchController.cs`](../../../src/MCUGLauncher/MainWindow/Controllers/InstanceSearchController.cs)。
+- **源码：** [`InstanceSearchController.cs`](../../../src/MCUGLauncher/Controllers/InstanceSearchController.cs)。

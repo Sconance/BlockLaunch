@@ -1,3 +1,4 @@
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -10,7 +11,11 @@ public partial class MainWindow
 
     void BuildAccountUI()
     {
-        microsoftAccountController = new MicrosoftAccountController(this, settingsDir, http);
+        muaAccounts = new(Path.Combine(settingsDir, "accounts"));
+        accountSessions = new AccountSessionService(new MicrosoftAccountService(
+            Path.Combine(settingsDir, "accounts"), http,
+            new EmbeddedMicrosoftOAuthUI(this, Path.Combine(settingsDir, "microsoft-browser"))), muaAccounts);
+        microsoftAccountController = new MicrosoftAccountController(this, accountSessions);
         microsoftAccountController.Load();
         BuildMuaAccountUI();
         InitializeAccountControls(

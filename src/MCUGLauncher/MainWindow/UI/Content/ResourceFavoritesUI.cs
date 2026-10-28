@@ -135,30 +135,7 @@ public partial class MainWindow
         var candidates = bookmarks?.Query(ContentSearchQueryInput.Text.Trim(), kind: kind)
             .Select(item => item.Project)
             .ToList() ?? [];
-        var target = SearchTarget();
-        if (target.GameVersion.Length > 0 || target.Loader.Length > 0 || releaseChannel.SelectedIndex > 0)
-        {
-            var channel = releaseChannel.SelectedIndex;
-            using var gate = new SemaphoreSlim(4);
-            var matches = await Task.WhenAll(candidates.Select(async project =>
-            {
-                await gate.WaitAsync(token);
-                try
-                {
-                    var versions = await new ContentService(http, token).Versions(project.Id, target.GameVersion, target.Loader, kind);
-                    return versions.Any(version => channel == 0 || version.VersionType == new[] { "", "release", "beta", "alpha" }[channel]) ? project : null;
-                }
-                finally
-                {
-                    gate.Release();
-                }
-            }));
-            candidates = matches.OfType<ContentProject>().ToList();
-        }
-
-        if (resourceSort.SelectedIndex == 1)
-            candidates = candidates.OrderByDescending(project => project.Downloads).ToList();
-        return new(candidates.Skip(searchOffset).Take(15).ToList(), candidates.Count);
+        return await resourceManagement.SearchFavorites(candidates, ResourceQuery(SearchTarget()), token);
     }
 
     void ToggleResourceView() => SetResourceView(!resourceListView);

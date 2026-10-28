@@ -1,18 +1,11 @@
 using System.IO;
-using System.Net.Http;
 using System.Windows;
 using System.Windows.Controls;
-using CmlLib.Core.Auth;
 
 namespace BlockLaunch;
 
-internal sealed class MicrosoftAccountController(MainWindow host, string settingsDirectory, HttpClient http)
+internal sealed class MicrosoftAccountController(MainWindow host, AccountSessionService accounts)
 {
-    readonly MicrosoftAccountService accounts = new(
-        Path.Combine(settingsDirectory, "accounts"),
-        http,
-        new EmbeddedMicrosoftOAuthUI(host, Path.Combine(settingsDirectory, "microsoft-browser")));
-
     public SavedMicrosoftAccount? SavedAccount
     {
         get; private set;
@@ -22,7 +15,7 @@ internal sealed class MicrosoftAccountController(MainWindow host, string setting
     {
         try
         {
-            SavedAccount = accounts.ReadSavedAccount();
+            SavedAccount = accounts.ReadMicrosoft();
         }
         catch (Exception ex) when (ex is AccountStorageException or IOException or UnauthorizedAccessException)
         {
@@ -30,15 +23,17 @@ internal sealed class MicrosoftAccountController(MainWindow host, string setting
         }
     }
 
-    public async Task Login(bool interactive)
+    public async Task Login(bool interactive, bool ensure = false)
     {
         host.online = null;
         host.UpdateAccountBadge();
         host.operations.Current?.Report(interactive
             ? "请在微软官方授权窗口完成登录；随后验证 Xbox 和 Java 版授权…"
             : "正在验证 / 刷新微软、Xbox 和 Minecraft 会话…");
-        host.online = await accounts.Authenticate(interactive, host.CurrentToken);
-        SavedAccount = accounts.ReadSavedAccount();
+        host.online = ensure
+            ? await accounts.EnsureMicrosoft(host.CurrentToken, host.Log)
+            : await accounts.LoginMicrosoft(interactive, host.CurrentToken);
+        SavedAccount = accounts.ReadMicrosoft();
         host.prefs.PreferMicrosoft = true;
         host.prefs.PreferMua = false;
         host.settings.Save(host.prefs);
@@ -49,18 +44,7 @@ internal sealed class MicrosoftAccountController(MainWindow host, string setting
             : "正版会话验证 / 刷新完成。");
     }
 
-    public async Task EnsureLogin()
-    {
-        try
-        {
-            await Login(false);
-        }
-        catch (AccountLoginException ex) when (ex.RequiresInteractive)
-        {
-            host.Log(ex.Message);
-            await Login(true);
-        }
-    }
+    public Task EnsureLogin() => Login(false, true);
 
     public void OpenManagement()
     {
@@ -90,7 +74,7 @@ internal sealed class MicrosoftAccountController(MainWindow host, string setting
             await host.RunAccountAction(() =>
             {
                 host.RequireStopped();
-                accounts.Forget();
+                accounts.ForgetMicrosoft();
                 host.online = null;
                 SavedAccount = null;
                 host.SelectAccountMode(0);

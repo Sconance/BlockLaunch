@@ -3,6 +3,10 @@
 MCUG Launcher 是 .NET 8 / WPF 应用。先从本文件定位功能，再阅读对应入口。
 构建、打包和运行检查见 [BUILD.md](BUILD.md)。
 
+新界面迁移预览位于 `src/MCUGLauncher/Front/`，通过 Contracts 接口和 Adapters 连接原资源服务；
+独立入口是 `tools/FrontPreview/`，不替换原启动器。范围、模拟/真实查询方式见 [Front 预览说明](FRONT_PREVIEW.md)。
+编译、模拟/真实查询、原功能回归待测项与旧 UI 删除条件见 [Front 验收清单](FRONT_ACCEPTANCE.md)。
+
 ## 先读哪些文件
 
 1. `src/MCUGLauncher/MainWindow/MainWindow.xaml.cs`：窗口初始化、服务组装与主操作。
@@ -11,8 +15,10 @@ MCUG Launcher 是 .NET 8 / WPF 应用。先从本文件定位功能，再阅读�
 4. `src/MCUGLauncher.Core/`：实际业务服务；UI 调用这些服务。
 5. `test/` 对应检查程序：合成输入、预期行为和失败边界。
 
-窗口功能由 `partial MainWindow` 与独立组件共同实现，代码位于
-`src/MCUGLauncher/MainWindow/`；窗口 partial 按功能放在 `UI/`，交互控制器放在 `Controllers/`，构建器放在 `Builders/`，展示模型放在 `Models/`，生命周期初始化放在 `Initialization/`，页面组合放在 `Presentation/`，视觉样式放在 `Styling/`。
+窗口功能由 `partial MainWindow` 与独立组件共同实现。
+`src/MCUGLauncher/MainWindow/` 保留 `UI/`、`Builders/`、`Models/`、`Initialization/` 和 `Styling/`；
+交互控制器位于同级 `src/MCUGLauncher/Controllers/`，对话框和页面组合位于同级 `src/MCUGLauncher/Presentation/`。
+这次仅调整目录与文档引用，保留 `BlockLaunch` 命名空间、构造函数和调用方式；不表示已消除窗口依赖。
 新组件通过构造参数接收窗口或控件依赖。
 `MainWindow` 仍负责 WPF/XAML 事件入口与控制器组装；尚未迁移的功能仍共享窗口状态，**不是互相独立的组件**。
 初始化顺序集中在窗口构造函数中；调整父子控件关系前，应检查后续布局方法是否仍会读取它们。
@@ -32,16 +38,28 @@ MCUG Launcher 是 .NET 8 / WPF 应用。先从本文件定位功能，再阅读�
 | 下载队列与任务操作 | `UI/Downloads/DownloadQueueUI.cs`、`UI/Downloads/DownloadTaskUI.cs`、`UI/Downloads/MiniDownloadUI.cs` | Core `Application/OperationCoordinator.cs` |
 | 文件拖入、资源导入 | `Controllers/FileImportController.cs`、`UI/Instances/InstanceLibraryUI.cs`、`Presentation/InstanceLibraryDialog.cs` | Core `Application/LocalImportClassifier.cs`、`WorldArchives.cs` |
 | 整合包导入、导出、升级 | `UI/Packs/PackUI.cs`、`Controllers/PackUpgradeController.cs` | Core `PackService.cs`、`Application/PackUpgrade.cs` |
-| Java 与游戏启动 | `Controllers/JavaManagerController.cs`、`MainWindow.xaml.cs` | Core `Application/Java*.cs`、`LaunchService.cs` |
+| Java 与游戏启动 | `Controllers/JavaManagerController.cs`、`UI/Launch/GameLaunchUI.cs`（窗口适配）、`src/MCUGLauncher/Launch/GameLaunchController.cs`（独立启动编排） | Core `Application/Java*.cs`、`LaunchService.cs` |
 | 主题、背景 | `UI/Experience/AppearanceUI.cs`、`Styling/WindowThemeStyler.cs`、`Initialization/UtilityWindowInitializer.cs`、`App.xaml` | Core `Domain/Preferences.cs` |
 | 下载与网络设置 | `Controllers/NetworkSettingsController.cs` | `NetworkPolicyHandler`、Core 网络策略 |
 | 崩溃分析与反馈 | `UI/Support/DiagnosticsUI.cs` | Core `Application/Diagnostics.cs` |
 
 所有 MainWindow 类/记录类型的逐类说明和源码链接见 [组件文档索引](MainWindow/README.md)。
 
-表中的 Core 路径相对于 `src/MCUGLauncher.Core/`；界面代码路径相对于
-`src/MCUGLauncher/MainWindow/`，组件路径再包含对应职责目录；显式列出的 XAML 路径相对于
-`src/MCUGLauncher/`。
+启动编排现位于主项目同级功能目录 `src/MCUGLauncher/Launch/`。
+`GameLaunchController` 通过 `IGameLaunchInteraction` 获取输入与交互，不持有 MainWindow 或 WPF 控件。
+窗口仅适配设置、账号授权、预检确认、进度与启动结果；游戏日志、退出诊断和窗口隐藏/恢复仍由原有组件处理。
+详见 [启动模块说明](LAUNCH_MODULE.md)。
+
+下载任务执行已提取为 `src/MCUGLauncher/Downloads/DownloadTaskExecutor.cs`；
+窗口仅保留队列调度、状态与 UI/存档保护适配，详见 [下载执行器说明](DOWNLOAD_EXECUTOR.md)。
+
+版本与资源管理分别位于同级 `Versions/`、`Resources/`：查询、目标解析、资源操作和更新准备通过服务调用；
+窗口保留表单、确认与显示。边界和隔离检查见 [版本与资源管理模块](VERSION_RESOURCE_MODULES.md)。
+
+表中的 Core 路径相对于 `src/MCUGLauncher.Core/`；`Controllers/`、`Presentation/`、`Authentication/` 和
+显式列出的 XAML 路径相对于 `src/MCUGLauncher/`；其他界面代码路径相对于 `src/MCUGLauncher/MainWindow/`。
+迁移验证方式与后续解耦方案见 [界面组件布局与解耦](UI_COMPONENT_LAYOUT.md)。
+内容更新控制器已通过小型交互接口解除具体窗口依赖，见 [内容更新解耦](CONTENT_UPDATE_DECOUPLING.md)。
 
 ## 如何扩展
 

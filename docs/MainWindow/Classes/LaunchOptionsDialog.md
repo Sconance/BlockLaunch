@@ -4,4 +4,4 @@
 
 - **主要入口：** `Show(descriptor)`。
 - **协作：** 使用 `LaunchOptionsForm` 收集设置，经主窗口的停止状态检查和对话框入口完成保存；通过回调应用个性化并打开外观设置。
-- **源码：** [`LaunchOptionsDialog.cs`](../../../src/MCUGLauncher/MainWindow/Presentation/LaunchOptionsDialog.cs)。
+- **源码：** [`LaunchOptionsDialog.cs`](../../../src/MCUGLauncher/Presentation/LaunchOptionsDialog.cs)。

@@ -20,7 +20,7 @@ internal sealed class InstanceUninstallationController(MainWindow host)
             host.RequireStopped();
             var root = host.prefs.Root;
             var defaults = host.prefs.Launch;
-            var plan = await Task.Run(() => InstanceUninstaller.Plan(root, key, defaults));
+            var plan = await host.versionManagement.PlanUninstall(root, key, defaults);
             var body = new StackPanel
             {
                 Margin = new Thickness(26)
@@ -66,7 +66,7 @@ internal sealed class InstanceUninstallationController(MainWindow host)
             var frozen = plan;
             if (plan.SharedData && shared.IsChecked == true)
             {
-                frozen = await Task.Run(() => InstanceUninstaller.Plan(root, key, defaults, true));
+                frozen = await host.versionManagement.PlanUninstall(root, key, defaults, true);
                 if (frozen.InstanceId != plan.InstanceId || frozen.SharedData != plan.SharedData)
                     throw new IOException("实例身份或隔离设置已变化，请重新确认删除。");
             }
@@ -80,7 +80,7 @@ internal sealed class InstanceUninstallationController(MainWindow host)
                         host.operations.ChangePending(record.Id, OperationState.Cancelled);
                 try
                 {
-                    await Task.Run(() => InstanceUninstaller.Delete(frozen, defaults));
+                    await host.versionManagement.Uninstall(frozen, defaults);
                     deleted = true;
                     host.Log("已删除版本及所选数据：" + key);
                 }

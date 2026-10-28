@@ -259,7 +259,7 @@ public partial class MainWindow
             ShowSketchVersions();
     }
 
-    internal PackRequirements RequirementsFor(string profile) => ProfileInspector.Read(prefs.Root, profile);
+    internal PackRequirements RequirementsFor(string profile) => versionManagement.Requirements(prefs.Root, profile);
 
     void ShowInstanceDetail()
     {
@@ -331,8 +331,4 @@ public partial class MainWindow
         playerIdentityController.Refresh();
     }
 
-    void PrepareOfflineSkin(string directory, string baseVersion)
-    {
-        OfflineSkinPackBuilder.Prepare(prefs.Root, directory, prefs.OfflineSkin, baseVersion, AccountModeControl.SelectedIndex == 0);
-    }
 }

@@ -12,9 +12,7 @@ using XboxAuthNet.Game.Authenticators;
 
 namespace BlockLaunch;
 
-public record SavedMicrosoftAccount(string Username, string Uuid, string SkinUrl = "");
-
-public sealed class MicrosoftAccountService
+public sealed class MicrosoftAccountService : IMicrosoftAccountProvider
 {
     readonly ProtectedAccountStorage storage;
     readonly HttpClient http;

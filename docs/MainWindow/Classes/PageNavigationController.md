@@ -4,4 +4,4 @@
 
 - **主要入口：** `Navigate(sender, e)`。
 - **协作：** 通过传入的委托刷新内容、任务和下载分类；不直接构建功能页面。
-- **源码：** [`PageNavigationController.cs`](../../../src/MCUGLauncher/MainWindow/Controllers/PageNavigationController.cs)。
+- **源码：** [`PageNavigationController.cs`](../../../src/MCUGLauncher/Controllers/PageNavigationController.cs)。

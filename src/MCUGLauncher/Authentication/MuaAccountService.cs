@@ -10,24 +10,9 @@ using CmlLib.Core.Auth;
 
 namespace BlockLaunch;
 
-public record MuaProfile(string Id, string Name);
-
-public sealed class MuaCredential
+public sealed class MuaAccountService : IDisposable, IMuaAccountProvider
 {
-    public string Server { get; set; } = MuaAccountService.Api;
-    public string Account { get; set; } = "";
-    public string AccessToken { get; set; } = "";
-    public string ClientToken { get; set; } = "";
-    public MuaProfile Profile { get; set; } = new("", "");
-
-    public override string ToString() => "MUA credential (protected)";
-}
-
-public sealed record MuaMetadata(string Json, IReadOnlyList<string> SkinDomains);
-
-public sealed class MuaAccountService : IDisposable
-{
-    public const string Api = "https://skin.mualliance.ltd/api/yggdrasil/";
+    public const string Api = MuaCredential.DefaultServer;
 
     public static bool IsMuaConfiguration(string text)
     {
@@ -367,6 +352,8 @@ public sealed class MuaAccountService : IDisposable
 
         return null;
     }
+
+    MSession IMuaAccountProvider.CreateSession(MuaCredential credential) => Session(credential);
 
     public static MSession Session(MuaCredential c)
     {

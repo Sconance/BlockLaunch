@@ -1,6 +1,14 @@
 using BlockLaunch;
 using System.Text.Json;
 
+await DownloadQueueServiceChecks.Run();
+if (args.Contains("--queue-service"))
+    return;
+
+await DownloadTaskExecutorChecks.Run();
+if (args.Contains("--executor"))
+    return;
+
 var root = Path.Combine(Path.GetTempPath(), "BlockLaunch-queue-" + Guid.NewGuid().ToString("N"));
 var queue = new OperationCoordinator(root);
 void Check(bool value, string name)

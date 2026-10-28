@@ -4,4 +4,4 @@
 
 - **主要入口：** `UpdateName()`、`Refresh(bypassCache)`、`Cancel()`。
 - **协作：** 从 `PlayerIdentityState` 快照读取账号与路径，通过头像渲染工具更新 WPF 控件。
-- **源码：** [`PlayerIdentityController.cs`](../../../src/MCUGLauncher/MainWindow/Controllers/PlayerIdentityController.cs)。
+- **源码：** [`PlayerIdentityController.cs`](../../../src/MCUGLauncher/Controllers/PlayerIdentityController.cs)。

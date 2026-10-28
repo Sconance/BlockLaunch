@@ -4,4 +4,4 @@
 
 - **主要入口：** `Build()`、`Push(page)`、`Pop(page)`、`Activate(page)`、`RefreshTitle(page)`。
 - **协作：** 接收 `MainWindow`、内嵌页面列表和导航控件；窗口关闭时按栈逆序强制关闭页面。
-- **源码：** [`InlinePageHost.cs`](../../../src/MCUGLauncher/MainWindow/Presentation/InlinePageHost.cs)。
+- **源码：** [`InlinePageHost.cs`](../../../src/MCUGLauncher/Presentation/InlinePageHost.cs)。

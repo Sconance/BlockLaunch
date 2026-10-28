@@ -4,4 +4,4 @@
 
 - **主要入口：** `AutomaticLoaderClick` 及版本选择处理。
 - **协作：** 依赖 `MainWindow` 的实例、操作状态和队列入口；加载器安装由安装服务执行。
-- **源码：** [`LoaderInstallationController.cs`](../../../src/MCUGLauncher/MainWindow/Controllers/LoaderInstallationController.cs)。
+- **源码：** [`LoaderInstallationController.cs`](../../../src/MCUGLauncher/Controllers/LoaderInstallationController.cs)。

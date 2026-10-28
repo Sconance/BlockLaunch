@@ -17,7 +17,7 @@ internal sealed class LoaderInstallationController(MainWindow host)
         {
             host.RequireStopped();
             var gameVersion = host.downloadVersion ?? host.Target().GameVersion;
-            var releases = await LoaderCatalog.Get(host.http, gameVersion, loader, host.CurrentToken);
+            var releases = await host.versionManagement.Loaders(gameVersion, loader, host.CurrentToken);
             if (releases.Count == 0)
                 throw new IOException("此游戏版本没有可用的自动安装版本。NeoForge 从 1.20.2 起支持；旧版本可使用官方安装器。");
             var body = new StackPanel();

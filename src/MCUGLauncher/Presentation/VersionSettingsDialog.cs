@@ -22,8 +22,8 @@ internal sealed class VersionSettingsDialog(MainWindow host, string key, string 
             return;
         }
 
-        descriptor = catalog.GetOrCreate(key);
-        requirements = host.RequirementsFor(descriptor.LaunchProfileId);
+        descriptor = host.versionManagement.Descriptor(root, key);
+        requirements = host.versionManagement.Requirements(root, descriptor.LaunchProfileId);
         view = new VersionSettingsWindowView(host, descriptor.DisplayName, descriptor, requirements, Render, () => window.Close());
         window = view.Window;
         host.versionSettingsWindow = window;

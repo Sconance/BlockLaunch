@@ -12,10 +12,9 @@ public partial class MainWindow
 
     void BuildMuaAccountUI()
     {
-        muaAccounts = new(Path.Combine(settingsDir, "accounts"));
         try
         {
-            muaAccount = muaAccounts.Read();
+            muaAccount = accountSessions.ReadMua();
         }
         catch (Exception ex) when (ex is AccountStorageException or IOException or UnauthorizedAccessException)
         {
@@ -132,7 +131,7 @@ public partial class MainWindow
         try
         {
             operations.Current?.Report("正在验证 MUA 账号…");
-            var credential = await muaAccounts.Login(account.Text, secret, SelectMuaRole, CurrentToken);
+            var credential = await accountSessions.LoginMua(account.Text, secret, SelectMuaRole, CurrentToken);
             muaAccount = credential;
             muaValidated = true;
             AccountModeIndex = 2;
@@ -160,7 +159,7 @@ public partial class MainWindow
         try
         {
             muaValidated = false;
-            muaAccount = await muaAccounts.Ensure(force, CurrentToken);
+            muaAccount = await accountSessions.EnsureMua(force, CurrentToken);
             muaValidated = true;
             UpdateAccountBadge();
         }
@@ -200,7 +199,7 @@ public partial class MainWindow
             await RunAccountAction(async () =>
             {
                 RequireStopped();
-                var revoked = await muaAccounts.Forget(CurrentToken);
+                var revoked = await accountSessions.ForgetMua(CurrentToken);
                 muaAccount = null;
                 muaValidated = false;
                 prefs.PreferMua = false;

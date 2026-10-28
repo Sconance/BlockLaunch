@@ -155,19 +155,19 @@ public partial class MainWindow
     {
         try
         {
-            var result = await session.Completion;
-            if (gameSession == session)
-                StopGameButtonControl.Visibility = Visibility.Collapsed;
-            var completedContext = context with
+            var result = await gameSessionMonitor.Observe(session, context, completedContext =>
             {
-                Exit = result
-            };
-            if (gameSession == session)
-                recentDiagnosticContext = completedContext;
-            Log(result.Requested ? $"游戏已按关闭请求退出（代码 {result.Code}）。" : result.Code == 0 ? "游戏正常退出（代码 0）。" : $"游戏异常退出（代码 {result.Code}），正在生成本地诊断。");
-            if (!result.Requested && result.Code != 0)
+                if (gameSession == session)
+                {
+                    StopGameButtonControl.Visibility = Visibility.Collapsed;
+                    recentDiagnosticContext = completedContext;
+                }
+                var exit = completedContext.Exit!;
+                Log(exit.Requested ? $"游戏已按关闭请求退出（代码 {exit.Code}）。" : exit.Code == 0 ? "游戏正常退出（代码 0）。" : $"游戏异常退出（代码 {exit.Code}），正在生成本地诊断。");
+            });
+            if (result.Diagnostic != null)
             {
-                var snapshot = await Task.Run(() => Diagnostics.Capture(completedContext));
+                var snapshot = result.Diagnostic;
                 if (gameSession != session)
                     return;
                 ShowDiagnosticSnapshot(snapshot);

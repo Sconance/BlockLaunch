@@ -48,7 +48,23 @@ public partial class MainWindow
         }
     }
 
-    ContentService Modrinth => new(http, CurrentToken);
+    internal bool IsGameRunning => game is { HasExited: false };
+
+    ResourceSearchQuery ResourceQuery(InstanceTarget target) => new(
+        ContentSearchQueryInput.Text.Trim(), target.GameVersion, target.Loader, ContentKind,
+        searchOffset, ResourceSearchSort(), releaseChannel.SelectedIndex switch
+        {
+            1 => "release",
+            2 => "beta",
+            3 => "alpha",
+            _ => ""
+        });
+
+    ResourceInstallTarget ResourceTarget()
+    {
+        var target = Target();
+        return new(prefs.Root, target.Version, Instance(), target.GameVersion, target.Loader);
+    }
 
     void Navigate(object sender, RoutedEventArgs e)
     {
@@ -73,15 +89,7 @@ public partial class MainWindow
         ContentDiscoverNavigation.IsChecked = true;
     }
 
-    internal InstanceTarget Target()
-    {
-        var selected = Selected();
-        if (!File.Exists(Path.Combine(prefs.Root, "versions", selected, selected + ".json")) && rows.Any(r => r.Id == selected && (r.Type.Equals("release", StringComparison.OrdinalIgnoreCase) || r.Type.Equals("snapshot", StringComparison.OrdinalIgnoreCase))))
-            return new(selected, selected, "vanilla");
-        var descriptor = new InstanceCatalog(prefs.Root).GetOrCreate(selected);
-        var info = RequirementsFor(descriptor.LaunchProfileId);
-        return new(selected, info.Minecraft, info.Loader);
-    }
+    internal InstanceTarget Target() => versionManagement.Target(prefs.Root, Selected(), rows);
 
     void VersionChanged(object s, SelectionChangedEventArgs e)
     {
@@ -153,10 +161,9 @@ public partial class MainWindow
         if (resourceSource.SelectedIndex == 1)
             throw new NotSupportedException("CurseForge 未启用：当前没有 API Key。请使用 Modrinth。");
         ShowResourceResults();
-        var service = new ContentService(http, token);
         var page = resourceFavoritesOnly
             ? await SearchFavoriteResources(token)
-            : await service.Search(ContentSearchQueryInput.Text.Trim(), target.GameVersion, target.Loader, ContentKind, searchOffset, ResourceSearchSort());
+            : await resourceManagement.Search(ResourceQuery(target), token);
         token.ThrowIfCancellationRequested();
         ContentSearchResultsControl.ItemsSource = DecorateProjects(page.Items);
         searchTotal = page.Total;
@@ -213,13 +220,11 @@ public partial class MainWindow
             ContentProjectDescriptionLabel.Text = project.Description;
             ContentProjectVersionsControl.ItemsSource = null;
             ContentInstallButtonControl.IsEnabled = false;
-            var type = ContentKind;
+            var query = ResourceQuery(target);
             OperationStatusLabel.Text = "读取兼容版本…";
             var presentation = LoadResourcePresentation(project, token);
-            var list = await new ContentService(http, token).Versions(project.Id, target.GameVersion, target.Loader, type);
+            var list = await resourceManagement.Versions(project.Id, query, token);
             token.ThrowIfCancellationRequested();
-            if (releaseChannel.SelectedIndex > 0)
-                list = list.Where(v => v.VersionType == new[] { "", "release", "beta", "alpha" }[releaseChannel.SelectedIndex]).ToList();
             ContentProjectVersionsControl.ItemsSource = list;
             ContentProjectVersionsControl.SelectedIndex = list.Count > 0 ? 0 : -1;
             ContentInstallButtonControl.IsEnabled = list.Count > 0;
@@ -230,24 +235,15 @@ public partial class MainWindow
         });
     }
 
-    internal void RequireStopped()
-    {
-        if (game is
-            {
-                HasExited: false
-            })
-            throw new IOException("请先关闭游戏，再修改实例内容。");
-    }
+    internal void RequireStopped() => ResourceManagementService.RequireStopped(IsGameRunning);
 
     async Task InstallVersion(ContentVersion version)
     {
         RequireStopped();
-        var target = Target();
-        if (!LocalVersions().Contains(target.Version))
-            throw new IOException("请先安装并选择本地游戏版本。");
+        var target = ResourceTarget();
         OperationStatusLabel.Text = "解析必需依赖…";
-        var plan = await Modrinth.Resolve(version, target.GameVersion, ContentKind == "datapack" ? "datapack" : target.Loader);
-        var destination = Instance();
+        var plan = await resourceManagement.PrepareInstallation(version, target, ContentKind, IsGameRunning, CurrentToken);
+        var destination = target.Directory;
         if (plan.Types.Values.Contains("datapack"))
         {
             var picker = new OpenFolderDialog
@@ -257,15 +253,12 @@ public partial class MainWindow
             };
             if (picker.ShowDialog() != true)
                 return;
-            var world = Path.GetFullPath(picker.FolderName);
-            var saves = Path.GetFullPath(Path.Combine(destination, "saves")) + Path.DirectorySeparatorChar;
-            if (!world.StartsWith(saves, StringComparison.OrdinalIgnoreCase) || !File.Exists(Path.Combine(world, "level.dat")))
-                throw new IOException("请选择当前实例的有效存档目录（含 level.dat）。");
+            var world = resourceManagement.ValidateWorld(destination, picker.FolderName);
             destination = world;
             managedWorld = world;
         }
 
-        var count = await Modrinth.Install(plan, destination, text => operations.Current?.Report(text));
+        var count = await resourceManagement.Install(plan, destination, IsGameRunning, CurrentToken, text => operations.Current?.Report(text));
         Log($"安装完成：{version.Name}，共 {count} 项（含必需依赖）。更新前的文件保留在实例备份目录。");
         RefreshLocalContent();
         InlineMessageBox.Show($"已安装 {count} 项内容（含必需依赖）。\n手动导入的模组无法自动识别重复项目，请在内容管理中检查。", "安装完成");
@@ -290,7 +283,7 @@ public partial class MainWindow
             return;
         try
         {
-            localSnapshot = ContentService.ListLocal(ManagedDirectory());
+            localSnapshot = resourceManagement.ListLocal(ManagedDirectory());
             ApplyLocalSearch();
             if (managedWorld != null)
                 ManageTargetLabel.Text = "数据包目标存档：" + managedWorld;
@@ -311,7 +304,7 @@ public partial class MainWindow
         RequireStopped();
         if (InstalledContentListControl.SelectedItem is LocalContent item)
         {
-            ContentService.Toggle(item);
+            resourceManagement.Toggle(item, IsGameRunning);
             Log("切换内容状态：" + item.Name);
             RefreshLocalContent();
         }
@@ -323,7 +316,7 @@ public partial class MainWindow
         RequireStopped();
         if (InstalledContentListControl.SelectedItem is LocalContent item)
         {
-            ContentService.MoveToBackup(ManagedDirectory(), item);
+            resourceManagement.MoveToBackup(ManagedDirectory(), item, IsGameRunning);
             Log("已移至备份：" + item.Name + "。其他模组可能依赖此项目，请检查依赖。");
             RefreshLocalContent();
         }

@@ -34,7 +34,7 @@ internal sealed class LaunchOptionsDialog(
                 {
                     host.RequireStopped();
                     descriptor.Launch = null;
-                    new InstanceCatalog(host.prefs.Root).Save(descriptor);
+                    host.versionManagement.Save(host.prefs.Root, descriptor);
                     dialog.Close();
                 }
                 catch (Exception ex)
@@ -52,7 +52,7 @@ internal sealed class LaunchOptionsDialog(
                 if (descriptor != null)
                 {
                     descriptor.Launch = updated;
-                    new InstanceCatalog(host.prefs.Root).Save(descriptor);
+                    host.versionManagement.Save(host.prefs.Root, descriptor);
                 }
                 else
                 {

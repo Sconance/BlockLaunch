@@ -3,9 +3,11 @@ using System.Windows.Controls;
 
 namespace BlockLaunch;
 
-internal sealed class ContentUpdateSelectionView
+internal sealed class ContentUpdateSelectionView : IContentUpdateSelection
 {
     readonly InlineDialog dialog;
+    readonly Func<string, StackPanel, InlineDialog> createDialog;
+    readonly Func<string, RoutedEventHandler, Button> createButton;
 
     public InlineDialog Dialog => dialog;
 
@@ -15,9 +17,11 @@ internal sealed class ContentUpdateSelectionView
         object owner,
         IEnumerable<ContentUpdate> updates,
         string? project,
-        Func<IReadOnlyList<ContentVersion>, Task> preview,
+        Func<IContentUpdateSelection, IReadOnlyList<ContentVersion>, Task> preview,
         Func<bool> isBusy)
     {
+        this.createDialog = createDialog;
+        this.createButton = createButton;
         var panel = new StackPanel();
         panel.Children.Add(Heading("选择更新内容"));
         panel.Children.Add(Hint("仅检查已管理的 Modrinth 内容。先勾选项目，再预览版本、必需依赖和文件变化。"));
@@ -45,7 +49,7 @@ internal sealed class ContentUpdateSelectionView
         choices.Children.Add(createButton("全不选", (_, _) => selected.ForEach(item => item.Box.IsChecked = false)));
         panel.Children.Add(choices);
         panel.Children.Add(createButton("预览所选更新", async (_, _) =>
-            await preview(selected.Where(item => item.Box.IsChecked == true).Select(item => item.Version).ToList())));
+            await preview(this, selected.Where(item => item.Box.IsChecked == true).Select(item => item.Version).ToList())));
         dialog.Closing += (_, e) =>
         {
             if (isBusy())
@@ -56,6 +60,9 @@ internal sealed class ContentUpdateSelectionView
     public void Show() => dialog.ShowDialog();
 
     public void Close() => dialog.Close();
+
+    public bool ConfirmPreview(ContentUpdatePreview preview) =>
+        new ContentUpdatePreviewView(createDialog, createButton, dialog, preview).Show();
 
     static TextBlock Heading(string text) => new()
     {
