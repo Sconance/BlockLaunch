@@ -376,7 +376,9 @@ internal sealed class CompactShellController
 
     internal void UpdateHomeLaunchLabel()
     {
-        homeSelectedLabel.Text = workspace.Controls.Versions.SelectedItem is VersionRow selected ? selected.Label : "尚未安装游戏，请前往下载";
+        homeSelectedLabel.Text = workspace.Controls.Versions.SelectedItem is VersionRow selected
+            ? workspace.PackController.VersionLabel(selected.Id, workspace.LaunchCoordinator.LocalVersions())
+            : "尚未安装游戏，请前往下载";
         homeSelectedLabel.ToolTip = homeSelectedLabel.Text;
         if (workspace.Controls.LaunchGameButton != null)
             workspace.Controls.LaunchGameButton.ToolTip = homeSelectedLabel.Text;

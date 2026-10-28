@@ -85,6 +85,8 @@ internal sealed class InlineHostController
             if (e.Key == Key.Escape && inlinePages.Count > 0)
             {
                 e.Handled = true;
+                if (InlineEscapeHandler.DismissSelector(inlinePages[^1]))
+                    return;
                 inlinePages[^1].Close();
             }
         };

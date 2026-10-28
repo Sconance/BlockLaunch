@@ -20,6 +20,7 @@ internal sealed class InstancePagesController
     }
 
     readonly InstanceSearchController instanceSearch;
+    internal event Action? InstanceViewsChanged;
 
     internal ListBox instanceList = new();
     internal readonly TextBox instanceQuery = new()
@@ -242,6 +243,8 @@ internal sealed class InstancePagesController
         instanceList.SelectedItem = result.FirstOrDefault(r => r.Key == workspace.Controls.Versions.SelectedValue as string) ?? result.FirstOrDefault();
         if (workspace.SketchController.sketchHome != null)
             workspace.SketchController.ShowSketchVersions();
+        workspace.CompactShellController.UpdateHomeLaunchLabel();
+        InstanceViewsChanged?.Invoke();
     }
 
     internal PackRequirements RequirementsFor(string profile) => ProfileInspector.Read(workspace.LaunchCoordinator.prefs.Root, profile);

@@ -3,6 +3,7 @@ using System.IO;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shell;
@@ -138,6 +139,7 @@ static class Program
         {
             Check(((ComboBox)Field("AccountMode")).SelectedIndex == 2, "preferred MUA mode survives missing cache without offline fallback");
             ((ComboBox)Field("AccountMode")).SelectedIndex = 0;
+
             Check(window.WindowStyle == WindowStyle.None && WindowChrome.GetWindowChrome(window)?.ResizeBorderThickness.Left == 6, "custom integrated caption retains resize border");
             Check(typeof(MainWindow).Assembly.GetName().Name == "MCUGLauncher" && typeof(MainWindow).Assembly.GetName().Version!.ToString() == "0.20.2.0", "final assembly name and version");
             Check(window.Title.StartsWith("MCUG Launcher") && ((SolidColorBrush)app.Resources["AccentBrush"]).Color == Color.FromRgb(0, 109, 184), "new brand uses Wuhan CUG blue");
@@ -427,6 +429,21 @@ static class Program
                 var categories = Walk(page).OfType<RadioButton>().Where(r => r.GroupName == "SketchCategories").ToList();
                 Check(categories.Count == 7, "seven sketch content categories available");
                 var versionList = Walk(page).OfType<ListBox>().First();
+                var catalog = new InstanceCatalog(game);
+                var descriptor = catalog.GetOrCreate("1.21.1");
+                var originalName = descriptor.DisplayName;
+                descriptor.DisplayName = "Renamed inline fixture";
+                catalog.Save(descriptor);
+                Call("RefreshInstanceViews");
+                Check(versionList.SelectedItem is InstanceView selected && selected.Key == "1.21.1"
+                    && selected.Name == descriptor.DisplayName
+                    && Walk(page).OfType<TextBlock>().Any(text => text.Text == descriptor.DisplayName),
+                    "open content manager refreshes renamed metadata and retains selection");
+                Check(((TextBlock)Field("homeSelectedLabel")).Text.Contains(descriptor.DisplayName),
+                    "home launch label refreshes renamed metadata without changing the selection");
+                descriptor.DisplayName = originalName;
+                catalog.Save(descriptor);
+                Call("RefreshInstanceViews");
                 Check(!ScrollViewer.GetCanContentScroll(versionList), "manager version list scrolls in pixels");
                 Check(Walk(page).OfType<ComboBox>().Single().SelectedItem?.ToString() == game, "manager exposes current directory dropdown");
                 Check(((Grid)Field("inlineHost")).RowDefinitions[0].Height.Value == 8 && ((Button)Field("managerCaptionBack")).Visibility == Visibility.Visible, "manager title moves into caption without duplicate row");
@@ -650,6 +667,37 @@ static class Program
             Call("ChangeDownloadById", live192.Id, OperationState.Cancelled);
             Check(queue192.History().Single(r => r.Id == live192.Id).State == OperationState.Cancelled, "task list cancels resumed transfer");
             Pages().Last().Close();
+            var escapeCombo = new ComboBox { ItemsSource = new[] { "first", "second" }, SelectedIndex = 0 };
+            var escapePage = new InlineDialog { Owner = window, Title = "Escape routing fixture", Content = escapeCombo };
+            var keyboardSource = System.Windows.Interop.HwndSource.FromHwnd(
+                new System.Windows.Interop.WindowInteropHelper(window).EnsureHandle());
+            LauncherTestAccess.Set(window, "closeAfterTask", true);
+            window.Show();
+            Drive(() => escapePage.ShowDialog(), page =>
+            {
+                if ((bool)Field("busy") || !escapeCombo.IsLoaded)
+                    return false;
+                escapeCombo.IsDropDownOpen = true;
+                var key = new KeyEventArgs(Keyboard.PrimaryDevice, keyboardSource, 0, Key.Escape)
+                {
+                    RoutedEvent = Keyboard.PreviewKeyDownEvent
+                };
+                escapeCombo.RaiseEvent(key);
+                if (!key.Handled)
+                {
+                    key.RoutedEvent = Keyboard.KeyDownEvent;
+                    escapeCombo.RaiseEvent(key);
+                }
+                Check(Pages().Contains(page) && !escapeCombo.IsDropDownOpen,
+                    "Escape dismisses an open selector without leaving the inline editor");
+                window.RaiseEvent(new KeyEventArgs(Keyboard.PrimaryDevice, keyboardSource, 0, Key.Escape)
+                {
+                    RoutedEvent = Keyboard.PreviewKeyDownEvent
+                });
+                Check(!Pages().Contains(page), "unhandled Escape still returns from the inline editor");
+                return true;
+            });
+            window.Hide();
             Console.WriteLine("ALL_INLINE_UI_CHECKS_PASSED (component interactions; not live Microsoft authorization)");
         }
         catch (Exception ex)

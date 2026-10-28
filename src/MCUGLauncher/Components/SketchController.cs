@@ -477,6 +477,17 @@ internal sealed class SketchController
             }
         }
 
+        void ReloadVersions()
+        {
+            // Rebind immutable rows after nested editors save metadata, retaining the instance key.
+            var selectedKey = (list.SelectedItem as InstanceView)?.Key ?? current;
+            list.ItemsSource = (workspace.InstancePagesController.instanceList.ItemsSource as System.ComponentModel.ICollectionView)?.SourceCollection;
+            list.SelectedItem = list.Items.Cast<InstanceView>().FirstOrDefault(item => item.Key == selectedKey)
+                ?? list.Items.Cast<InstanceView>().FirstOrDefault();
+            SafeRender();
+        }
+
+        workspace.InstancePagesController.InstanceViewsChanged += ReloadVersions;
         workspace.DropFeedbackController.refreshSketchManager = SafeRender;
         foreach (var name in new[]
         {
@@ -568,6 +579,7 @@ internal sealed class SketchController
         };
         page.Closed += (_, _) =>
         {
+            workspace.InstancePagesController.InstanceViewsChanged -= ReloadVersions;
             workspace.DropFeedbackController.sketchManagerKey = null;
             workspace.DropFeedbackController.refreshSketchManager = null;
             workspace.InstancePagesController.RefreshInstanceViews();
