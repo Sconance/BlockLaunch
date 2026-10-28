@@ -40,7 +40,24 @@
 
 组合根负责连接回调，所有模块构造完成后才执行初始化。需要后续状态的回调延迟读取，不捕获过时的 HttpClient 或账号状态。
 
-仍有应用级控制器依赖 `LauncherWorkspace`；大型版本设置、实例页面和资源工作区还可以继续分解。本轮没有宣称完成整个应用的依赖解耦，也没有改动 Core、认证协议、配置格式或版本号。
+仍有应用级控制器依赖 `LauncherWorkspace`；实例页面和资源工作区还可以继续分解。没有宣称完成整个应用的依赖解耦，也没有改动 Core、认证协议、配置格式或版本号。
+
+## 版本设置页面进一步拆分
+
+`VersionSettingsController` 从约 750 行缩减到约 125 行，负责页内窗口生命周期、初始栏目和导航；页面主体不再放在一个 Render 方法的分支中。
+
+- `Views/VersionSettings/VersionSettingsView.cs`：布局、页头和统一的卡片、字段及按钮。
+- `VersionOverviewPage`：版本个性化、快捷方式和维护入口。
+- `VersionLaunchPage`：当前实例启动选项与 Java 配置。
+- `VersionLoaderPage`：兼容加载器查询、安装与实例维护。
+- `VersionModPage`：本实例 Mod 列表、筛选及管理操作。
+- `VersionExportPage`：整合包选项和启动脚本入口。
+- `Components/VersionIdentityEditor`：名称、描述、分类等身份信息的编辑与保存。
+- `Presentation/VersionSettingsPageContext`：当前实例的数据、页面视图与重绘入口，不持有 MainWindow 或工作区。
+- `Presentation/VersionTaskActions`：任务执行、取消令牌和运行时网络访问的少量明确能力；每页再单独声明所需的动作记录。
+- `Composition/VersionSettingsComposition`：把已有应用操作接到页面，保持下载、账号和实例服务实现不变。
+
+页面构建器不接收整个工作区，也不通过反射查找应用操作。新增的检查限制协调器大小，并防止独立页面重新依赖 MainWindow 或 LauncherWorkspace。
 
 ## 验证范围
 

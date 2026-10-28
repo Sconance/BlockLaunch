@@ -25,7 +25,7 @@ def main():
     # These adapters have explicit dependencies. Keep the composition root out of them.
     isolated = ('AvatarController', 'HomeAccountController', 'KeyboardNavigationController',
                 'LoaderOverviewController', 'NetworkController', 'WindowChromeController',
-                'GameWindowBehaviorController', 'InstanceSearchController')
+                'GameWindowBehaviorController', 'InstanceSearchController', 'VersionIdentityEditor')
     for name in isolated:
         source = app / 'Components' / f'{name}.cs'
         if re.search(r'\bLauncherWorkspace\b', source.read_text(encoding='utf-8-sig')):
@@ -34,6 +34,15 @@ def main():
         for source in (app / folder).glob('*.cs'):
             if re.search(r'\bLauncherWorkspace\b', source.read_text(encoding='utf-8-sig')):
                 errors.append(f'{source.relative_to(root)} depends on the full workspace')
+    version_pages = app / 'Views/VersionSettings'
+    for name in ('VersionOverviewPage', 'VersionLaunchPage', 'VersionLoaderPage', 'VersionModPage', 'VersionExportPage'):
+        source = version_pages / f'{name}.cs'
+        if not source.is_file():
+            errors.append(f'Missing independent version page: {name}')
+        elif re.search(r'\b(LauncherWorkspace|MainWindow)\b', source.read_text(encoding='utf-8-sig')):
+            errors.append(f'{name} must use per-instance context and explicit actions')
+    if len((app / 'Components/VersionSettingsController.cs').read_text(encoding='utf-8-sig').splitlines()) > 200:
+        errors.append('Version settings coordinator exceeds its lifetime/navigation boundary')
     presentation = '{http://schemas.microsoft.com/winfx/2006/xaml/presentation}'
     document = ET.parse(app / 'MainWindow.xaml')
     for tab in document.iter(presentation + 'TabItem'):

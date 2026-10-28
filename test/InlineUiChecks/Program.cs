@@ -330,6 +330,29 @@ static class Program
             Drive(() => Call("OpenVersionSettings", "1.21.1"), page =>
             {
                 Check(page.Title.StartsWith("版本设置"), "version settings is an inline page");
+                foreach (var section in new[]
+                {
+                    ("概览", "修改版本名"),
+                    ("设置", "保存版本设置"),
+                    ("修改", "获取兼容加载器版本"),
+                    ("Mod 管理", "搜索下载 Mod"),
+                    ("导出", "选择位置并导出")
+                })
+                {
+                    var navigation = Walk(page).OfType<RadioButton>()
+                        .Single(button => Equals(button.Content, section.Item1 switch
+                        {
+                            "概览" => "◇   概览",
+                            "设置" => "⚙   设置",
+                            "修改" => "✎   修改",
+                            "Mod 管理" => "▦   Mod 管理",
+                            _ => "□   导出"
+                        }));
+                    navigation.IsChecked = true;
+                    Check(Buttons(page).Any(button => Equals(button.Content, section.Item2)),
+                        "independent version page renders its working controls: " + section.Item1);
+                }
+                Walk(page).OfType<RadioButton>().Single(button => Equals(button.Content, "◇   概览")).IsChecked = true;
                 Capture("v0162-version-page.png");
                 page.Close();
                 return true;
