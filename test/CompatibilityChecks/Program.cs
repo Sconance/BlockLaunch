@@ -23,6 +23,12 @@ if (args.Contains("--front"))
     return;
 }
 
+if (args.Contains("--front-settings"))
+{
+    await FrontSettingsChecks.Run();
+    return;
+}
+
 if (args.Contains("--content-update-controller"))
 {
     await ContentUpdateControllerChecks.Run();
@@ -48,6 +54,8 @@ await ManagementServiceChecks.Run();
 await ContentUpdateControllerChecks.Run();
 
 await FrontResourceBrowserChecks.Run();
+
+await FrontSettingsChecks.Run();
 
 var root = Path.Combine(Path.GetTempPath(), "BlockLaunch 兼容与恢复 " + Guid.NewGuid().ToString("N"));
 Directory.CreateDirectory(root);

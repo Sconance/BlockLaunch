@@ -8,14 +8,22 @@ public partial class FrontWindow : Window
 {
     readonly ResourceBrowserViewModel resources;
     readonly ResourceBrowserView browser;
+    readonly SettingsViewModel settings;
+    readonly SettingsView settingsView;
 
-    public FrontWindow(IFrontResourceBrowser resourceBrowser, string mode)
+    public FrontWindow(IFrontResourceBrowser resourceBrowser, IFrontSettings settingsService, string mode)
     {
         InitializeComponent();
         ModeLabel.Text = mode;
         resources = new ResourceBrowserViewModel(resourceBrowser);
         browser = new ResourceBrowserView(resources);
-        Closed += (_, _) => resources.Dispose();
+        settings = new SettingsViewModel(settingsService);
+        settingsView = new SettingsView(settings);
+        Closed += (_, _) =>
+        {
+            resources.Dispose();
+            settings.Dispose();
+        };
         HomeNavigation.IsChecked = true;
     }
 
@@ -35,11 +43,17 @@ public partial class FrontWindow : Window
             ShowHome();
             return;
         }
+        if (page == "settings")
+        {
+            PageTitle.Text = "启动设置";
+            PageSubtitle.Text = "通过独立接口读取、校验和保存设置，不依赖旧窗口。";
+            PageHost.Content = settingsView;
+            return;
+        }
         var description = page switch
         {
             "install" => ("游戏安装", "版本列表、加载器选择与安装任务将在下一阶段接入。"),
             "content" => ("内容管理", "本地资源列表、启用/禁用和更新预览尚未迁移。"),
-            "settings" => ("启动设置", "Java、内存、分辨率和隔离设置尚未迁移；当前不会保存配置。"),
             "logs" => ("运行日志", "游戏输出与诊断尚未接入；这里不会读取真实日志。"),
             _ => ("任务与恢复", "下载进度、暂停、继续和事务回退尚未接入。")
         };

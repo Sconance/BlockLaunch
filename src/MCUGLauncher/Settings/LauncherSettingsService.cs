@@ -1,4 +1,5 @@
 using System.IO;
+using System.Text.Json;
 
 namespace BlockLaunch;
 
@@ -6,10 +7,11 @@ public sealed record LauncherSettingsInput(
     string Root, string Java, string Player, string Ram, string Width, string Height,
     string LastVersion, bool PreferMicrosoft, bool PreferMua);
 
-public sealed class LauncherSettingsService(SettingsStore store)
+public sealed class LauncherSettingsService(SettingsStore store, Func<bool>? isGameRunning = null)
 {
     public void Save(Preferences prefs, LauncherSettingsInput input)
     {
+        EnsureCanSave();
         if (!int.TryParse(input.Ram, out var ram) || ram < 512 || ram > 131072)
             throw new ArgumentException("内存必须在 512–131072 MB 之间。");
         if (!int.TryParse(input.Width, out var width) || !int.TryParse(input.Height, out var height)
@@ -19,6 +21,24 @@ public sealed class LauncherSettingsService(SettingsStore store)
         var java = input.Java.Trim().Trim('"');
         if (java.Length > 0 && !File.Exists(java))
             throw new ArgumentException("指定的 Java 文件不存在。");
+        var pending = JsonSerializer.Deserialize<Preferences>(JsonSerializer.Serialize(prefs))!;
+        pending.Root = root;
+        pending.Java = java;
+        pending.Player = input.Player.Trim();
+        pending.Ram = ram;
+        pending.Width = width;
+        pending.Height = height;
+        pending.LastVersion = input.LastVersion;
+        pending.PreferMicrosoft = input.PreferMicrosoft;
+        pending.PreferMua = input.PreferMua;
+        pending.Launch.RamMb = ram;
+        pending.Launch.Java = java;
+        pending.Launch.Width = width;
+        pending.Launch.Height = height;
+        if (!pending.GameRoots.Contains(root, StringComparer.OrdinalIgnoreCase))
+            pending.GameRoots.Add(root);
+        store.Save(pending);
+        prefs.SchemaVersion = pending.SchemaVersion;
         prefs.Root = root;
         prefs.Java = java;
         prefs.Player = input.Player.Trim();
@@ -34,6 +54,11 @@ public sealed class LauncherSettingsService(SettingsStore store)
         prefs.Launch.Height = height;
         if (!prefs.GameRoots.Contains(root, StringComparer.OrdinalIgnoreCase))
             prefs.GameRoots.Add(root);
-        store.Save(prefs);
+    }
+
+    public void EnsureCanSave()
+    {
+        if (isGameRunning?.Invoke() == true)
+            throw new InvalidOperationException("请先关闭游戏再更改设置。");
     }
 }

@@ -1,6 +1,7 @@
 # Front 界面迁移预览
 
 完整待测步骤与旧 UI 删除门槛见 [Front 验收清单](FRONT_ACCEPTANCE.md)。目前不满足删除条件，保留旧 UI。
+本轮设置页的跨设备交接、编译命令和逐项通过标准见 [Windows 设置页验收指南](FRONT_SETTINGS_WINDOWS_TEST.md)。根目录 `AGENT.md` 是供测试 agent 使用的临时提示词，完成测试并记录后删除。
 
 ## 第一阶段范围
 
@@ -12,10 +13,11 @@
 | --- | --- |
 | 主窗口与开始游戏 | 复用旧 XAML 的导航分区、尺寸、配色和卡片风格；展示模拟实例/玩家，启动按钮禁用 |
 | 内容中心 | 可搜索、按类型/游戏版本/加载器筛选、排序、翻页、选择项目并读取兼容版本 |
-| 游戏安装、内容管理、设置、日志、任务 | 导航和明确的未迁移提示；不提供假装已接通的业务按钮 |
+| 启动设置 | 游戏目录、Java、内存与窗口宽高的真实读取/保存；预览采用独立测试配置，保留其他偏好 |
+| 游戏安装、内容管理、日志、任务 | 导航和明确的未迁移提示；不提供假装已接通的业务按钮 |
 
 整体风格参考现有界面，未逐像素复刻所有运行时 Builders/Styling 的效果。
-本轮不接入登录、启动、下载、安装、删除、配置保存或事务回退，防止预览修改真实数据。
+本轮不接入登录、启动、下载、安装、删除或事务回退。设置会真实写入独立测试目录，不能再将整个预览称为“只读”。
 
 ## 分层
 
@@ -29,6 +31,9 @@ Contracts/IFrontResourceBrowser     纯 C# 查询接口和显示数据
 Adapters/FrontResourceBrowserAdapter
     ↓
 Resources/ResourceManagementService → Core ContentService
+
+Front/Views/SettingsView → SettingsViewModel → Contracts/IFrontSettings
+    ↑ Adapters/FrontSettingsAdapter → LauncherSettingsService → SettingsStore
 ```
 
 Front 只依赖契约，不直接引用 MainWindow、Controller、HttpClient、文件操作或资源业务实现。
@@ -81,3 +86,16 @@ dotnet run --project test/CompatibilityChecks/CompatibilityChecks.csproj -c Rele
 
 下一阶段可沿用同一模式为版本列表添加契约/适配器，再单独接入启动和下载命令，
 必须保留原操作协调器、运行门禁和事务保护，不能让 ViewModel 自行执行安装或文件修改。
+
+## 设置页读写与隔离
+
+```powershell
+dotnet run --project tools/FrontPreview/FrontPreview.csproj -c Release -- --settings-dir "$env:TEMP\MCUG Front Settings Test"
+dotnet run --project test/CompatibilityChecks/CompatibilityChecks.csproj -c Release -- --front-settings
+```
+
+首次启动初始化测试配置；第一次打开设置页读取，显式点击保存后提交编辑。省略目录参数时使用 `%TEMP%\MCUGLauncher-FrontPreview`。
+仅接管空目录或已含 `.front-preview` 标记的测试目录；独占 `download-queue.lock`，同目录不能同时启动两个宿主。
+不要将正式配置目录传入，也不要手动为它添加标记。`--live` 仅改变资源查询来源，不改变设置隔离策略。
+`--simulate-game-running` 用于测试保存门禁，不启动真实游戏。切换页面保留编辑，重新读取放弃编辑；关闭期间已开始的原子保存可能完成。
+自动内存、隔离模式和实例级设置仍未开放编辑，保存本页不会覆盖这些偏好。正式入口和旧设置页均保留。

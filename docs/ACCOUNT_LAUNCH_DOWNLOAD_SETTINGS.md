@@ -46,4 +46,5 @@ dotnet run --project test/AuthChecks/AuthChecks.csproj -c Release
 - [ ] 下载排队、暂停、继续、重试、提交阶段拒绝取消；切换目录不改变原任务快照。
 - [ ] 正常退出、主动关闭、异常退出诊断；新会话启动后，旧会话不得覆盖新页面状态。
 
-Front 尚未接入这些写操作，旧 UI 仍不可删除。本次也没有把 Windows DPAPI、OAuth/WebView 或游戏进程替换成跨平台实现。
+Front 已接入五项启动设置读写，预览只使用独立测试配置；账号、启动、下载写操作仍未接入，旧 UI 仍不可删除。
+设置页的编译、自动化与真实 GUI 验收步骤见 `FRONT_SETTINGS_WINDOWS_TEST.md`。Windows DPAPI、OAuth/WebView 和游戏进程没有替换成跨平台实现。

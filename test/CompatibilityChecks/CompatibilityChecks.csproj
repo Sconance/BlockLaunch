@@ -26,5 +26,8 @@
     <Compile Include="../../src/MCUGLauncher/Contracts/IFrontResourceBrowser.cs" Link="Contracts/IFrontResourceBrowser.cs" />
     <Compile Include="../../src/MCUGLauncher/Adapters/FrontResourceBrowserAdapter.cs" Link="Adapters/FrontResourceBrowserAdapter.cs" />
     <Compile Include="../../src/MCUGLauncher/Front/ViewModels/ResourceBrowserViewModel.cs" Link="Front/ResourceBrowserViewModel.cs" />
+    <Compile Include="../../src/MCUGLauncher/Contracts/IFrontSettings.cs" Link="Contracts/IFrontSettings.cs" />
+    <Compile Include="../../src/MCUGLauncher/Adapters/FrontSettingsAdapter.cs" Link="Adapters/FrontSettingsAdapter.cs" />
+    <Compile Include="../../src/MCUGLauncher/Front/ViewModels/SettingsViewModel.cs" Link="Front/SettingsViewModel.cs" />
   </ItemGroup>
 </Project>

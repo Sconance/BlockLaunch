@@ -51,7 +51,7 @@
         <TextBlock x:Name="PageSubtitle" Text="欢迎回来，今天也去创造一点不同。" Style="{StaticResource Caption}" Margin="0,7,0,0" />
       </StackPanel>
       <ContentControl x:Name="PageHost" Grid.Row="1" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
-      <TextBlock Grid.Row="2" Text="迁移预览：原启动器不受影响；不会启动游戏、下载、删除文件或保存设置。" Style="{StaticResource Caption}" Margin="0,12,0,0" TextWrapping="Wrap" />
+      <TextBlock Grid.Row="2" Text="迁移预览：设置页可真实保存至独立测试目录；不会启动游戏、登录、下载或删除实例。" Style="{StaticResource Caption}" Margin="0,12,0,0" TextWrapping="Wrap" />
     </Grid>
   </Grid>
 </Window>

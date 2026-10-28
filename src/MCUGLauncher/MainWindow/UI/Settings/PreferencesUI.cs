@@ -24,11 +24,6 @@ public partial class MainWindow
 
     async void SaveClick(object s, RoutedEventArgs e) => await Run(async () =>
     {
-        if (game is
-            {
-                HasExited: false
-            })
-            throw new Exception("请先关闭游戏再更改设置。");
         SavePreferences();
         SetupLauncher();
         await StartupRecovery();

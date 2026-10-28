@@ -4,7 +4,9 @@
 
 **不能删除旧前端代码。本次不删除任何旧 UI。**
 
-Front 目前只具备外壳、模拟开始页和资源只读查询，其他页面是未迁移提示。
+Front 目前具备外壳、模拟开始页、资源只读查询，以及五项启动设置的真实读写；其他页面是未迁移提示。
+本轮设置页的 Windows agent 完整交接见 [设置页编译与验收指南](FRONT_SETTINGS_WINDOWS_TEST.md)，根目录 `AGENT.md` 是临时任务提示词，完成并记录测试后删除。
+FrontPreview 默认使用独立测试配置目录，不读取正式账号或实例；设置写入仅作用于测试配置。
 正式入口仍是 App.xaml 的 `StartupUri="MainWindow.xaml"`，不是 FrontWindow。
 MainWindow 仍组装配置、账号、任务队列、游戏会话和界面控制器，多个组件依赖其字段和方法。
 FrontPreview 还从原 App.xaml 读取共享样式，因此 App.xaml 也不能作为“旧样式”直接删除。
@@ -22,6 +24,7 @@ dotnet build tools/FrontPreview/FrontPreview.csproj -c Release
 dotnet run --project test/CompatibilityChecks/CompatibilityChecks.csproj -c Release -- --front
 dotnet run --project test/CompatibilityChecks/CompatibilityChecks.csproj -c Release -- --content-update-controller
 dotnet run --project test/CompatibilityChecks/CompatibilityChecks.csproj -c Release -- --management
+dotnet run --project test/CompatibilityChecks/CompatibilityChecks.csproj -c Release -- --front-settings
 ```
 
 - [ ] 主项目与 FrontPreview 编译成功，无 XAML 资源、事件或类型错误。
@@ -29,6 +32,14 @@ dotnet run --project test/CompatibilityChecks/CompatibilityChecks.csproj -c Rele
 - [ ] Front 隔离检查通过：真实适配映射、查询快照、分页、乱序响应、取消、详情失败、空结果及窗口关闭。
 - [ ] 内容更新控制器检查通过：确认/拒绝、目录快照、运行门禁、取消、指纹和事务回退。
 - [ ] 版本/资源管理检查通过：在线合并、离线回退、实例隔离、资源目标限制及本地资源操作。
+
+### 设置页专项（本轮必测，尚未执行 Windows 验收）
+
+- [ ] `--front-settings` 退出码 0，出现 `ALL_FRONT_SETTINGS_CHECKS_PASSED`，相关回归检查通过。
+- [ ] 设置页真实读取、合法保存、重启恢复、重新读取放弃编辑、保留其他偏好。
+- [ ] 非法内存/尺寸/Java/目录拒绝保存，文件哈希不变；读取错误和保存错误可恢复。
+- [ ] `--simulate-game-running` 拒绝保存；同目录第二进程拒绝启动；已有非空非预览目录拒绝接管。
+- [ ] 原生键鼠、缩放/最小尺寸、导航切换和关闭窗口验收完成，证据已写入专项指南。
 
 验收时记录操作系统、SDK 版本、实际命令、退出码和首个失败信息；不要在未运行前勾选。
 
@@ -40,9 +51,9 @@ dotnet run --project tools/FrontPreview/FrontPreview.csproj -c Release
 
 | 状态 | 操作 | 预期结果 |
 | --- | --- | --- |
-| [ ] | 打开预览并依次点击全部导航 | 主窗口正常显示；开始页与内容中心可访问；其余页面明确提示未迁移，不展示可执行的真实业务按钮 |
+| [ ] | 打开预览并依次点击全部导航 | 主窗口正常显示；开始页、内容中心、启动设置可访问；其余页面明确提示未迁移，不展示可执行的真实业务按钮 |
 | [ ] | 调整窗口到最小尺寸，检查 Windows 100% / 150% / 200% 缩放 | 导航、搜索栏、列表、详情和底部按钮可见，没有不可操作的裁切或重叠；视觉问题需记录修复 |
-| [ ] | 查看开始页 | 玩家和实例明确标注模拟；启动按钮不可用，不触发游戏、登录或真实配置读写 |
+| [ ] | 查看开始页 | 玩家和实例明确标注模拟；启动按钮不可用，不触发游戏或登录；独立宿主会初始化测试配置，只有设置页保存会提交编辑 |
 | [ ] | 内容中心清空关键词并搜索 | 加载状态可见，显示 32 个模拟项目中的前 15 项，第一页不可点上一页 |
 | [ ] | 连续点击下一页到末页，再返回 | 页码范围与项目一致；末页不可继续；没有重复翻页或跳过项目 |
 | [ ] | 搜索 `empty` | 显示明确空状态，无旧结果或可翻到不存在页的按钮 |
@@ -69,7 +80,7 @@ dotnet run --project tools/FrontPreview/FrontPreview.csproj -c Release -- --live
 | [ ] | 设置游戏版本和加载器，再选择项目 | 兼容版本由现有 ResourceManagementService 返回，不绕过原兼容性逻辑 |
 | [ ] | 切换排序、翻页并快速更换查询 | 参数与显示一致，旧请求不能覆盖新结果 |
 | [ ] | 断网、恢复网络、取消与超时 | 显示错误或取消/超时状态；恢复网络后可重试；无无限加载 |
-| [ ] | 比对预览前后的真实账号、实例和配置 | 只读浏览不下载、不安装、不登录、不删除、不保存设置；网络缓存/系统行为不等同业务写入 |
+| [ ] | 比对预览前后的正式账号、实例和配置 | 资源浏览不下载、不安装、不登录、不删除；独立测试配置可由设置页保存，正式配置不受影响；网络缓存/系统行为不等同业务写入 |
 
 预览工具使用独立 HttpClient，不读取旧网络偏好、代理配置或账号。
 当前不支持项目图标/长描述、收藏管理、下载入队和安装；不要把缺失功能当作已验收。
@@ -102,7 +113,7 @@ dotnet run --project test/WorkflowUiChecks/WorkflowUiChecks.csproj -c Release
 
 不能直接删除 `MainWindow.xaml`、`MainWindow/UI/`、`MainWindow/Builders/`、`Presentation/` 或 App.xaml。
 Builders 中还包括脚本和离线皮肤包生成，不能按目录名判断全是可删除 UI。
-当前没有已确认可删除的整套旧页面；本轮仅补充文档，不删除源码。
+当前没有已确认可删除的整套旧页面；本轮新增设置页不代表完整设置和其他功能均已迁移，不删除旧源码。
 
 ## 验收记录
 

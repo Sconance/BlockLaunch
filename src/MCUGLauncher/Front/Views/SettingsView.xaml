@@ -1,0 +1,40 @@
+<UserControl x:Class="BlockLaunch.Front.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <StackPanel>
+      <Border Style="{StaticResource Card}">
+        <StackPanel>
+          <TextBlock Text="启动设置" FontSize="22" FontWeight="Bold" />
+          <TextBlock Text="仅保存游戏目录、Java、内存和分辨率。账号、版本选择、隔离模式和其他偏好保持原样。" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,10,0,16" />
+          <TextBlock Text="内存值会保存为手动内存偏好；已有的自动内存开关不会在此页被改变。" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,0,0,12" />
+          <StackPanel IsEnabled="{Binding CanEdit}">
+            <TextBlock Text="游戏目录" />
+            <TextBox Text="{Binding Root, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="游戏目录" />
+            <TextBlock Text="Java 可执行文件（留空自动选择）" />
+            <TextBox Text="{Binding Java, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Java 可执行文件" />
+            <TextBlock Text="内存（MB，512–131072）" />
+            <TextBox Text="{Binding Ram, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="内存 MB" />
+            <WrapPanel>
+              <StackPanel Margin="0,0,20,0">
+                <TextBlock Text="窗口宽度（320–16384）" />
+                <TextBox Width="220" Text="{Binding Width, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="窗口宽度" />
+              </StackPanel>
+              <StackPanel>
+                <TextBlock Text="窗口高度（240–16384）" />
+                <TextBox Width="220" Text="{Binding Height, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="窗口高度" />
+              </StackPanel>
+            </WrapPanel>
+          </StackPanel>
+          <WrapPanel Margin="0,16,0,0">
+            <Button Content="保存设置" Click="SaveClick" IsEnabled="{Binding CanSave}" Margin="0,0,12,0" />
+            <Button Content="重新读取（放弃未保存修改）" Click="ReloadClick" IsEnabled="{Binding CanReload}" />
+          </WrapPanel>
+        </StackPanel>
+      </Border>
+      <ProgressBar Height="3" IsIndeterminate="{Binding IsBusy}" Margin="0,12,0,0" />
+      <TextBlock Text="{Binding Status}" TextWrapping="Wrap" Margin="0,12,0,0" AutomationProperties.Name="设置操作状态" />
+      <TextBlock Text="仅点击保存才提交输入。切换页面会保留当前编辑；重新读取会放弃编辑。预览关闭期间已开始的原子保存仍可能完成。" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,12,0,0" />
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

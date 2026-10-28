@@ -173,7 +173,7 @@ public partial class MainWindow : Window
         instanceSearchController = new InstanceSearchController(instanceList, instanceQuery, instanceSearchSummary);
         Directory.CreateDirectory(settingsDir);
         settings = new SettingsStore(settingsDir);
-        launcherSettings = new LauncherSettingsService(settings);
+        launcherSettings = new LauncherSettingsService(settings, () => game is { HasExited: false });
         javaManagerController = new JavaManagerController(this);
         pageNavigationController = new PageNavigationController(
             MainTabControl,
