@@ -43,8 +43,8 @@ static class Program
         var window = new MainWindow(root);
         SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext());
         const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
-        object Field(string name) => typeof(MainWindow).GetField(name, flags)!.GetValue(window)!;
-        object? Call(string name, params object[] args) => typeof(MainWindow).GetMethod(name, flags)!.Invoke(window, args);
+        object Field(string name) => LauncherTestAccess.Get(window, name);
+        object? Call(string name, params object[] args) => LauncherTestAccess.Invoke(window, name, args);
         List<InlineDialog> Pages() => ((IEnumerable<InlineDialog>)Field("inlinePages")).ToList();
         void Check(bool ok, string label)
         {
@@ -151,7 +151,7 @@ static class Program
             search.Clear();
             Capture("v0162-home-offline.png");
             Check(((AccountPanelView)Field("accountPanel")).OfflineIdentity.Visibility == Visibility.Visible, "offline identity has explicitly labeled editable name");
-            typeof(MainWindow).GetField("savedAccount", flags)!.SetValue(window, new SavedMicrosoftAccount("OnlineFixture", "0123456789abcdef0123456789abcdef"));
+            LauncherTestAccess.Set(window, "savedAccount", new SavedMicrosoftAccount("OnlineFixture", "0123456789abcdef0123456789abcdef"));
             ((ComboBox)Field("AccountMode")).SelectedIndex = 1;
             Check(((AccountPanelView)Field("accountPanel")).OfflineIdentity.Visibility == Visibility.Collapsed && ((TextBlock)Field("AvatarPlayerName")).Text == "OnlineFixture", "Microsoft mode displays saved role and hides offline input");
             Capture("v0162-home-online.png");
@@ -446,7 +446,7 @@ static class Program
             preferences.GameRoots.Add(emptyRoot);
             var originalHttp = (System.Net.Http.HttpClient)Field("http");
             using var offlineHttp = new System.Net.Http.HttpClient(new OfflineDirectoryHandler());
-            typeof(MainWindow).GetField("http", flags)!.SetValue(window, offlineHttp);
+            LauncherTestAccess.Set(window, "http", offlineHttp);
             var rootStage = 0;
             Drive(() => Call("OpenSketchManager", "1.21.1"), page =>
             {
@@ -473,7 +473,7 @@ static class Program
                 page.Close();
                 return true;
             });
-            typeof(MainWindow).GetField("http", flags)!.SetValue(window, originalHttp);
+            LauncherTestAccess.Set(window, "http", originalHttp);
             Call("SetupLauncher");
             Check(((Button)Field("managerCaptionBack")).Visibility == Visibility.Collapsed && ((DockPanel)((Grid)window.Content).Children[0]).Children.OfType<TextBlock>().First().Text == "MCUG Launcher", "leaving manager restores brand caption");
             Drive(() => Call("OpenVersionSection", "1.21.1", "导出"), page =>
@@ -594,11 +594,11 @@ static class Program
                 type = "release",
                 libraries = Array.Empty<object>()
             });
-            typeof(MainWindow).GetField("sketchManagerKey", flags)!.SetValue(window, targetKey192);
+            LauncherTestAccess.Set(window, "sketchManagerKey", targetKey192);
             var directory192 = (string)Call("DropTargetDirectory")!;
             Wait((Task)Call("ImportDroppedFiles", new object[] { new[] { resource192 } })!);
             Check(File.Exists(Path.Combine(directory192, "resourcepacks", Path.GetFileName(resource192))), "resource drop imports into manager target rather than home selection");
-            typeof(MainWindow).GetField("sketchManagerKey", flags)!.SetValue(window, null);
+            LauncherTestAccess.Set(window, "sketchManagerKey", null);
             var live192 = queue192.Enqueue("下载交互验收", game, "fixture", new()
             {
                 Kind = "resource"
@@ -608,7 +608,7 @@ static class Program
                 c.Report("正在接收", 40);
                 await Task.Delay(30000, c.Token);
             }, live192);
-            typeof(MainWindow).GetField("busy", flags)!.SetValue(window, true);
+            LauncherTestAccess.Set(window, "busy", true);
             Call("SetInputs", false);
             Call("RefreshMiniDownloads", true);
             Check(((ComboBox)Field("AccountMode")).IsEnabled && ((ComboBox)Field("Versions")).IsEnabled && !((Button)Field("LaunchGameButton")).IsEnabled, "download keeps account and version browsing enabled while launch stays protected");
@@ -618,7 +618,7 @@ static class Program
             Capture("v0192-tasks.png");
             Call("ChangeDownloadById", live192.Id, OperationState.Paused);
             Wait(run192);
-            typeof(MainWindow).GetField("busy", flags)!.SetValue(window, false);
+            LauncherTestAccess.Set(window, "busy", false);
             Call("SetInputs", true);
             Call("RefreshMiniDownloads", true);
             Check(queue192.History().Single(r => r.Id == live192.Id).State == OperationState.Paused && window.TaskbarItemInfo.ProgressState == System.Windows.Shell.TaskbarItemProgressState.Paused, "task list pauses active transfer and taskbar");

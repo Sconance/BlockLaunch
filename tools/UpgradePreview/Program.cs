@@ -49,7 +49,7 @@ public static class Program
             Width = 1200,
             Height = 840
         };
-        typeof(MainWindow).GetField("http", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.SetValue(window, new HttpClient(new Handler()));
+        LauncherTestAccess.Set(window, "http", new HttpClient(new Handler()));
         app.Run(window);
     }
 }

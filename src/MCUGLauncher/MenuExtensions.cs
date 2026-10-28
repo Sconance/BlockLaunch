@@ -1,6 +1,5 @@
 namespace BlockLaunch;
-
-public partial class MainWindow
+internal sealed partial class MenuExtensionsController
 {
     // Register additional, implemented pages here. Existing pages and configuration stay unchanged.
     // Example: menus.Register(LauncherMenuArea.Download,

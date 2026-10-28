@@ -31,9 +31,9 @@ static class Program
         };
         var window = new MainWindow(root);
         SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext());
-        const BindingFlags flags = BindingFlags.NonPublic | BindingFlags.Instance;
-        object Field(string name) => typeof(MainWindow).GetField(name, flags)!.GetValue(window)!;
-        object? Call(string name, params object[] args) => typeof(MainWindow).GetMethod(name, flags)!.Invoke(window, args);
+
+        object Field(string name) => LauncherTestAccess.Get(window, name);
+        object? Call(string name, params object[] args) => LauncherTestAccess.Invoke(window, name, args);
         void Assert(bool ok, string label)
         {
             if (!ok)
@@ -127,7 +127,7 @@ static class Program
             var partial = ReliableDownloader.PartialPath(target, hash);
             var offset = new FileInfo(partial).Length;
             Assert(offset > 0 && offset < bytes.Length, "partial file preserved after pause");
-            typeof(MainWindow).GetField("queueReady", flags)!.SetValue(window, true);
+            LauncherTestAccess.Set(window, "queueReady", true);
             Wait((Task)Call("PumpDownloads")!);
             Assert(coordinator.History().Single(r => r.Id == second.Id).State == OperationState.Queued, "next job cannot start while queue paused");
             Assert(new SettingsStore(root).Load().DownloadsPaused, "pause state persists across restart");

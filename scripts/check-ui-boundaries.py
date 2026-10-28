@@ -1,0 +1,49 @@
+"""Keep the native window a shell and page markup in standalone views."""
+from pathlib import Path
+import re
+import sys
+import xml.etree.ElementTree as ET
+
+
+def main():
+    root = Path(__file__).resolve().parent.parent
+    app = root / 'src/MCUGLauncher'
+    errors = []
+    shell = app / 'MainWindow.xaml.cs'
+    for source in app.rglob('*.cs'):
+        if any(part in ('bin', 'obj') for part in source.parts):
+            continue
+        text = source.read_text(encoding='utf-8-sig')
+        if source != shell and re.search(r'\bclass\s+MainWindow\b', text):
+            errors.append(f'{source.relative_to(root)} reintroduces MainWindow implementation')
+    text = shell.read_text(encoding='utf-8-sig')
+    if len(text.splitlines()) > 150:
+        errors.append('MainWindow code-behind exceeds the shell boundary; move behavior to its owning module')
+    for forbidden in ('new HttpClient', 'new MinecraftLauncher', 'Process.Start', 'JsonSerializer.'):
+        if forbidden in text:
+            errors.append(f'MainWindow contains application behavior: {forbidden}')
+    presentation = '{http://schemas.microsoft.com/winfx/2006/xaml/presentation}'
+    document = ET.parse(app / 'MainWindow.xaml')
+    for tab in document.iter(presentation + 'TabItem'):
+        children = list(tab)
+        if len(children) != 1 or not children[0].tag.startswith('{clr-namespace:BlockLaunch}'):
+            errors.append('A main tab embeds page layout instead of a standalone view')
+    pages = list((app / 'Views/Pages').glob('*.xaml'))
+    for page in pages:
+        view = ET.parse(page).getroot()
+        if view.tag != '{clr-namespace:BlockLaunch}LauncherPage':
+            errors.append(f'{page.relative_to(root)} must use the page action boundary')
+        if not page.with_suffix('.xaml.cs').is_file():
+            errors.append(f'{page.relative_to(root)} has no code-behind')
+    project = ET.parse(app / 'MCUGLauncher.csproj')
+    if any('TestSupport' in str(item.attrib) or '/test/' in str(item.attrib) for item in project.iter('Compile')):
+        errors.append('Test-only module inspection must not ship in the launcher')
+    if errors:
+        print('\n'.join(errors), file=sys.stderr)
+        return 1
+    print(f'PASS: native window stays a shell; {len(pages)} independent markup views; no MainWindow partial modules.')
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())

@@ -294,9 +294,9 @@ static class Program
         };
         var window = new MainWindow(root);
         SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext());
-        const BindingFlags flags = BindingFlags.NonPublic | BindingFlags.Instance;
-        object Field(string name) => typeof(MainWindow).GetField(name, flags)!.GetValue(window)!;
-        object? Call(string name, params object[] args) => typeof(MainWindow).GetMethod(name, flags)!.Invoke(window, args);
+
+        object Field(string name) => LauncherTestAccess.Get(window, name);
+        object? Call(string name, params object[] args) => LauncherTestAccess.Invoke(window, name, args);
         void Wait(Task task)
         {
             var frame = new DispatcherFrame();
@@ -318,12 +318,12 @@ static class Program
                 c.Report("fixture", 30);
                 await completion.Task;
             }, record);
-            typeof(MainWindow).GetField("busy", flags)!.SetValue(window, true);
+            LauncherTestAccess.Set(window, "busy", true);
             Call("SetInputs", false);
             Check(((TextBox)Field("SearchQuery")).IsEnabled && ((ListBox)Field("SearchResults")).IsEnabled && !((TextBox)Field("GameRoot")).IsEnabled, "background download allows browsing but locks mutable root");
             var previous = (HttpClient)Field("http");
             using var http = new HttpClient(new SearchHandler());
-            typeof(MainWindow).GetField("http", flags)!.SetValue(window, http);
+            LauncherTestAccess.Set(window, "http", http);
             Call("NavigateDownloads", "Mod");
             Wait((Task)Call("RunBrowse", (Func<Task>)(() => (Task)Call("SearchContent")!))!);
             Check(((ListBox)Field("SearchResults")).Items.Count == 1 && coordinator.Current?.Record.Id == record.Id, "resource search completes concurrently without replacing download context");
@@ -367,8 +367,8 @@ static class Program
             Check(menu.Items.OfType<MenuItem>().Any(i => Equals(i.Header, "Java 管理")) && menu.Items.OfType<MenuItem>().Any(i => Equals(i.Header, "服务器收藏")), "utility features reachable through More menu");
             completion.SetResult();
             Wait(download);
-            typeof(MainWindow).GetField("busy", flags)!.SetValue(window, false);
-            typeof(MainWindow).GetField("http", flags)!.SetValue(window, previous);
+            LauncherTestAccess.Set(window, "busy", false);
+            LauncherTestAccess.Set(window, "http", previous);
             Wait(coordinator.Run("UI contextual backup", root, "", async context =>
             {
                 await Task.Run(() => SaveProtection.Create(Path.Combine(root, "instance"), Path.Combine(root, "ui-backups"), "UI context", 2, context.Token));
@@ -377,17 +377,17 @@ static class Program
             foreach (var item in coordinator.History().Where(r => r.State == OperationState.Queued))
                 coordinator.ChangePending(item.Id, OperationState.Cancelled);
             prefs.ResourceDownloadDirectory = Path.Combine(root, "downloaded-resources");
-            typeof(MainWindow).GetField("http", flags)!.SetValue(window, http);
+            LauncherTestAccess.Set(window, "http", http);
             var data = new byte[65536];
             Call("QueueContent", new ContentVersion { Id = "pump", ProjectId = "p", Files = [new() { Filename = "pump.jar", Url = "https://cdn.modrinth.com/pump.jar", Size = data.Length, Hashes = new() { ["sha512"] = Convert.ToHexString(System.Security.Cryptography.SHA512.HashData(data)) } }] });
-            typeof(MainWindow).GetField("queueReady", flags)!.SetValue(window, true);
+            LauncherTestAccess.Set(window, "queueReady", true);
             var pump = (Task)Call("PumpDownloads")!;
             Check(((TextBox)Field("SearchQuery")).IsEnabled && coordinator.Current?.Record.Download?.Kind == "resource", "real queue pump leaves search enabled after acquiring operation");
             Wait((Task)Call("RunBrowse", (Func<Task>)(() => (Task)Call("SearchContent")!))!);
             Wait(pump);
             Check(coordinator.History().Any(r => r.Download?.Content?.Id == "pump" && r.State == OperationState.Completed), "real pump completes verified resource while search runs");
-            typeof(MainWindow).GetField("queueReady", flags)!.SetValue(window, false);
-            typeof(MainWindow).GetField("http", flags)!.SetValue(window, previous);
+            LauncherTestAccess.Set(window, "queueReady", false);
+            LauncherTestAccess.Set(window, "http", previous);
         }
         finally
         {

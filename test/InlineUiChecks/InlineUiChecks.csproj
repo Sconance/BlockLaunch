@@ -14,4 +14,7 @@
   <ItemGroup>
     <Content Include="../../src/MCUGLauncher/App.xaml" Link="Fixtures/LauncherApp.xaml" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="../../test/Support/LauncherTestAccess.cs" Link="TestSupport/LauncherTestAccess.cs" />
+  </ItemGroup>
 </Project>

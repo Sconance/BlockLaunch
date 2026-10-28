@@ -34,7 +34,7 @@ public static class Program
             Title = "0.15 component tests"
         };
         window.Show();
-        const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+
         var timer = new DispatcherTimer
         {
             Interval = TimeSpan.FromMilliseconds(100)
@@ -45,7 +45,7 @@ public static class Program
         {
             if (started)
                 return;
-            if ((bool)typeof(MainWindow).GetField("busy", flags)!.GetValue(window)!)
+            if ((bool)LauncherTestAccess.Get(window, "busy"))
             {
                 if (DateTime.UtcNow > deadline)
                 {
@@ -60,10 +60,10 @@ public static class Program
             timer.Stop();
             try
             {
-                typeof(MainWindow).GetField("queueReady", flags)!.SetValue(window, false);
-                ((DispatcherTimer?)typeof(MainWindow).GetField("downloadTimer", flags)!.GetValue(window))?.Stop();
+                LauncherTestAccess.Set(window, "queueReady", false);
+                ((DispatcherTimer?)LauncherTestAccess.Get(window, "downloadTimer"))?.Stop();
                 using var http = new HttpClient(new Handler());
-                typeof(MainWindow).GetField("http", flags)!.SetValue(window, http);
+                LauncherTestAccess.Set(window, "http", http);
                 var instance = Path.Combine(game, "test-instance");
                 if (ContentService.ReadManaged(instance).Count == 0)
                     await new ContentService(http).Install(new([Handler.V("old")], new()
@@ -80,7 +80,7 @@ public static class Program
                 {
                     try
                     {
-                        var dialogs = ((IEnumerable<InlineDialog>)typeof(MainWindow).GetField("inlinePages", flags)!.GetValue(window)!).ToList();
+                        var dialogs = ((IEnumerable<InlineDialog>)LauncherTestAccess.Get(window, "inlinePages")).ToList();
                         if (stage == 0 && dialogs.FirstOrDefault(w => w.Title == "内容更新") is
                             {
                             } updates)
@@ -106,18 +106,18 @@ public static class Program
                     catch (Exception ex)
                     {
                         errors.Add(ex);
-                        foreach (var dialog in ((IEnumerable<InlineDialog>)typeof(MainWindow).GetField("inlinePages", flags)!.GetValue(window)!).Reverse().ToList())
+                        foreach (var dialog in ((IEnumerable<InlineDialog>)LauncherTestAccess.Get(window, "inlinePages")).Reverse().ToList())
                             dialog.Close();
                     }
                 };
                 driver.Start();
-                await (Task)typeof(MainWindow).GetMethod("OpenContentUpdates", flags)!.Invoke(window, [instance, "fixture", "1.21.1", "fabric", null, null])!;
+                await (Task)LauncherTestAccess.Invoke(window, "OpenContentUpdates", [instance, "fixture", "1.21.1", "fabric", null, null])!;
                 driver.Stop();
                 if (errors.Count > 0)
                     throw errors[0];
                 if (stage != 2)
                     throw new Exception("Workflow incomplete");
-                var queue = (OperationCoordinator)typeof(MainWindow).GetField("operations", flags)!.GetValue(window)!;
+                var queue = (OperationCoordinator)LauncherTestAccess.Get(window, "operations");
                 var job = queue.History().First(r => r.Download?.PreparedPlan != null);
                 if (job.Download!.PreparedPlan!.Versions.Single().Id != "new" || string.IsNullOrEmpty(job.Download.ContentFingerprint))
                     throw new Exception("Queue lost approved plan");
@@ -128,7 +128,7 @@ public static class Program
                 };
                 networkDriver.Tick += (_, _) =>
                 {
-                    var dialog = ((IEnumerable<InlineDialog>)typeof(MainWindow).GetField("inlinePages", flags)!.GetValue(window)!).FirstOrDefault(w => w.Title == "下载与网络设置");
+                    var dialog = ((IEnumerable<InlineDialog>)LauncherTestAccess.Get(window, "inlinePages")).FirstOrDefault(w => w.Title == "下载与网络设置");
                     if (dialog == null)
                         return;
                     networkDriver.Stop();
@@ -138,7 +138,7 @@ public static class Program
                     controls.OfType<Button>().Single(b => Equals(b.Content, "保存，下次启动生效")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                 };
                 networkDriver.Start();
-                typeof(MainWindow).GetMethod("NetworkClick", flags)!.Invoke(window, [window, new RoutedEventArgs()]);
+                LauncherTestAccess.Invoke(window, "NetworkClick", [window, new RoutedEventArgs()]);
                 networkDriver.Stop();
                 if (new SettingsStore(settings).Load().Network.DownloadSource != "仅官方")
                     throw new Exception("Network save failed");
@@ -155,7 +155,7 @@ public static class Program
                     approved = files;
                     return Task.FromResult(true);
                 };
-                var packDialog = (InlineDialog)typeof(MainWindow).GetMethod("BuildPackUpgradeDialog", flags)!.Invoke(window, [packPreview, window, approve])!;
+                var packDialog = (InlineDialog)LauncherTestAccess.Invoke(window, "BuildPackUpgradeDialog", [packPreview, window, approve])!;
                 packDialog.Loaded += (_, _) =>
                 {
                     var controls = Descendants(packDialog).ToList();

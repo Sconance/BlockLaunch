@@ -5,30 +5,32 @@ MCUG Launcher 是 .NET 8 / WPF 应用。先从本文件定位功能，再阅读�
 
 ## 先读哪些文件
 
-1. `src/MCUGLauncher/MainWindow.xaml.cs`：窗口初始化、服务组装与主操作。
-2. `src/MCUGLauncher/MainWindow.xaml`、`App.xaml`：命名控件和公共样式。
-3. 对应的 `*UI.cs`：页面构建、事件和状态展示。
-4. `src/MCUGLauncher.Core/`：实际业务服务；UI 调用这些服务。
-5. `test/` 对应检查程序：合成输入、预期行为和失败边界。
+1. `src/MCUGLauncher/MainWindow.xaml.cs`：原生窗口、页面组合和页内对话框衔接。
+2. `Composition/LauncherWorkspace.cs`：模块组合；`LauncherControls.cs`：页面控件的强类型绑定。
+3. `Views/Pages/`：九个独立页面/导航视图的 XAML；`App.xaml`：公共样式。
+4. `Components/`：按功能分开的控制器，拥有各自状态；`Presentation/` 与 `Views/`：已独立提取的视图和 Presenter。
+5. `src/MCUGLauncher.Core/`：启动、认证、下载和实例等业务服务。
+6. `test/`：原有断言继续执行，测试检查入口改为定位所属模块。
 
-现有窗口按功能使用 `partial MainWindow` 分文件。它们共享窗口状态，**不是互相独立的组件**。
-初始化顺序集中在窗口构造函数中；调整父子控件关系前，应检查后续布局方法是否仍会读取它们。
-本次保留了这个兼容边界，没有为了整洁重写启动、认证或实例存储。
+页面动作经 `LauncherPage` 事件边界进入 `Composition/LauncherPageRouter.cs` 的强类型路由。
+控制器通过 `workspace.Controls` 使用页面输入，通过 `workspace.Window` 使用原生窗口能力，跨模块协作通过显式的模块属性。
+`LauncherWorkspace` 只负责组合，不拥有下载、账号或实例业务状态。不要重新添加 `partial MainWindow` 功能文件。
+页面迁移时保留原有动态布局的视图树形状；详细说明见 [MainWindow 重构记录](MAINWINDOW_REFACTOR.md)。
 
 ## 功能定位
 
 | 想修改的内容 | 界面入口 | 服务或数据 |
 | --- | --- | --- |
-| 账号面板、登录方式 | `HomeAccountUI.cs` | `Authentication/` |
-| 主导航、窗口拖动、大小适配 | `ModernUI.cs`、`CompactShellUI.cs`、`WindowChromeUI.cs` | 窗口自身 |
-| 主页版本选择、版本内容管理 | `SketchUI.cs`、`VersionSettingsUI.cs` | Core `Domain/Instances.cs`、`Application/InstanceManagement.cs` |
-| 版本和资源下载 | `DownloadPageUI.cs`、`ContentUI.cs` | Core `GameInstaller.cs`、`ContentService.cs` |
-| 下载队列与任务操作 | `DownloadQueueUI.cs`、`DownloadTaskUI.cs`、`MiniDownloadUI.cs` | Core `Application/OperationCoordinator.cs` |
-| 文件拖入、资源导入 | `DropFeedbackUI.cs`、`InstanceLibraryUI.cs` | Core `Application/LocalImportClassifier.cs`、`WorldArchives.cs` |
-| 整合包导入、导出、升级 | `PackUI.cs`、`PackUpgradeUI.cs` | Core `PackService.cs`、`Application/PackUpgrade.cs` |
-| Java 与游戏启动 | `JavaManagerUI.cs`、`MainWindow.xaml.cs` | Core `Application/Java*.cs`、`LaunchService.cs` |
-| 主题、背景 | `AppearanceUI.cs`、`ExperienceThemeUI.cs`、`App.xaml` | Core `Domain/Preferences.cs` |
-| 崩溃分析与反馈 | `DiagnosticsUI.cs` | Core `Application/Diagnostics.cs` |
+| 账号面板、登录方式 | `Components/HomeAccountController.cs` | `Authentication/` |
+| 主导航、窗口拖动、大小适配 | `Components/ModernController.cs`、`Components/CompactShellController.cs`、`Components/WindowChromeController.cs` | 窗口自身 |
+| 主页版本选择、版本内容管理 | `Components/SketchController.cs`、`Components/VersionSettingsController.cs` | Core `Domain/Instances.cs`、`Application/InstanceManagement.cs` |
+| 版本和资源下载 | `Components/DownloadPageController.cs`、`Components/ContentController.cs` | Core `GameInstaller.cs`、`ContentService.cs` |
+| 下载队列与任务操作 | `Components/DownloadQueueController.cs`、`Components/DownloadTaskController.cs`、`Components/MiniDownloadController.cs` | Core `Application/OperationCoordinator.cs` |
+| 文件拖入、资源导入 | `Components/DropFeedbackController.cs`、`Components/InstanceLibraryController.cs` | Core `Application/LocalImportClassifier.cs`、`WorldArchives.cs` |
+| 整合包导入、导出、升级 | `Components/PackController.cs`、`Components/PackUpgradeController.cs` | Core `PackService.cs`、`Application/PackUpgrade.cs` |
+| Java 与游戏启动 | `Components/JavaManagerController.cs`、`MainWindow.xaml.cs` | Core `Application/Java*.cs`、`LaunchService.cs` |
+| 主题、背景 | `Components/AppearanceController.cs`、`Components/ExperienceThemeController.cs`、`App.xaml` | Core `Domain/Preferences.cs` |
+| 崩溃分析与反馈 | `Components/DiagnosticsController.cs` | Core `Application/Diagnostics.cs` |
 
 表中的 Core 路径相对于 `src/MCUGLauncher.Core/`；界面路径相对于 `src/MCUGLauncher/`。
 
@@ -76,17 +78,17 @@ dotnet run --project tools/SourceFormatter
 
 ## 0.20.1 下载界面扩展
 
-- `DownloadNavigation.cs`：分类名称与 `DownloadCategoryIcon` 映射。为条目的 `Image` 传入 `ImageSource` 即显示图片；留空时回退到字形，不影响分类键或下载逻辑。图片建议以 WPF Resource 加入项目，并使用 pack URI 加载。
-- `ResourceWorkspaceUI.cs`：列表与页内详情切换、兼容信息与依赖数量展示、窄窗口布局。复用既有命名控件及事件，资源独立下载和整合包导入行为保持原样。
-- `LoaderOverviewUI.cs`：横向加载器配置行，从官方目录读取兼容版本；选择后调用既有 EnqueueDownload，不实现第二套安装器。
+- `Components/DownloadNavigationController.cs`：分类名称与 `DownloadCategoryIcon` 映射。为条目的 `Image` 传入 `ImageSource` 即显示图片；留空时回退到字形，不影响分类键或下载逻辑。图片建议以 WPF Resource 加入项目，并使用 pack URI 加载。
+- `Components/ResourceWorkspaceController.cs`：列表与页内详情切换、兼容信息与依赖数量展示、窄窗口布局。复用既有命名控件及事件，资源独立下载和整合包导入行为保持原样。
+- `Components/LoaderOverviewController.cs`：横向加载器配置行，从官方目录读取兼容版本；选择后调用既有 EnqueueDownload，不实现第二套安装器。
 - 列表模板 `ResourceSearchItem` 位于 `App.xaml`。不展示服务端未提供的评价、点赞或截图。
 
-- `ResponsiveResourcePanel.cs`：分页结果的自适应卡片排列；`ResourceSearchLayoutUI.cs`：搜索及带标签筛选布局。
-- `ResourcePresentationUI.cs`：可选的项目介绍与截图展示。请求失败不影响版本选择和下载；截图限 Modrinth CDN，正文仅显示有长度上限的纯文本预览。
+- `ResponsiveResourcePanel.cs`：分页结果的自适应卡片排列；`Components/ResourceSearchLayoutController.cs`：搜索及带标签筛选布局。
+- `Components/ResourcePresentationController.cs`：可选的项目介绍与截图展示。请求失败不影响版本选择和下载；截图限 Modrinth CDN，正文仅显示有长度上限的纯文本预览。
 
 
 ## 0.20.2 菜单与资源交互
 
-- 新增栏目从 `MenuExtensions.cs` 注册，入口定义在 `Navigation/LauncherMenuRegistry.cs`，宿主适配在 `MenuExtensionsUI.cs`。具体区域、上下文和图片图标示例见 [菜单扩展说明](MENU_EXTENSIONS.md)。
-- `ResourceFavoritesUI.cs` 负责收藏筛选、心形状态及视图切换，持久化复用 `ResourceBookmarkStore`，不创建第二份收藏文档。
+- 新增栏目从 `MenuExtensions.cs` 注册，入口定义在 `Navigation/LauncherMenuRegistry.cs`，宿主适配在 `Components/MenuExtensionsController.cs`。具体区域、上下文和图片图标示例见 [菜单扩展说明](MENU_EXTENSIONS.md)。
+- `Components/ResourceFavoritesController.cs` 负责收藏筛选、心形状态及视图切换，持久化复用 `ResourceBookmarkStore`，不创建第二份收藏文档。
 - 收藏兼容性检查最多并发四个请求，并跟随浏览取消；资源服务保留原始 Search 签名，通过新增重载接收受限的排序值。
