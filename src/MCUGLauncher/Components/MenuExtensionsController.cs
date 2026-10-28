@@ -85,7 +85,7 @@ internal sealed partial class MenuExtensionsController
                 }
                 else
                 {
-                    var item = InstancePagesController.ActionButton("", (_, _) =>
+                    var item = FeatureUiElements.ActionButton("", (_, _) =>
                     {
                         lifetime?.Close();
                         if (area == LauncherMenuArea.Download)
@@ -151,11 +151,11 @@ internal sealed partial class MenuExtensionsController
     {
         try
         {
-            return page.CreateContent(new(workspace.Window, instanceId, workspace.ResourceFavoritesController.resourceDetailProject)) ?? InstancePagesController.Hint("栏目未提供页面内容。");
+            return page.CreateContent(new(workspace.Window, instanceId, workspace.ResourceFavoritesController.resourceDetailProject)) ?? FeatureUiElements.Hint("栏目未提供页面内容。");
         }
         catch (Exception ex)
         {
-            return InstancePagesController.Hint("无法加载“" + page.Title + "”：" + ex.Message);
+            return FeatureUiElements.Hint("无法加载“" + page.Title + "”：" + ex.Message);
         }
     }
 
@@ -166,7 +166,7 @@ internal sealed partial class MenuExtensionsController
         foreach (var nav in ((StackPanel)workspace.Controls.HomeNav.Parent).Children.OfType<RadioButton>().Where(r => r.Tag is string))
             nav.IsChecked = false;
         var body = new DockPanel();
-        var back = InstancePagesController.ActionButton("← 返回", (_, _) =>
+        var back = FeatureUiElements.ActionButton("← 返回", (_, _) =>
         {
             workspace.Window.MainTabs.SelectedItem = previous == extensionPage ? workspace.Window.MainTabs.Items[0] : previous;
             var original = ((StackPanel)workspace.Controls.HomeNav.Parent).Children.OfType<RadioButton>().FirstOrDefault(r => r.Tag?.ToString() == workspace.Window.MainTabs.SelectedIndex.ToString());

@@ -24,7 +24,7 @@ internal sealed class ResourceSearchLayoutController
         row.Children.Clear();
         filters.Children.Clear();
         workspace.ResourceFavoritesController.resourceFavoriteFilter.Click += async (_, _) => await workspace.ResourceFavoritesController.ToggleResourceFavoriteFilter();
-        var clear = InstancePagesController.ActionButton("清除筛选", async (_, _) =>
+        var clear = FeatureUiElements.ActionButton("清除筛选", async (_, _) =>
         {
             if (workspace.ResourceFavoritesController.resourceFavoritesOnly)
                 await workspace.ResourceFavoritesController.ToggleResourceFavoriteFilter();

@@ -27,7 +27,22 @@
 
 `scripts/check-ui-boundaries.py` 检查窗口大小边界、独立 XAML 页及生产代码中是否重新引入 MainWindow 功能文件；已接入 CI。
 
-## 验证边界
+## 参考 refactor 的第二轮细化
+
+本轮只修改 `test`。参考远程 `refactor` 的 `db0ab6a` 快照，保留现有独立 XAML 页面与窗口组合结构，逐项迁移小组件，不直接合并另一条分支。
+
+- `AvatarController`、`HomeAccountController`、`KeyboardNavigationController`、`LoaderOverviewController`、`NetworkController`、`WindowChromeController` 不再接收整个 `LauncherWorkspace`。它们通过构造参数接收实际需要的控件、状态读取函数与操作回调。
+- 账号状态快照 `PlayerIdentityState` 与视图分离；刷新时读取当前状态，取消令牌和刷新序号仍由头像组件管理。
+- 复用 `refactor` 的 `GameWindowBehaviorController`、`InstanceSearchController`、`OfflineSkinPackBuilder`、`LaunchScriptBuilder`，分别负责游戏窗口行为、实例列表筛选、离线皮肤包和安全引用启动脚本参数。
+- `Models/` 单独存放 `BookmarkView`、`InstanceTarget`、`InstanceView`、`DownloadCategoryIcon` 和账号展示状态。保留原命名空间与类型可见性。
+- `Views/Forms/` 放置启动参数与网络设置表单；`Views/Shared/FeatureUiElements` 提供通用标题、说明和动作按钮。表单不直接访问配置存储或其他模块。
+- `HomeWelcomePresenter` 只处理默认欢迎区域的外观。
+
+组合根负责连接回调，所有模块构造完成后才执行初始化。需要后续状态的回调延迟读取，不捕获过时的 HttpClient 或账号状态。
+
+仍有应用级控制器依赖 `LauncherWorkspace`；大型版本设置、实例页面和资源工作区还可以继续分解。本轮没有宣称完成整个应用的依赖解耦，也没有改动 Core、认证协议、配置格式或版本号。
+
+## 验证范围
 
 测试仅在 `test/Support/LauncherTestAccess.cs` 中使用模块检查适配器，原有功能断言继续执行，不在生产窗口保留用于兼容测试的私有字段或业务方法。该适配器仅链接到检查/预览项目。
 

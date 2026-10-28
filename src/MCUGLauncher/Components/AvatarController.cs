@@ -1,26 +1,47 @@
 using System.IO;
 using System.Net.Http;
 using System.Windows;
+using System.Windows.Controls;
 
 namespace BlockLaunch;
 internal sealed class AvatarController
 {
-    readonly LauncherWorkspace workspace;
-    internal AvatarController(LauncherWorkspace workspace)
+    readonly Image skinAvatar;
+    readonly TextBlock avatarCaption;
+    readonly TextBlock displayName;
+    readonly Func<PlayerIdentityState> getState;
+    readonly Func<bool> isBusy;
+    readonly Func<Task> refreshMicrosoftProfile;
+
+    internal AvatarController(Image skinAvatar,
+        TextBlock avatarCaption, TextBlock displayName,
+        Func<PlayerIdentityState> getState, Func<bool> isBusy, Func<Task> refreshMicrosoftProfile)
     {
-        this.workspace = workspace;
+        this.skinAvatar = skinAvatar;
+        this.avatarCaption = avatarCaption;
+        this.displayName = displayName;
+        this.getState = getState;
+        this.isBusy = isBusy;
+        this.refreshMicrosoftProfile = refreshMicrosoftProfile;
     }
 
     internal CancellationTokenSource? avatarCancellation;
     internal int avatarRevision;
     internal void UpdateAvatarName()
     {
-        workspace.Controls.AvatarPlayerName.Text = workspace.Controls.AccountMode.SelectedIndex == 2 ? workspace.MuaAccountController.muaAccount?.Profile.Name ?? "尚未登录" : workspace.Controls.AccountMode.SelectedIndex == 1 ? workspace.LaunchCoordinator.online?.Username ?? workspace.AccountController.savedAccount?.Username ?? "尚未登录" : string.IsNullOrWhiteSpace(workspace.Controls.PlayerName.Text) ? "请输入角色名" : workspace.Controls.PlayerName.Text;
+        var state = getState();
+        displayName.Text = state.AccountMode switch
+        {
+            2 => state.MuaAccount?.Profile.Name ?? "尚未登录",
+            1 => state.OnlineUsername ?? state.MicrosoftAccount?.Username ?? "尚未登录",
+            _ => string.IsNullOrWhiteSpace(state.PlayerName) ? "请输入角色名" : state.PlayerName
+        };
     }
 
     internal async void RefreshAvatar(bool bypassCache = false)
     {
-        if (workspace.Controls.SkinAvatar == null || workspace.Controls.AvatarCaption == null)
+        var state = getState();
+        if (skinAvatar == null || avatarCaption == null)
             return;
         avatarCancellation?.Cancel();
         avatarCancellation?.Dispose();
@@ -29,16 +50,16 @@ internal sealed class AvatarController
         var token = cancellation.Token;
         var revision = ++avatarRevision;
         UpdateAvatarName();
-        workspace.Controls.SkinAvatar.Source = AvatarRenderer.Default();
-        workspace.Controls.AvatarCaption.Text = "默认头像";
+        skinAvatar.Source = AvatarRenderer.Default();
+        avatarCaption.Text = "默认头像";
         try
         {
-            if (workspace.Controls.AccountMode.SelectedIndex == 2)
+            if (state.AccountMode == 2)
             {
-                var account = workspace.MuaAccountController.muaAccount;
+                var account = state.MuaAccount;
                 if (account == null)
                     return;
-                var cacheFile = Path.Combine(workspace.LaunchCoordinator.settingsDir, "mua-avatars", account.Profile.Id + ".png");
+                var cacheFile = Path.Combine(state.SettingsDirectory, "mua-avatars", account.Profile.Id + ".png");
                 if (!bypassCache && File.Exists(cacheFile) && new FileInfo(cacheFile).Length <= 2 * 1024 * 1024)
                 {
                     try
@@ -46,8 +67,8 @@ internal sealed class AvatarController
                         var cachedMua = AvatarRenderer.FromSkin(await File.ReadAllBytesAsync(cacheFile, token));
                         if (revision != avatarRevision)
                             return;
-                        workspace.Controls.SkinAvatar.Source = cachedMua;
-                        workspace.Controls.AvatarCaption.Text = "MUA 皮肤";
+                        skinAvatar.Source = cachedMua;
+                        avatarCaption.Text = "MUA 皮肤";
                         return;
                     }
                     catch (Exception ex) when (ex is IOException or ArgumentException or NotSupportedException or FormatException)
@@ -55,8 +76,8 @@ internal sealed class AvatarController
                     }
                 }
 
-                var metadata = await workspace.MuaAccountController.muaAccounts.Metadata(token);
-                var muaUri = await workspace.MuaAccountController.muaAccounts.Skin(account, metadata, token);
+                var metadata = await state.MuaAccounts.Metadata(token);
+                var muaUri = await state.MuaAccounts.Skin(account, metadata, token);
                 if (muaUri == null)
                     return;
                 byte[] data;
@@ -70,32 +91,32 @@ internal sealed class AvatarController
                 var muaAvatar = AvatarRenderer.FromSkin(data);
                 if (revision != avatarRevision || token.IsCancellationRequested)
                     return;
-                workspace.Controls.SkinAvatar.Source = muaAvatar;
-                workspace.Controls.AvatarCaption.Text = "MUA 皮肤";
+                skinAvatar.Source = muaAvatar;
+                avatarCaption.Text = "MUA 皮肤";
                 Directory.CreateDirectory(Path.GetDirectoryName(cacheFile)!);
                 await File.WriteAllBytesAsync(cacheFile, data, token);
                 return;
             }
 
-            if (workspace.Controls.AccountMode.SelectedIndex != 1)
+            if (state.AccountMode != 1)
             {
-                if (File.Exists(workspace.LaunchCoordinator.prefs.OfflineSkin))
+                if (File.Exists(state.OfflineSkin))
                 {
-                    var localBytes = await File.ReadAllBytesAsync(workspace.LaunchCoordinator.prefs.OfflineSkin, token);
+                    var localBytes = await File.ReadAllBytesAsync(state.OfflineSkin, token);
                     if (revision != avatarRevision || token.IsCancellationRequested)
                         return;
-                    workspace.Controls.SkinAvatar.Source = AvatarRenderer.FromSkin(localBytes);
-                    workspace.Controls.AvatarCaption.Text = "本地皮肤";
+                    skinAvatar.Source = AvatarRenderer.FromSkin(localBytes);
+                    avatarCaption.Text = "本地皮肤";
                 }
 
                 return;
             }
 
-            var skin = workspace.AccountController.savedAccount?.SkinUrl;
+            var skin = state.MicrosoftAccount?.SkinUrl;
             if (string.IsNullOrWhiteSpace(skin))
                 return;
             var uri = AvatarRenderer.SkinUri(skin);
-            var cache = Path.Combine(workspace.LaunchCoordinator.settingsDir, "avatars");
+            var cache = Path.Combine(state.SettingsDirectory, "avatars");
             var file = AvatarRenderer.CachePath(cache, uri);
             if (!bypassCache && File.Exists(file))
             {
@@ -104,8 +125,8 @@ internal sealed class AvatarController
                     var cached = AvatarRenderer.FromSkin(await File.ReadAllBytesAsync(file, token));
                     if (revision != avatarRevision)
                         return;
-                    workspace.Controls.SkinAvatar.Source = cached;
-                    workspace.Controls.AvatarCaption.Text = "正版皮肤";
+                    skinAvatar.Source = cached;
+                    avatarCaption.Text = "正版皮肤";
                     return;
                 }
                 catch (Exception ex) when (ex is IOException or System.NotSupportedException or System.ArgumentException or FormatException)
@@ -113,34 +134,35 @@ internal sealed class AvatarController
                 }
             }
 
-            workspace.Controls.AvatarCaption.Text = "正在读取皮肤…";
-            var bytes = await AvatarRenderer.Download(workspace.LaunchCoordinator.http, uri, token);
+            avatarCaption.Text = "正在读取皮肤…";
+            var bytes = await AvatarRenderer.Download(state.Http, uri, token);
             var avatar = AvatarRenderer.FromSkin(bytes);
             if (revision != avatarRevision || token.IsCancellationRequested)
                 return;
-            workspace.Controls.SkinAvatar.Source = avatar;
-            workspace.Controls.AvatarCaption.Text = "正版皮肤";
+            skinAvatar.Source = avatar;
+            avatarCaption.Text = "正版皮肤";
             Directory.CreateDirectory(cache);
             await File.WriteAllBytesAsync(file, bytes, token);
         }
         catch (OperationCanceledException)
         {
             if (revision == avatarRevision)
-                workspace.Controls.AvatarCaption.Text = "头像暂不可用";
+                avatarCaption.Text = "头像暂不可用";
         }
         catch (Exception)
         {
             if (revision == avatarRevision)
-                workspace.Controls.AvatarCaption.Text = "头像暂不可用，可稍后刷新";
+                avatarCaption.Text = "头像暂不可用，可稍后刷新";
         }
     }
 
     internal async void RefreshAvatarClick(object s, RoutedEventArgs e)
     {
-        if (workspace.LaunchCoordinator.busy)
+        var state = getState();
+        if (isBusy())
             return;
-        if (workspace.Controls.AccountMode.SelectedIndex == 1 && workspace.AccountController.savedAccount != null)
-            await workspace.LaunchCoordinator.Run(() => workspace.AccountController.MicrosoftLogin(false), "刷新玩家档案与头像");
+        if (state.AccountMode == 1 && state.MicrosoftAccount != null)
+            await refreshMicrosoftProfile();
         RefreshAvatar(true);
     }
 }

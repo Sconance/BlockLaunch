@@ -31,6 +31,7 @@ static class Program
         Directory.CreateDirectory(root);
         try
         {
+            ExtractedBuilders(root);
             Core(root).GetAwaiter().GetResult();
             Ui(root);
             Console.WriteLine("ALL_EXPERIENCE_CHECKS_PASSED");
@@ -40,6 +41,37 @@ static class Program
             Console.WriteLine(ex);
             Environment.ExitCode = 1;
         }
+    }
+
+    static void ExtractedBuilders(string root)
+    {
+        var executable = @"C:\中文 空格\player's 100%\MCUGLauncher.exe";
+        var command = LaunchScriptBuilder.Build(executable, root, "实例 空格", "mua", false);
+        Check(command.Contains("player's 100%%") && command.Contains("--instance \"实例 空格\"")
+            && command.Contains("--account mua") && command.Contains("DisableDelayedExpansion"),
+            "extracted CMD builder preserves spaces, percent escaping and account routing");
+        var powershell = LaunchScriptBuilder.Build(executable, root, "玩家'实例", "microsoft", true);
+        Check(powershell.Contains("player''s 100%") && powershell.Contains("'玩家''实例'")
+            && powershell.Contains("--account microsoft"),
+            "extracted PowerShell builder quotes apostrophes without embedding credentials");
+
+        var directory = Path.Combine(root, "offline-builder-fixture");
+        var skin = Path.Combine(root, "fixture-skin.png");
+        File.WriteAllBytes(skin, [1, 2, 3, 4]);
+        OfflineSkinPackBuilder.Prepare(root, directory, skin, "fixture", false);
+        Check(!Directory.Exists(directory), "offline skin builder leaves online instances untouched");
+        var version = Path.Combine(root, "versions", "fixture");
+        Directory.CreateDirectory(version);
+        using (var jar = ZipFile.Open(Path.Combine(version, "fixture.jar"), ZipArchiveMode.Create))
+        using (var writer = new StreamWriter(jar.CreateEntry("version.json").Open()))
+            writer.Write("{\"pack_version\":{\"resource\":{\"major\":42}}}");
+        OfflineSkinPackBuilder.Prepare(root, directory, skin, "fixture", true);
+        using var pack = ZipFile.OpenRead(Path.Combine(directory, "resourcepacks", "BlockLaunch Offline Skin.zip"));
+        using var metadata = JsonDocument.Parse(pack.GetEntry("pack.mcmeta")!.Open());
+        Check(metadata.RootElement.GetProperty("pack").GetProperty("pack_format").GetInt32() == 42
+            && pack.GetEntry("assets/minecraft/textures/entity/player/slim/zuri.png") != null
+            && pack.GetEntry("assets/minecraft/textures/entity/steve.png")!.Length == 4,
+            "offline skin builder preserves modern pack format and legacy/player texture entries");
     }
 
     static async Task Core(string root)

@@ -22,8 +22,8 @@ internal sealed class UpdatesController
         if (updates == null)
             return;
         var panel = new StackPanel();
-        panel.Children.Add(InstancePagesController.Heading("选择更新内容"));
-        panel.Children.Add(InstancePagesController.Hint("仅检查已管理的 Modrinth 内容。先勾选项目，再预览版本、必需依赖和文件变化。"));
+        panel.Children.Add(FeatureUiElements.Heading("选择更新内容"));
+        panel.Children.Add(FeatureUiElements.Hint("仅检查已管理的 Modrinth 内容。先勾选项目，再预览版本、必需依赖和文件变化。"));
         var selected = new List<(CheckBox Box, ContentVersion Version)>();
         foreach (var update in updates.Where(u => project == null || u.Current.ProjectId == project))
         {
@@ -44,14 +44,14 @@ internal sealed class UpdatesController
         }
 
         if (selected.Count == 0)
-            panel.Children.Add(InstancePagesController.Hint("没有可选择的兼容正式版更新。"));
+            panel.Children.Add(FeatureUiElements.Hint("没有可选择的兼容正式版更新。"));
         var dialog = workspace.InstancePagesController.FeatureDialog("内容更新", panel);
         dialog.Owner = owner ?? workspace.Window;
         var choices = new WrapPanel();
-        choices.Children.Add(InstancePagesController.ActionButton("全选", (_, _) => selected.ForEach(x => x.Box.IsChecked = true)));
-        choices.Children.Add(InstancePagesController.ActionButton("全不选", (_, _) => selected.ForEach(x => x.Box.IsChecked = false)));
+        choices.Children.Add(FeatureUiElements.ActionButton("全选", (_, _) => selected.ForEach(x => x.Box.IsChecked = true)));
+        choices.Children.Add(FeatureUiElements.ActionButton("全不选", (_, _) => selected.ForEach(x => x.Box.IsChecked = false)));
         panel.Children.Add(choices);
-        panel.Children.Add(InstancePagesController.ActionButton("预览所选更新", async (_, _) =>
+        panel.Children.Add(FeatureUiElements.ActionButton("预览所选更新", async (_, _) =>
         {
             var roots = selected.Where(x => x.Box.IsChecked == true).Select(x => x.Version).ToList();
             ContentUpdatePreview? preview = null;
@@ -63,13 +63,13 @@ internal sealed class UpdatesController
             if (preview == null)
                 return;
             var details = new StackPanel();
-            details.Children.Add(InstancePagesController.Heading("确认更新清单"));
-            details.Children.Add(InstancePagesController.Hint($"{preview.Changes.Count} 项（含必需依赖） · 文件总量约 {preview.Bytes / 1024d / 1024:N1} MiB，已校验缓存可复用\n禁用状态会保留，原文件保留为回退备份。"));
+            details.Children.Add(FeatureUiElements.Heading("确认更新清单"));
+            details.Children.Add(FeatureUiElements.Hint($"{preview.Changes.Count} 项（含必需依赖） · 文件总量约 {preview.Bytes / 1024d / 1024:N1} MiB，已校验缓存可复用\n禁用状态会保留，原文件保留为回退备份。"));
             foreach (var change in preview.Changes)
-                details.Children.Add(InstancePagesController.Hint(change.Label));
+                details.Children.Add(FeatureUiElements.Hint(change.Label));
             var confirm = workspace.InstancePagesController.FeatureDialog("更新预览", details);
             confirm.Owner = dialog;
-            details.Children.Add(InstancePagesController.ActionButton("确认并加入下载队列", (_, _) => confirm.DialogResult = true));
+            details.Children.Add(FeatureUiElements.ActionButton("确认并加入下载队列", (_, _) => confirm.DialogResult = true));
             if (confirm.ShowDialog() != true)
                 return;
             workspace.DownloadQueueController.EnqueueDownload("批量内容更新 · " + preview.Changes.Count + " 项", key, new()

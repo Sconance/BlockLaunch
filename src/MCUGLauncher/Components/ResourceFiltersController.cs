@@ -70,7 +70,7 @@ internal sealed class ResourceFiltersController
         row.Children.Add(resourceLoader);
         row.Children.Add(resourceSource);
         row.Children.Add(releaseChannel);
-        row.Children.Add(InstancePagesController.ActionButton("重置条件", (_, _) =>
+        row.Children.Add(FeatureUiElements.ActionButton("重置条件", (_, _) =>
         {
             if (workspace.LaunchCoordinator.busy)
                 return;
@@ -85,8 +85,8 @@ internal sealed class ResourceFiltersController
         filters.Children.Add(row);
         var manage = (Grid)workspace.Controls.InstalledContent.Parent;
         var toolbar = manage.Children.OfType<WrapPanel>().First(p => Grid.GetRow(p) == 1);
-        toolbar.Children.Add(InstancePagesController.ActionButton("导入光影", async (_, _) => await workspace.LaunchCoordinator.Import("shaderpacks", "光影包|*.zip")));
-        toolbar.Children.Add(InstancePagesController.ActionButton("管理存档数据包", (_, _) =>
+        toolbar.Children.Add(FeatureUiElements.ActionButton("导入光影", async (_, _) => await workspace.LaunchCoordinator.Import("shaderpacks", "光影包|*.zip")));
+        toolbar.Children.Add(FeatureUiElements.ActionButton("管理存档数据包", (_, _) =>
         {
             if (workspace.LaunchCoordinator.busy)
                 return;
@@ -107,7 +107,7 @@ internal sealed class ResourceFiltersController
             workspace.ContentController.managedWorld = picker.FolderName;
             workspace.ContentController.RefreshLocalContent();
         }));
-        toolbar.Children.Add(InstancePagesController.ActionButton("返回实例内容", (_, _) =>
+        toolbar.Children.Add(FeatureUiElements.ActionButton("返回实例内容", (_, _) =>
         {
             workspace.ContentController.managedWorld = null;
             workspace.ContentController.UpdateTargets();

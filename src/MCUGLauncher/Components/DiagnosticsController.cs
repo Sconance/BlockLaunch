@@ -16,7 +16,7 @@ internal sealed class DiagnosticsController
     internal DiagnosticSnapshot? diagnosticSnapshot;
     internal DiagnosticContext? lastAnalyzedContext;
     internal readonly StackPanel diagnosticResults = new();
-    internal readonly TextBlock diagnosticState = InstancePagesController.Hint("尚未分析。可以分析当前选择的实例，或最近一次启动的实例。");
+    internal readonly TextBlock diagnosticState = FeatureUiElements.Hint("尚未分析。可以分析当前选择的实例，或最近一次启动的实例。");
     internal int diagnosticTabIndex;
     internal void BuildDiagnosticsUI()
     {
@@ -35,16 +35,16 @@ internal sealed class DiagnosticsController
             workspace.Controls.PageSubtitle.Text = "本地分析 · 日志证据 · 导出前预览";
         };
         var body = new StackPanel();
-        body.Children.Add(InstancePagesController.Heading("游戏退出排查"));
-        body.Children.Add(InstancePagesController.Hint("规则提示是可能原因，不是确定结论。主动关闭不会自动判为崩溃。读取有限日志、模组文件名和当前实例的 JAR 元数据，不读取账号缓存或存档内容。"));
+        body.Children.Add(FeatureUiElements.Heading("游戏退出排查"));
+        body.Children.Add(FeatureUiElements.Hint("规则提示是可能原因，不是确定结论。主动关闭不会自动判为崩溃。读取有限日志、模组文件名和当前实例的 JAR 元数据，不读取账号缓存或存档内容。"));
         var actions = new WrapPanel();
-        actions.Children.Add(InstancePagesController.ActionButton("分析当前实例", async (_, _) => await workspace.LaunchCoordinator.Run(async () =>
+        actions.Children.Add(FeatureUiElements.ActionButton("分析当前实例", async (_, _) => await workspace.LaunchCoordinator.Run(async () =>
         {
             var descriptor = new InstanceCatalog(workspace.LaunchCoordinator.prefs.Root).GetOrCreate(workspace.LaunchCoordinator.Selected());
             var context = new DiagnosticContext(workspace.LaunchCoordinator.Instance(), descriptor.LaunchProfileId);
             await AnalyzeDiagnostics(context);
         }, "分析当前实例日志")));
-        actions.Children.Add(InstancePagesController.ActionButton("分析最近启动", async (_, _) =>
+        actions.Children.Add(FeatureUiElements.ActionButton("分析最近启动", async (_, _) =>
         {
             if (recentDiagnosticContext == null)
             {
@@ -55,8 +55,8 @@ internal sealed class DiagnosticsController
             var context = recentDiagnosticContext;
             await workspace.LaunchCoordinator.Run(() => AnalyzeDiagnostics(context), "分析最近启动日志");
         }));
-        actions.Children.Add(InstancePagesController.ActionButton("预览并导出反馈 ZIP", (_, _) => FeedbackPreview()));
-        actions.Children.Add(InstancePagesController.ActionButton("修复后重新检查", async (_, _) =>
+        actions.Children.Add(FeatureUiElements.ActionButton("预览并导出反馈 ZIP", (_, _) => FeedbackPreview()));
+        actions.Children.Add(FeatureUiElements.ActionButton("修复后重新检查", async (_, _) =>
         {
             if (lastAnalyzedContext != null)
                 await workspace.LaunchCoordinator.Run(() => AnalyzeDiagnostics(lastAnalyzedContext), "重新检查诊断");
@@ -66,7 +66,7 @@ internal sealed class DiagnosticsController
         body.Children.Add(diagnosticResults);
         workspace.Window.MainTabs.Items.Add(new TabItem { Header = "诊断与反馈", Content = new ScrollViewer { Content = body, VerticalScrollBarVisibility = ScrollBarVisibility.Auto } });
         var logActions = ((Grid)workspace.Controls.GameLogView.Parent).Children.OfType<WrapPanel>().Single();
-        logActions.Children.Add(InstancePagesController.ActionButton("诊断与反馈", (_, _) => nav.IsChecked = true));
+        logActions.Children.Add(FeatureUiElements.ActionButton("诊断与反馈", (_, _) => nav.IsChecked = true));
     }
 
     internal async Task AnalyzeDiagnostics(DiagnosticContext context)
@@ -105,17 +105,17 @@ internal sealed class DiagnosticsController
         foreach (var finding in snapshot.Findings)
         {
             var card = new StackPanel();
-            card.Children.Add(InstancePagesController.Heading(finding.Title));
-            card.Children.Add(InstancePagesController.Hint(finding.Advice));
+            card.Children.Add(FeatureUiElements.Heading(finding.Title));
+            card.Children.Add(FeatureUiElements.Hint(finding.Advice));
             card.Children.Add(new TextBox { IsReadOnly = true, Text = finding.Source + "\n" + finding.Evidence, TextWrapping = TextWrapping.Wrap, MaxHeight = 140, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
             if (snapshot.Logs.Any(log => log.Name == finding.Source))
-                card.Children.Add(InstancePagesController.ActionButton("跳转日志证据", (_, _) => OpenDiagnosticEvidence(snapshot, finding)));
+                card.Children.Add(FeatureUiElements.ActionButton("跳转日志证据", (_, _) => OpenDiagnosticEvidence(snapshot, finding)));
             diagnosticResults.Children.Add(workspace.InstancePagesController.FeatureCard(card));
         }
 
         foreach (var notice in snapshot.Notices)
-            diagnosticResults.Children.Add(InstancePagesController.Hint(notice));
-        diagnosticResults.Children.Add(InstancePagesController.Hint($"已采集 {snapshot.Logs.Count} 份有限日志快照。点击“预览并导出反馈 ZIP”可查看实际文件内容并选择导出范围。"));
+            diagnosticResults.Children.Add(FeatureUiElements.Hint(notice));
+        diagnosticResults.Children.Add(FeatureUiElements.Hint($"已采集 {snapshot.Logs.Count} 份有限日志快照。点击“预览并导出反馈 ZIP”可查看实际文件内容并选择导出范围。"));
     }
 
     internal void OpenDiagnosticEvidence(DiagnosticSnapshot snapshot, DiagnosticFinding finding)
@@ -124,8 +124,8 @@ internal sealed class DiagnosticsController
         if (source == null)
             return;
         var body = new StackPanel();
-        body.Children.Add(InstancePagesController.Heading(source.Name));
-        body.Children.Add(InstancePagesController.Hint("以下为诊断时采集的有限脱敏快照；不会打开账号文件。"));
+        body.Children.Add(FeatureUiElements.Heading(source.Name));
+        body.Children.Add(FeatureUiElements.Hint("以下为诊断时采集的有限脱敏快照；不会打开账号文件。"));
         var text = new TextBox
         {
             Text = source.Text,
@@ -160,8 +160,8 @@ internal sealed class DiagnosticsController
         }
 
         var body = new StackPanel();
-        body.Children.Add(InstancePagesController.Heading("反馈包范围与文本预览"));
-        body.Children.Add(InstancePagesController.Hint("不会自动上传。请逐项检查下方实际文本；自动过滤无法保证完全脱敏，聊天、玩家名和服务器域名等仍可能存在。不希望分享日志时，取消日志勾选。"));
+        body.Children.Add(FeatureUiElements.Heading("反馈包范围与文本预览"));
+        body.Children.Add(FeatureUiElements.Hint("不会自动上传。请逐项检查下方实际文本；自动过滤无法保证完全脱敏，聊天、玩家名和服务器域名等仍可能存在。不希望分享日志时，取消日志勾选。"));
         var logs = new CheckBox
         {
             Content = "包含日志与诊断证据（最多每份 1 MiB）",
@@ -191,7 +191,7 @@ internal sealed class DiagnosticsController
         {
             ItemTemplate = fileTemplate
         };
-        var size = InstancePagesController.Hint("");
+        var size = FeatureUiElements.Hint("");
         var text = new TextBox
         {
             IsReadOnly = true,
@@ -229,7 +229,7 @@ internal sealed class DiagnosticsController
         body.Children.Add(text);
         RefreshPreview();
         var dialog = workspace.InstancePagesController.FeatureDialog("反馈包预览（仅保存到本机）", body);
-        body.Children.Add(InstancePagesController.ActionButton("选择位置并导出这些文本", async (_, _) =>
+        body.Children.Add(FeatureUiElements.ActionButton("选择位置并导出这些文本", async (_, _) =>
         {
             var picker = new SaveFileDialog
             {

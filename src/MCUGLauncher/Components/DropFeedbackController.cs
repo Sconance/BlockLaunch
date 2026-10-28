@@ -68,19 +68,19 @@ internal sealed class DropFeedbackController
     internal string? ConfirmPackImport(PackOverview overview, string root)
     {
         var body = new StackPanel();
-        body.Children.Add(InstancePagesController.Hint($"{overview.Format} · Minecraft {overview.Requirements.Minecraft} · {overview.Requirements.Loader}\n安装目录：{root}\n将创建独立实例，确认后加入下载队列。"));
-        body.Children.Add(InstancePagesController.Heading("实例名称"));
+        body.Children.Add(FeatureUiElements.Hint($"{overview.Format} · Minecraft {overview.Requirements.Minecraft} · {overview.Requirements.Loader}\n安装目录：{root}\n将创建独立实例，确认后加入下载队列。"));
+        body.Children.Add(FeatureUiElements.Heading("实例名称"));
         var name = new TextBox
         {
             Text = overview.Name,
             MaxLength = 80
         };
         body.Children.Add(name);
-        var validation = InstancePagesController.Hint("");
+        var validation = FeatureUiElements.Hint("");
         body.Children.Add(validation);
         var page = workspace.InstancePagesController.FeatureDialog("确认导入整合包", body);
         var actions = new WrapPanel();
-        actions.Children.Add(InstancePagesController.ActionButton("确认并加入队列", (_, _) =>
+        actions.Children.Add(FeatureUiElements.ActionButton("确认并加入队列", (_, _) =>
         {
             if (string.IsNullOrWhiteSpace(name.Text))
             {
@@ -90,7 +90,7 @@ internal sealed class DropFeedbackController
 
             page.DialogResult = true;
         }));
-        actions.Children.Add(InstancePagesController.ActionButton("取消", (_, _) => page.DialogResult = false));
+        actions.Children.Add(FeatureUiElements.ActionButton("取消", (_, _) => page.DialogResult = false));
         body.Children.Add(actions);
         return page.ShowDialog() == true ? name.Text.Trim() : null;
     }

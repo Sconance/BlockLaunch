@@ -64,16 +64,16 @@ internal sealed class PackUpgradeController
     internal InlineDialog BuildPackUpgradeDialog(PackUpgradePreview preview, object owner, Func<string[], Task<bool>> commit)
     {
         var panel = new StackPanel();
-        panel.Children.Add(InstancePagesController.Heading("升级到 " + preview.Pack.Name));
-        panel.Children.Add(InstancePagesController.Hint($"Minecraft {preview.Pack.Minecraft} · {preview.Pack.Loader} {preview.Pack.LoaderVersion}\n升级创建独立副本，原实例和存档保留。跨游戏版本打开存档可能改变世界格式。\n勾选保留旧文件；取消勾选使用新包文件或移除旧文件。"));
+        panel.Children.Add(FeatureUiElements.Heading("升级到 " + preview.Pack.Name));
+        panel.Children.Add(FeatureUiElements.Hint($"Minecraft {preview.Pack.Minecraft} · {preview.Pack.Loader} {preview.Pack.LoaderVersion}\n升级创建独立副本，原实例和存档保留。跨游戏版本打开存档可能改变世界格式。\n勾选保留旧文件；取消勾选使用新包文件或移除旧文件。"));
         if (!preview.HasBaseline)
-            panel.Children.Add(InstancePagesController.Hint("旧包未记录文件基线，请逐项检查旧 Mod，避免与新版重复。"));
+            panel.Children.Add(FeatureUiElements.Hint("旧包未记录文件基线，请逐项检查旧 Mod，避免与新版重复。"));
         foreach (var group in preview.Files.Where(f => !f.Conflict).GroupBy(f => f.Relative.Split('/')[0]))
-            panel.Children.Add(InstancePagesController.Hint("自动保留 " + group.Key + " · " + group.Count() + " 个文件"));
+            panel.Children.Add(FeatureUiElements.Hint("自动保留 " + group.Key + " · " + group.Count() + " 个文件"));
         var choices = new List<(CheckBox Box, PackUpgradeFile File)>();
         var tooMany = preview.Files.Count(f => f.Conflict) > 500;
         if (tooMany)
-            panel.Children.Add(InstancePagesController.Hint("冲突超过 500 项，请先整理旧实例，再重新准备升级。原实例未修改。"));
+            panel.Children.Add(FeatureUiElements.Hint("冲突超过 500 项，请先整理旧实例，再重新准备升级。原实例未修改。"));
         else
             foreach (var file in preview.Files.Where(f => f.Conflict))
             {
@@ -91,10 +91,10 @@ internal sealed class PackUpgradeController
                 choices.Add((box, file));
             }
 
-        panel.Children.Add(InstancePagesController.Hint($"{preview.Files.Count} 项迁移 · {preview.Files.Count(f => f.Conflict)} 项需确认；存档、截图和玩家选项默认保留。"));
+        panel.Children.Add(FeatureUiElements.Hint($"{preview.Files.Count} 项迁移 · {preview.Files.Count(f => f.Conflict)} 项需确认；存档、截图和玩家选项默认保留。"));
         var dialog = workspace.InstancePagesController.FeatureDialog("整合包升级预览", panel);
         dialog.Owner = owner;
-        var confirm = InstancePagesController.ActionButton("确认迁移并创建升级副本", async (_, _) =>
+        var confirm = FeatureUiElements.ActionButton("确认迁移并创建升级副本", async (_, _) =>
         {
             var keep = choices.Where(c => c.Box.IsChecked == true).Select(c => c.File.Relative).Concat(preview.Files.Where(f => !f.Conflict && f.KeepOld).Select(f => f.Relative)).ToArray();
             if (await commit(keep))

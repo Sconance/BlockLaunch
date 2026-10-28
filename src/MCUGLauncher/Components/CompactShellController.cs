@@ -194,8 +194,8 @@ internal sealed class CompactShellController
         var buttons = new Grid();
         buttons.ColumnDefinitions.Add(new());
         buttons.ColumnDefinitions.Add(new());
-        var choose = InstancePagesController.ActionButton("版本选择", (_, _) => ShowHomeVersions());
-        var settingsButton = InstancePagesController.ActionButton("版本设置", (_, _) =>
+        var choose = FeatureUiElements.ActionButton("版本选择", (_, _) => ShowHomeVersions());
+        var settingsButton = FeatureUiElements.ActionButton("版本设置", (_, _) =>
         {
             try
             {
@@ -270,12 +270,12 @@ internal sealed class CompactShellController
         chooser.Children.Clear();
         chooser.ColumnDefinitions[0].Width = new GridLength(205);
         toolbar.Margin = new Thickness(0, 0, 12, 0);
-        toolbar.Children.Insert(0, InstancePagesController.ActionButton("← 返回启动", (_, _) =>
+        toolbar.Children.Insert(0, FeatureUiElements.ActionButton("← 返回启动", (_, _) =>
         {
             workspace.Window.MainTabs.SelectedIndex = 0;
             workspace.Controls.PageTitle.Text = "启动";
         }));
-        toolbar.Children.Add(InstancePagesController.ActionButton("使用所选版本", (_, _) =>
+        toolbar.Children.Add(FeatureUiElements.ActionButton("使用所选版本", (_, _) =>
         {
             if (workspace.InstancePagesController.instanceList.SelectedItem is not InstanceView item || workspace.LaunchCoordinator.busy)
                 return;
@@ -283,13 +283,13 @@ internal sealed class CompactShellController
             workspace.Window.MainTabs.SelectedIndex = 0;
             workspace.Controls.PageTitle.Text = "启动";
         }));
-        toolbar.Children.Add(InstancePagesController.ActionButton("所选版本设置", (_, _) =>
+        toolbar.Children.Add(FeatureUiElements.ActionButton("所选版本设置", (_, _) =>
         {
             if (workspace.InstancePagesController.instanceList.SelectedItem is InstanceView item)
                 workspace.VersionSettingsController.OpenVersionSettings(item.Key);
         }));
-        toolbar.Children.Add(InstancePagesController.ActionButton("新建同版本实例", workspace.StabilityController.NewInstanceClick));
-        toolbar.Children.Add(InstancePagesController.Hint("搜索已安装版本"));
+        toolbar.Children.Add(FeatureUiElements.ActionButton("新建同版本实例", workspace.StabilityController.NewInstanceClick));
+        toolbar.Children.Add(FeatureUiElements.Hint("搜索已安装版本"));
         toolbar.Children.Add(workspace.InstancePagesController.instanceQuery);
         toolbar.Children.Add(workspace.InstancePagesController.instanceSearchSummary);
         workspace.InstancePagesController.instanceList.ItemTemplate = (DataTemplate)System.Windows.Markup.XamlReader.Parse("<DataTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'><Grid><Grid.ColumnDefinitions><ColumnDefinition Width='40'/><ColumnDefinition/></Grid.ColumnDefinitions><TextBlock Text='◇' FontSize='27' Foreground='#006DB8' VerticalAlignment='Center'/><StackPanel Grid.Column='1'><TextBlock Text='{Binding Name}' FontSize='14' FontWeight='SemiBold'/><TextBlock Text='{Binding Detail}' FontSize='11' Foreground='SlateGray' Margin='0,3,0,0'/></StackPanel></Grid></DataTemplate>");
@@ -330,7 +330,7 @@ internal sealed class CompactShellController
         }
 
         var directoryButtons = new WrapPanel();
-        directoryButtons.Children.Add(InstancePagesController.ActionButton("选择下载目录", (_, _) =>
+        directoryButtons.Children.Add(FeatureUiElements.ActionButton("选择下载目录", (_, _) =>
         {
             var picker = new OpenFolderDialog
             {
@@ -348,7 +348,7 @@ internal sealed class CompactShellController
             workspace.LaunchCoordinator.settings.Save(workspace.LaunchCoordinator.prefs);
             workspace.ContentController.UpdateTargets();
         }));
-        directoryButtons.Children.Add(InstancePagesController.ActionButton("打开下载目录", (_, _) =>
+        directoryButtons.Children.Add(FeatureUiElements.ActionButton("打开下载目录", (_, _) =>
         {
             Directory.CreateDirectory(workspace.LaunchCoordinator.prefs.ResourceDownloadDirectory);
             System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(workspace.LaunchCoordinator.prefs.ResourceDownloadDirectory) { UseShellExecute = true });

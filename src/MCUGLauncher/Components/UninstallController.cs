@@ -37,7 +37,7 @@ internal sealed class UninstallController
                 Visibility = plan.SharedData ? Visibility.Visible : Visibility.Collapsed
             };
             if (plan.SharedData)
-                body.Children.Add(InstancePagesController.Hint("此版本使用共享目录，默认保留共用数据。勾选后会删除所有共用版本的共享存档、Mod、配置、资源包和截图。"));
+                body.Children.Add(FeatureUiElements.Hint("此版本使用共享目录，默认保留共用数据。勾选后会删除所有共用版本的共享存档、Mod、配置、资源包和截图。"));
             body.Children.Add(shared);
             var dialog = new InlineDialog
             {
@@ -56,12 +56,12 @@ internal sealed class UninstallController
                 HorizontalAlignment = HorizontalAlignment.Right,
                 Margin = new Thickness(0, 18, 0, 0)
             };
-            var confirm = InstancePagesController.ActionButton("确定删除", (_, _) => dialog.DialogResult = true);
+            var confirm = FeatureUiElements.ActionButton("确定删除", (_, _) => dialog.DialogResult = true);
             confirm.Foreground = Brushes.Red;
             confirm.BorderBrush = Brushes.Red;
             confirm.BorderThickness = new Thickness(1);
             actions.Children.Add(confirm);
-            actions.Children.Add(InstancePagesController.ActionButton("取消", (_, _) => dialog.DialogResult = false));
+            actions.Children.Add(FeatureUiElements.ActionButton("取消", (_, _) => dialog.DialogResult = false));
             body.Children.Add(actions);
             if (dialog.ShowDialog() != true)
                 return;

@@ -1,30 +1,36 @@
-using System.IO;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Media;
 
 namespace BlockLaunch;
 internal sealed class HomeAccountController
 {
-    readonly LauncherWorkspace workspace;
-    internal HomeAccountController(LauncherWorkspace workspace)
+    readonly AccountPanelControls controls;
+    readonly AccountPanelActions actions;
+    readonly Func<(bool Microsoft, bool Mua)> getAccountState;
+    readonly Action<Border> configureWelcome;
+
+    internal HomeAccountController(AccountPanelControls controls, AccountPanelActions actions,
+        Func<(bool Microsoft, bool Mua)> getAccountState, Action<Border> configureWelcome)
     {
-        this.workspace = workspace;
+        this.controls = controls;
+        this.actions = actions;
+        this.getAccountState = getAccountState;
+        this.configureWelcome = configureWelcome;
     }
 
     internal AccountPanelView? accountPanel;
     internal void BuildHomeAccountPanel()
     {
         // Reuse the named XAML controls: existing bindings and authentication handlers stay attached.
-        var originalPanel = (StackPanel)workspace.Controls.AccountMode.Parent;
+        var originalPanel = (StackPanel)controls.Mode.Parent;
         var card = (Border)originalPanel.Parent;
-        var avatar = (Border)workspace.Controls.SkinAvatar.Parent;
+        var avatar = controls.Avatar;
         var originalControls = new UIElement[]
         {
-            workspace.Controls.AccountMode,
-            workspace.Controls.PlayerName,
-            workspace.Controls.AvatarPlayerName,
-            workspace.Controls.AccountStatus,
+            controls.Mode,
+            controls.PlayerName,
+            controls.DisplayName,
+            controls.Status,
             avatar
         };
         foreach (var child in originalControls)
@@ -35,25 +41,15 @@ internal sealed class HomeAccountController
         card.Child = null;
         card.Padding = new Thickness(16, 12, 16, 14);
         card.CornerRadius = new CornerRadius(10);
-        accountPanel = new AccountPanelView(new(workspace.Controls.AccountMode, workspace.Controls.PlayerName, workspace.Controls.AvatarPlayerName, workspace.Controls.AccountStatus, avatar, (Style)workspace.Window.FindResource("AccountLoginChip")), new(() => workspace.AvatarController.RefreshAvatar(true), () => workspace.DownloadTaskController.RunAccountAction(workspace.LaunchCoordinator.Login, "微软正版登录"), () => workspace.DownloadTaskController.RunAccountAction(workspace.MuaAccountController.MuaLogin, "MUA 登录"), () => workspace.AccountController.AccountManagementClick(workspace.Window, new RoutedEventArgs()), () => workspace.MuaAccountController.MuaManagementClick(workspace.Window, new RoutedEventArgs())));
+        accountPanel = new AccountPanelView(controls, actions);
         card.Child = accountPanel;
-        ConfigureHomeWelcome(card);
+        configureWelcome(card);
         UpdateAccountPanel();
     }
 
-    internal void ConfigureHomeWelcome(Border card)
+    internal void UpdateAccountPanel()
     {
-        var home = (Grid)((TabItem)workspace.Window.MainTabs.Items[0]).Content;
-        var banner = home.Children.OfType<Border>().FirstOrDefault(b => b != card && Grid.GetColumn(b) == 2);
-        if (banner != null && !File.Exists(workspace.LaunchCoordinator.prefs.BackgroundPath))
-        {
-            banner.SetResourceReference(Border.BackgroundProperty, "ThemeSurfaceBrush");
-            banner.CornerRadius = new CornerRadius(10);
-            banner.BorderBrush = new SolidColorBrush(Color.FromRgb(214, 225, 232));
-            banner.BorderThickness = new Thickness(1);
-            banner.Child = new HomeWelcomeView(Brand.Name);
-        }
+        var state = getAccountState();
+        accountPanel?.UpdateState(state.Microsoft, state.Mua);
     }
-
-    internal void UpdateAccountPanel() => accountPanel?.UpdateState(workspace.AccountController.savedAccount != null || workspace.LaunchCoordinator.online != null, workspace.MuaAccountController.muaAccount != null);
 }

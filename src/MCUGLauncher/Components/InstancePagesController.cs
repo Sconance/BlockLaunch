@@ -1,8 +1,7 @@
+using static BlockLaunch.FeatureUiElements;
+using System.Text.Json;
 using System.Diagnostics;
 using System.IO;
-using System.IO.Compression;
-using System.Runtime.InteropServices;
-using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -11,15 +10,16 @@ using System.Windows.Media.Imaging;
 using Microsoft.Win32;
 
 namespace BlockLaunch;
-
-public record InstanceView(string Key, string Name, string Group, string Detail, string Icon, int JavaMajor = 0);
 internal sealed class InstancePagesController
 {
     readonly LauncherWorkspace workspace;
     internal InstancePagesController(LauncherWorkspace workspace)
     {
         this.workspace = workspace;
+        instanceSearch = new InstanceSearchController(instanceList, instanceQuery, instanceSearchSummary);
     }
+
+    readonly InstanceSearchController instanceSearch;
 
     internal ListBox instanceList = new();
     internal readonly TextBox instanceQuery = new()
@@ -32,43 +32,11 @@ internal sealed class InstancePagesController
         TextWrapping = TextWrapping.Wrap,
         Margin = new Thickness(0, 3, 0, 8)
     };
-    internal void FilterInstanceViews()
-    {
-        var view = instanceList.ItemsSource as System.ComponentModel.ICollectionView;
-        if (view == null)
-            return;
-        var terms = instanceQuery.Text.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-        view.Filter = item => item is InstanceView instance && terms.All(t => (instance.Name + " " + instance.Key + " " + instance.Detail).Contains(t, StringComparison.OrdinalIgnoreCase));
-        instanceSearchSummary.Text = $"显示 {view.Cast<object>().Count()} 个已安装版本";
-    }
+    internal void FilterInstanceViews() => instanceSearch.Apply();
 
     internal ComboBox rootList = new();
     internal StackPanel instanceDetail = new();
     internal RadioButton instanceNav = null!;
-    internal static TextBlock Heading(string text) => new()
-    {
-        Text = text,
-        FontSize = 17,
-        FontWeight = FontWeights.SemiBold,
-        Margin = new Thickness(0, 5, 0, 12),
-        TextWrapping = TextWrapping.Wrap
-    };
-    internal static TextBlock Hint(string text) => new()
-    {
-        Text = text,
-        TextWrapping = TextWrapping.Wrap,
-        Foreground = Brushes.SlateGray,
-        Margin = new Thickness(0, 5, 0, 10)
-    };
-    internal static Button ActionButton(string title, RoutedEventHandler action)
-    {
-        var b = new Button
-        {
-            Content = title
-        };
-        b.Click += action;
-        return b;
-    }
 
     internal Border FeatureCard(UIElement child) => new()
     {
@@ -309,15 +277,14 @@ internal sealed class InstancePagesController
             };
             if (picker.ShowDialog() != true)
                 return;
-            static string Q(string text) => "'" + text.Replace("'", "''") + "'";
-            static string Cmd(string text) => "\"" + text.Replace("%", "%%") + "\"";
             var account = workspace.Controls.AccountMode.SelectedIndex switch
             {
                 1 => "microsoft",
                 2 => "mua",
                 _ => "offline"
             };
-            var command = Path.GetExtension(picker.FileName).Equals(".ps1", StringComparison.OrdinalIgnoreCase) ? "# 账号授权由启动器完成，脚本不保存令牌。\r\n& " + Q(Environment.ProcessPath!) + " --root " + Q(workspace.LaunchCoordinator.prefs.Root) + " --instance " + Q(key) + " --account " + account + "\r\n" : "@echo off\r\nchcp 65001 >nul\r\nsetlocal DisableDelayedExpansion\r\n" + Cmd(Environment.ProcessPath!) + " --root " + Cmd(workspace.LaunchCoordinator.prefs.Root) + " --instance " + Cmd(key) + " --account " + account + "\r\n";
+            var command = LaunchScriptBuilder.Build(Environment.ProcessPath!, workspace.LaunchCoordinator.prefs.Root,
+                key, account, Path.GetExtension(picker.FileName).Equals(".ps1", StringComparison.OrdinalIgnoreCase));
             if (Path.GetExtension(picker.FileName).Equals(".ps1", StringComparison.OrdinalIgnoreCase))
                 File.WriteAllText(picker.FileName, command, new System.Text.UTF8Encoding(true));
             else
@@ -580,240 +547,4 @@ internal sealed class InstancePagesController
         workspace.AppearanceController.ApplyBackground();
         workspace.AvatarController.RefreshAvatar();
     }
-
-    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
-    internal static extern bool SetWindowText(IntPtr handle, string title);
-    [DllImport("psapi.dll")]
-    internal static extern bool EmptyWorkingSet(IntPtr handle);
-    internal async void ApplyLaunchBehavior(Process process, LaunchSettings settings, GameSession session)
-    {
-        try
-        {
-            process.PriorityClass = Enum.Parse<ProcessPriorityClass>(settings.Priority);
-            if (settings.TrimLauncher)
-                EmptyWorkingSet(Process.GetCurrentProcess().Handle);
-            if (settings.Visibility == "启动后最小化")
-                workspace.Window.WindowState = WindowState.Minimized;
-            if (settings.Visibility == "启动后隐藏")
-                workspace.Window.Hide();
-            if (settings.WindowTitle.Length > 0)
-                for (var i = 0; i < 60 && !process.HasExited; i++)
-                {
-                    process.Refresh();
-                    if (process.MainWindowHandle != IntPtr.Zero)
-                    {
-                        SetWindowText(process.MainWindowHandle, settings.WindowTitle);
-                        break;
-                    }
-
-                    await Task.Delay(500);
-                }
-
-            await session.Completion;
-        }
-        catch (Exception ex)
-        {
-            workspace.LaunchCoordinator.Log("启动外观设置：" + ex.Message);
-        }
-        finally
-        {
-            if (!workspace.Window.Dispatcher.HasShutdownStarted && settings.Visibility == "启动后隐藏")
-            {
-                workspace.Window.Show();
-                workspace.Window.WindowState = WindowState.Normal;
-            }
-        }
-    }
-
-    internal void PrepareOfflineSkin(string directory, string baseVersion)
-    {
-        if (workspace.Controls.AccountMode.SelectedIndex != 0 || !File.Exists(workspace.LaunchCoordinator.prefs.OfflineSkin))
-            return;
-        var packDir = Path.Combine(directory, "resourcepacks");
-        Directory.CreateDirectory(packDir);
-        var file = Path.Combine(packDir, "BlockLaunch Offline Skin.zip");
-        var format = 15;
-        var jar = Path.Combine(workspace.LaunchCoordinator.prefs.Root, "versions", baseVersion, baseVersion + ".jar");
-        if (File.Exists(jar))
-        {
-            using var gameJar = ZipFile.OpenRead(jar);
-            var version = gameJar.GetEntry("version.json");
-            if (version != null)
-            {
-                using var doc = JsonDocument.Parse(version.Open());
-                if (doc.RootElement.TryGetProperty("pack_version", out var p) && p.TryGetProperty("resource", out var r))
-                {
-                    if (r.ValueKind == JsonValueKind.Number)
-                        format = r.GetInt32();
-                    else if (r.TryGetProperty("major", out var major))
-                        format = major.GetInt32();
-                }
-            }
-        }
-
-        var temp = file + "." + Guid.NewGuid().ToString("N") + ".tmp";
-        using (var archive = ZipFile.Open(temp, ZipArchiveMode.Create))
-        {
-            using (var writer = new StreamWriter(archive.CreateEntry("pack.mcmeta").Open()))
-                writer.Write(JsonSerializer.Serialize(new
-                {
-                    pack = new
-                    {
-                        pack_format = format,
-                        description = "BlockLaunch Offline Skin (local default-player replacement)"
-                    }
-                }));
-            var paths = new List<string>
-            {
-                "assets/minecraft/textures/entity/steve.png",
-                "assets/minecraft/textures/entity/alex.png"
-            };
-            foreach (var model in new[]
-            {
-                "wide",
-                "slim"
-            }
-
-            )
-                foreach (var name in new[]
-                {
-                    "steve",
-                    "alex",
-                    "ari",
-                    "efe",
-                    "kai",
-                    "makena",
-                    "noor",
-                    "sunny",
-                    "zuri"
-                }
-
-                )
-                    paths.Add("assets/minecraft/textures/entity/player/" + model + "/" + name + ".png");
-            foreach (var path in paths)
-                archive.CreateEntryFromFile(workspace.LaunchCoordinator.prefs.OfflineSkin, path);
-        }
-
-        File.Move(temp, file, true);
-    }
-}
-
-public sealed class LaunchOptionsForm
-{
-    public StackPanel Panel { get; } = new();
-
-    StackPanel active = new();
-
-    void Section(string title)
-    {
-        active = new StackPanel();
-        active.Children.Add(new TextBlock { Text = title, FontSize = 16, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 0, 0, 14) });
-        Panel.Children.Add(new Border { Background = Brushes.White, CornerRadius = new CornerRadius(9), Padding = new Thickness(20), Margin = new Thickness(0, 0, 0, 14), Child = active });
-    }
-
-    public void SetJava(string path) => texts["Java"].Text = path;
-
-    readonly Dictionary<string, TextBox> texts = new();
-    readonly Dictionary<string, ComboBox> combos = new();
-    readonly Dictionary<string, CheckBox> checks = new();
-
-    void Text(string id, string label, string value)
-    {
-        active.Children.Add(new TextBlock { Text = label, Margin = new Thickness(0, 6, 0, 0) });
-        var text = new TextBox
-        {
-            Text = value
-        };
-        texts[id] = text;
-        active.Children.Add(text);
-    }
-
-    void Combo(string id, string label, string value, string[] values)
-    {
-        active.Children.Add(new TextBlock { Text = label });
-        var combo = new ComboBox
-        {
-            ItemsSource = values,
-            SelectedItem = value
-        };
-        combos[id] = combo;
-        active.Children.Add(combo);
-    }
-
-    void Check(string id, string label, bool value)
-    {
-        var c = new CheckBox
-        {
-            Content = label,
-            IsChecked = value,
-            Margin = new Thickness(0, 8, 0, 12)
-        };
-        checks[id] = c;
-        active.Children.Add(c);
-    }
-
-    public LaunchOptionsForm(LaunchSettings settings)
-    {
-        Section("启动选项");
-        Combo("Isolation", "版本隔离", settings.Isolation, ["独立实例", "共享根目录"]);
-        Text("WindowTitle", "游戏窗口标题（留空使用默认）", settings.WindowTitle);
-        Text("VersionInfo", "自定义版本信息", settings.VersionInfo);
-        Combo("Visibility", "启动器可见性", settings.Visibility, ["保持显示", "启动后最小化", "启动后隐藏"]);
-        Combo("Priority", "进程优先级", settings.Priority, ["BelowNormal", "Normal", "AboveNormal", "High"]);
-        Check("FullScreen", "全屏启动", settings.FullScreen);
-        Text("Width", "窗口宽度", settings.Width.ToString());
-        Text("Height", "窗口高度", settings.Height.ToString());
-        active.Children.Add(new TextBlock { Text = "常用分辨率（可继续修改宽高）", Margin = new Thickness(0, 6, 0, 0) });
-        var resolutions = new ComboBox
-        {
-            ItemsSource = new[] {
-                "选择预设…",
-                "854 × 480",
-                "1280 × 720",
-                "1600 × 900",
-                "1920 × 1080",
-                "2560 × 1440",
-                "3840 × 2160"
-            },
-            SelectedIndex = 0
-        };
-        resolutions.SelectionChanged += (_, _) =>
-        {
-            if (resolutions.SelectedIndex > 0)
-            {
-                var parts = ((string)resolutions.SelectedItem).Split('×');
-                texts["Width"].Text = parts[0].Trim();
-                texts["Height"].Text = parts[1].Trim();
-            }
-        };
-        active.Children.Add(resolutions);
-        Section("内存分配");
-        Check("AutoMemory", "自动分配内存（按可用内存推荐）", settings.AutoMemory);
-        Text("RamMb", "自定义内存 MB（关闭自动分配后生效）", settings.RamMb.ToString());
-        var memory = MemoryPolicy.Read();
-        active.Children.Add(new TextBlock { Text = $"系统已用 / 总计：{(memory.Total - memory.Available) / 1073741824.0:F1} / {memory.Total / 1073741824.0:F1} GB · 推荐 {MemoryPolicy.Recommend()} MB", TextWrapping = TextWrapping.Wrap });
-        Section("Java 与高级参数");
-        Check("TrimLauncher", "启动后收缩启动器工作集（不清理其他进程）", settings.TrimLauncher);
-        Text("Java", "Java 路径（留空自动）", settings.Java);
-        Text("JvmArguments", "额外 JVM 参数", settings.JvmArguments);
-        Text("Server", "启动后连接服务器（可选 host:port）", settings.Server);
-    }
-
-    public LaunchSettings Read() => new()
-    {
-        Isolation = (string)combos["Isolation"].SelectedItem,
-        WindowTitle = texts["WindowTitle"].Text,
-        VersionInfo = texts["VersionInfo"].Text,
-        Visibility = (string)combos["Visibility"].SelectedItem,
-        Priority = (string)combos["Priority"].SelectedItem,
-        FullScreen = checks["FullScreen"].IsChecked == true,
-        Width = int.Parse(texts["Width"].Text),
-        Height = int.Parse(texts["Height"].Text),
-        RamMb = int.Parse(texts["RamMb"].Text),
-        AutoMemory = checks["AutoMemory"].IsChecked == true,
-        TrimLauncher = checks["TrimLauncher"].IsChecked == true,
-        Java = texts["Java"].Text.Trim().Trim('"'),
-        JvmArguments = texts["JvmArguments"].Text,
-        Server = texts["Server"].Text.Trim()
-    };
 }

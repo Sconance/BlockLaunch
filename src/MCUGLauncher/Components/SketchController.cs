@@ -64,7 +64,7 @@ internal sealed class SketchController
         launch.Children.Remove(workspace.Controls.LaunchGameButton);
         Grid.SetRowSpan(workspace.Controls.LaunchGameButton, 2);
         row.Children.Add(workspace.Controls.LaunchGameButton);
-        var choose = InstancePagesController.ActionButton(">", (_, _) => ToggleSketchVersions());
+        var choose = FeatureUiElements.ActionButton(">", (_, _) => ToggleSketchVersions());
         sketchToggle = choose;
         choose.ToolTip = "展开版本列表";
         choose.FontSize = 18;
@@ -74,7 +74,7 @@ internal sealed class SketchController
         choose.Margin = new Thickness(5, 0, 0, 3);
         Grid.SetColumn(choose, 1);
         row.Children.Add(choose);
-        var manage = InstancePagesController.ActionButton("⚙", (_, _) =>
+        var manage = FeatureUiElements.ActionButton("⚙", (_, _) =>
         {
             try
             {
@@ -139,7 +139,7 @@ internal sealed class SketchController
         var toolbar = new StackPanel();
         DockPanel.SetDock(toolbar, Dock.Top);
         var directory = new DockPanel();
-        var add = InstancePagesController.ActionButton("＋", workspace.InstancePagesController.AddRootClick);
+        var add = FeatureUiElements.ActionButton("＋", workspace.InstancePagesController.AddRootClick);
         add.ToolTip = "添加已有游戏目录";
         DockPanel.SetDock(add, Dock.Right);
         directory.Children.Add(add);
@@ -155,15 +155,15 @@ internal sealed class SketchController
             HorizontalAlignment = HorizontalAlignment.Right
         };
         DockPanel.SetDock(tools, Dock.Right);
-        tools.Children.Add(InstancePagesController.ActionButton("导入整合包", workspace.PackController.ImportPackClick));
-        tools.Children.Add(InstancePagesController.ActionButton("刷新版本", async (_, _) => await workspace.LaunchCoordinator.Run(async () =>
+        tools.Children.Add(FeatureUiElements.ActionButton("导入整合包", workspace.PackController.ImportPackClick));
+        tools.Children.Add(FeatureUiElements.ActionButton("刷新版本", async (_, _) => await workspace.LaunchCoordinator.Run(async () =>
         {
             await workspace.LaunchCoordinator.Refresh();
             workspace.InstancePagesController.RefreshInstanceViews();
             ShowSketchVersions();
         })));
         titleRow.Children.Add(tools);
-        titleRow.Children.Add(InstancePagesController.Heading("游戏目录"));
+        titleRow.Children.Add(FeatureUiElements.Heading("游戏目录"));
         toolbar.Children.Add(titleRow);
         toolbar.Children.Add(directory);
         var searchRow = new Grid();
@@ -208,7 +208,7 @@ internal sealed class SketchController
                         Orientation = Orientation.Horizontal
                     };
                     DockPanel.SetDock(actions, Dock.Right);
-                    var play = InstancePagesController.ActionButton("▷", async (_, _) =>
+                    var play = FeatureUiElements.ActionButton("▷", async (_, _) =>
                     {
                         if (workspace.LaunchCoordinator.busy)
                             return;
@@ -217,7 +217,7 @@ internal sealed class SketchController
                     });
                     play.ToolTip = "启动此版本";
                     actions.Children.Add(play);
-                    var settingsButton = InstancePagesController.ActionButton("⚙", (_, _) => OpenSketchManager(item.Key));
+                    var settingsButton = FeatureUiElements.ActionButton("⚙", (_, _) => OpenSketchManager(item.Key));
                     settingsButton.ToolTip = "管理此版本";
                     actions.Children.Add(settingsButton);
                     line.Children.Add(actions);
@@ -227,7 +227,7 @@ internal sealed class SketchController
                     };
                     label.Children.Add(new TextBlock { Text = item.Name, FontSize = 13, FontWeight = FontWeights.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis, ToolTip = item.Name });
                     label.Children.Add(new TextBlock { Text = item.Detail, FontSize = 11, Foreground = Brushes.SlateGray, Margin = new Thickness(0, 3, 0, 0), TextTrimming = TextTrimming.CharacterEllipsis, ToolTip = item.Detail });
-                    var select = InstancePagesController.ActionButton("", (_, _) =>
+                    var select = FeatureUiElements.ActionButton("", (_, _) =>
                     {
                         if (workspace.LaunchCoordinator.busy && !workspace.DownloadTaskController.DownloadInProgress)
                             return;
@@ -259,7 +259,7 @@ internal sealed class SketchController
             }
 
             if (matches.Count == 0)
-                groups.Children.Add(InstancePagesController.Hint(query.Length > 0 ? "没有匹配的已安装版本。" : "还没有安装游戏，请到「下载」获取版本，或添加已有游戏目录。"));
+                groups.Children.Add(FeatureUiElements.Hint(query.Length > 0 ? "没有匹配的已安装版本。" : "还没有安装游戏，请到「下载」获取版本，或添加已有游戏目录。"));
         }
 
         search.TextChanged += (_, _) =>
@@ -308,7 +308,7 @@ internal sealed class SketchController
         layout.Children.Add(versions);
         var top = new StackPanel();
         DockPanel.SetDock(top, Dock.Top);
-        top.Children.Add(InstancePagesController.Heading("游戏目录"));
+        top.Children.Add(FeatureUiElements.Heading("游戏目录"));
         var directories = new ComboBox
         {
             ToolTip = workspace.LaunchCoordinator.prefs.Root,
@@ -320,7 +320,7 @@ internal sealed class SketchController
         directories.ItemTemplate = (DataTemplate)System.Windows.Markup.XamlReader.Parse("<DataTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation'><TextBlock Text='{Binding}' TextTrimming='CharacterEllipsis' ToolTip='{Binding}'/></DataTemplate>");
         top.Children.Add(directories);
         versions.Children.Add(top);
-        var bottom = InstancePagesController.ActionButton("＋ 导入整合包", (_, e) =>
+        var bottom = FeatureUiElements.ActionButton("＋ 导入整合包", (_, e) =>
         {
             page.Close();
             workspace.PackController.ImportPackClick(workspace.Window, e);
@@ -382,7 +382,7 @@ internal sealed class SketchController
             DisplayMemberPath = "Name"
         };
         ScrollViewer.SetCanContentScroll(files, false);
-        var info = InstancePagesController.Hint("选择内容查看详情。");
+        var info = FeatureUiElements.Hint("选择内容查看详情。");
         var preview = new Image
         {
             Height = 180,
@@ -415,14 +415,14 @@ internal sealed class SketchController
             current = selected.Key;
             workspace.DropFeedbackController.sketchManagerKey = current;
             var actions = new WrapPanel();
-            actions.Children.Add(InstancePagesController.ActionButton("版本设置", (_, _) => workspace.VersionSettingsController.OpenVersionSettings(current)));
-            actions.Children.Add(InstancePagesController.ActionButton("导出", (_, _) => workspace.VersionSettingsController.OpenVersionSection(current, "导出")));
-            actions.Children.Add(InstancePagesController.ActionButton("删除版本", (_, _) =>
+            actions.Children.Add(FeatureUiElements.ActionButton("版本设置", (_, _) => workspace.VersionSettingsController.OpenVersionSettings(current)));
+            actions.Children.Add(FeatureUiElements.ActionButton("导出", (_, _) => workspace.VersionSettingsController.OpenVersionSection(current, "导出")));
+            actions.Children.Add(FeatureUiElements.ActionButton("删除版本", (_, _) =>
             {
                 page.Close();
                 workspace.UninstallController.UninstallInstance(current);
             }));
-            bar.Children.Add(InstancePagesController.Heading(selected.Name));
+            bar.Children.Add(FeatureUiElements.Heading(selected.Name));
             bar.Children.Add(actions);
             directory = Path.Combine(DataRoot(), category switch
             {
@@ -434,7 +434,7 @@ internal sealed class SketchController
                 "蓝图" => "schematics",
                 _ => ""
             });
-            var folder = InstancePagesController.ActionButton("打开文件夹", (_, _) =>
+            var folder = FeatureUiElements.ActionButton("打开文件夹", (_, _) =>
             {
                 try
                 {
@@ -450,7 +450,7 @@ internal sealed class SketchController
             {
                 files.ItemsSource = null;
                 info.Text = "服务器地址保存于实例 servers.dat；点击下方管理启动器服务器收藏。";
-                bar.Children.Add(InstancePagesController.ActionButton("服务器收藏", (_, _) => workspace.ExperienceController.OpenServers()));
+                bar.Children.Add(FeatureUiElements.ActionButton("服务器收藏", (_, _) => workspace.ExperienceController.OpenServers()));
                 return;
             }
 
@@ -458,9 +458,9 @@ internal sealed class SketchController
             if (files.Items.Count == 0)
                 info.Text = "此分类暂无内容。";
             if (category == "存档" || category == "截图")
-                bar.Children.Add(InstancePagesController.ActionButton("备份、导入与预览", (_, _) => workspace.InstanceLibraryController.OpenInstanceLibrary(current)));
+                bar.Children.Add(FeatureUiElements.ActionButton("备份、导入与预览", (_, _) => workspace.InstanceLibraryController.OpenInstanceLibrary(current)));
             if (category == "模组")
-                bar.Children.Add(InstancePagesController.ActionButton("启用、禁用与更新", (_, _) => workspace.VersionSettingsController.OpenVersionSection(current, "Mod 管理")));
+                bar.Children.Add(FeatureUiElements.ActionButton("启用、禁用与更新", (_, _) => workspace.VersionSettingsController.OpenVersionSection(current, "Mod 管理")));
         }
 
         void SafeRender()

@@ -15,9 +15,9 @@ internal sealed class JavaManagerController
     {
         var panel = new StackPanel();
         var required = profile.Length > 0 ? JavaDiscovery.RequiredMajor(root, profile) : 0;
-        panel.Children.Add(InstancePagesController.Heading("Java 管理"));
-        panel.Children.Add(InstancePagesController.Hint(required > 0 ? $"当前版本需要 Java {required}。自动选择优先匹配大版本与 x64；手动选择在启动前再次校验。" : "选择实例后可显示 Java 版本要求；未选择时可以浏览、搜索和手动指定。"));
-        panel.Children.Add(InstancePagesController.Hint("筛选 Java · 输入版本、发行商或路径"));
+        panel.Children.Add(FeatureUiElements.Heading("Java 管理"));
+        panel.Children.Add(FeatureUiElements.Hint(required > 0 ? $"当前版本需要 Java {required}。自动选择优先匹配大版本与 x64；手动选择在启动前再次校验。" : "选择实例后可显示 Java 版本要求；未选择时可以浏览、搜索和手动指定。"));
+        panel.Children.Add(FeatureUiElements.Hint("筛选 Java · 输入版本、发行商或路径"));
         var filters = new WrapPanel();
         var query = new TextBox
         {
@@ -42,7 +42,7 @@ internal sealed class JavaManagerController
         };
         ScrollViewer.SetCanContentScroll(list, false);
         panel.Children.Add(list);
-        var state = InstancePagesController.Hint("常见位置扫描包括环境变量、安装目录、已保存路径和游戏 runtime。全盘搜索仅遍历本地固定磁盘，跳过无权限目录与目录链接，最多搜索两分钟。遇到上限会明确提示。");
+        var state = FeatureUiElements.Hint("常见位置扫描包括环境变量、安装目录、已保存路径和游戏 runtime。全盘搜索仅遍历本地固定磁盘，跳过无权限目录与目录链接，最多搜索两分钟。遇到上限会明确提示。");
         panel.Children.Add(state);
         var dialog = workspace.InstancePagesController.FeatureDialog("Java 管理", panel);
         dialog.Owner = owner ?? workspace.Window;
@@ -122,7 +122,7 @@ internal sealed class JavaManagerController
 
         void StartButton(string label, RoutedEventHandler action)
         {
-            var button = InstancePagesController.ActionButton(label, action);
+            var button = FeatureUiElements.ActionButton(label, action);
             starts.Add(button);
             tools.Children.Add(button);
         }
@@ -138,7 +138,7 @@ internal sealed class JavaManagerController
             if (picker.ShowDialog(dialog) == true)
                 await Scan([picker.FolderName]);
         });
-        tools.Children.Add(InstancePagesController.ActionButton("取消搜索", (_, _) => active?.Cancel()));
+        tools.Children.Add(FeatureUiElements.ActionButton("取消搜索", (_, _) => active?.Cancel()));
         StartButton("添加 Java 路径", async (_, _) =>
         {
             var picker = new OpenFileDialog
@@ -167,7 +167,7 @@ internal sealed class JavaManagerController
                 state.Text = ex.Message;
             }
         });
-        panel.Children.Add(InstancePagesController.ActionButton("使用所选 Java", (_, _) =>
+        panel.Children.Add(FeatureUiElements.ActionButton("使用所选 Java", (_, _) =>
         {
             try
             {
@@ -183,7 +183,7 @@ internal sealed class JavaManagerController
                 state.Text = ex.Message;
             }
         }));
-        panel.Children.Add(InstancePagesController.ActionButton("恢复自动选择", (_, _) =>
+        panel.Children.Add(FeatureUiElements.ActionButton("恢复自动选择", (_, _) =>
         {
             try
             {

@@ -28,8 +28,8 @@ internal sealed class DownloadTaskController
         var body = new DockPanel();
         var heading = new StackPanel();
         DockPanel.SetDock(heading, Dock.Top);
-        heading.Children.Add(InstancePagesController.Hint("任务保存各自的安装目录。暂停保留进度；取消停止任务并保留已校验缓存。提交安装结果时请等待完成。"));
-        heading.Children.Add(InstancePagesController.ActionButton("刷新任务", (_, _) => RefreshDownloadTasks(true)));
+        heading.Children.Add(FeatureUiElements.Hint("任务保存各自的安装目录。暂停保留进度；取消停止任务并保留已校验缓存。提交安装结果时请等待完成。"));
+        heading.Children.Add(FeatureUiElements.ActionButton("刷新任务", (_, _) => RefreshDownloadTasks(true)));
         body.Children.Add(heading);
         downloadTaskRows = new StackPanel();
         downloadTaskScroll = new ScrollViewer
@@ -71,7 +71,7 @@ internal sealed class DownloadTaskController
         }
 
         if (records.Count == 0)
-            downloadTaskRows.Children.Add(InstancePagesController.Hint("暂无下载任务。"));
+            downloadTaskRows.Children.Add(FeatureUiElements.Hint("暂无下载任务。"));
         downloadTaskScroll?.ScrollToVerticalOffset(offset);
     }
 
@@ -79,13 +79,13 @@ internal sealed class DownloadTaskController
     {
         var panel = new StackPanel();
         panel.Children.Add(new TextBlock { Text = record.Name, FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap });
-        panel.Children.Add(InstancePagesController.Hint(DownloadTaskStatus(record)));
+        panel.Children.Add(FeatureUiElements.Hint(DownloadTaskStatus(record)));
         panel.Children.Add(new ProgressBar { Minimum = 0, Maximum = 100, Value = record.Percent ?? 0, Height = 4, Margin = new Thickness(0, 4, 0, 8), IsIndeterminate = record.State == OperationState.Running && record.Percent == null });
         panel.Children.Add(new TextBlock { Text = record.Message, TextWrapping = TextWrapping.Wrap, FontSize = 11, ToolTip = record.Root });
         var actions = new WrapPanel();
         void Add(string name, OperationState state, bool enabled)
         {
-            var b = InstancePagesController.ActionButton(name, (_, _) => ChangeDownloadById(record.Id, state));
+            var b = FeatureUiElements.ActionButton(name, (_, _) => ChangeDownloadById(record.Id, state));
             b.IsEnabled = enabled && !record.Committing;
             actions.Children.Add(b);
         }

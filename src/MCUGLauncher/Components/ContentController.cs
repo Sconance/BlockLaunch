@@ -7,8 +7,6 @@ using System.Windows.Input;
 using Microsoft.Win32;
 
 namespace BlockLaunch;
-
-public record InstanceTarget(string Version, string GameVersion, string Loader);
 internal sealed class ContentController
 {
     readonly LauncherWorkspace workspace;

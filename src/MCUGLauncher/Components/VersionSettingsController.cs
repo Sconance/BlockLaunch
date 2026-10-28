@@ -104,7 +104,7 @@ internal sealed class VersionSettingsController
         };
         bar.Visibility = Visibility.Collapsed;
         // The main window provides the shared title and Back action.
-        var back = InstancePagesController.ActionButton("← 返回", (_, _) => window.Close());
+        var back = FeatureUiElements.ActionButton("← 返回", (_, _) => window.Close());
         back.Foreground = Brushes.White;
         back.Background = Brushes.Transparent;
         DockPanel.SetDock(back, Dock.Left);
@@ -154,7 +154,7 @@ internal sealed class VersionSettingsController
         };
         Button Button(string label, RoutedEventHandler action)
         {
-            var button = InstancePagesController.ActionButton(label, action);
+            var button = FeatureUiElements.ActionButton(label, action);
             button.MinWidth = 112;
             button.FontSize = 12;
             button.Margin = new Thickness(0, 4, 10, 4);
@@ -214,7 +214,7 @@ internal sealed class VersionSettingsController
             if (workspace.LaunchCoordinator.busy)
                 return;
             var panel = new StackPanel();
-            panel.Children.Add(InstancePagesController.Heading(label));
+            panel.Children.Add(FeatureUiElements.Heading(label));
             var input = new TextBox
             {
                 Text = value,
@@ -378,7 +378,7 @@ internal sealed class VersionSettingsController
                 personalization.Children.Add(Button("自定义分类", (_, _) => EditText("自定义分类", descriptor.Category, text => descriptor.Category = string.IsNullOrWhiteSpace(text) ? "自动" : text.Trim())));
                 custom.Children.Add(personalization);
                 if (descriptor.Description.Length > 0)
-                    custom.Children.Add(InstancePagesController.Hint(descriptor.Description));
+                    custom.Children.Add(FeatureUiElements.Hint(descriptor.Description));
                 var shortcuts = Card("快捷方式");
                 var folders = new WrapPanel();
                 folders.Children.Add(Button("存档与截图库", (_, _) =>
@@ -424,7 +424,7 @@ internal sealed class VersionSettingsController
             }
             else if (page == "设置")
             {
-                content.Children.Add(InstancePagesController.Hint(descriptor.Launch == null ? "当前跟随全局设置，保存后仅对本版本生效。" : "当前使用此版本的独立设置。"));
+                content.Children.Add(FeatureUiElements.Hint(descriptor.Launch == null ? "当前跟随全局设置，保存后仅对本版本生效。" : "当前使用此版本的独立设置。"));
                 var value = JsonSerializer.Deserialize<LaunchSettings>(JsonSerializer.Serialize(descriptor.Launch ?? workspace.LaunchCoordinator.prefs.Launch))!;
                 var form = new LaunchOptionsForm(value);
                 content.Children.Add(form.Panel);
@@ -494,7 +494,7 @@ internal sealed class VersionSettingsController
             else if (page == "修改")
             {
                 var loaders = Card("安装 / 修改模组加载器");
-                loaders.Children.Add(InstancePagesController.Hint("为 Minecraft " + requirements.Minecraft + " 安装指定加载器，生成新的启动版本。原实例与存档保留；现有模组不会自动迁移。"));
+                loaders.Children.Add(FeatureUiElements.Hint("为 Minecraft " + requirements.Minecraft + " 安装指定加载器，生成新的启动版本。原实例与存档保留；现有模组不会自动迁移。"));
                 var loader = new ComboBox
                 {
                     ItemsSource = new[]
@@ -564,7 +564,7 @@ internal sealed class VersionSettingsController
             else if (page == "Mod 管理")
             {
                 var card = Card("此版本的 Mod");
-                card.Children.Add(InstancePagesController.Hint("目录：" + Path.Combine(DataDirectory(), "mods")));
+                card.Children.Add(FeatureUiElements.Hint("目录：" + Path.Combine(DataDirectory(), "mods")));
                 var query = new TextBox
                 {
                     ToolTip = "搜索 Mod 文件名"
@@ -656,7 +656,7 @@ internal sealed class VersionSettingsController
             else
             {
                 var export = Card("导出整合包");
-                export.Children.Add(InstancePagesController.Hint("生成 MultiMC / Prism 兼容 ZIP，包含 Minecraft 与加载器组件清单。"));
+                export.Children.Add(FeatureUiElements.Hint("生成 MultiMC / Prism 兼容 ZIP，包含 Minecraft 与加载器组件清单。"));
                 CheckBox Option(string label, bool selected)
                 {
                     var check = new CheckBox
@@ -694,7 +694,7 @@ internal sealed class VersionSettingsController
                     }, "导出整合包");
                 }));
                 var scripts = Card("导出启动脚本");
-                scripts.Children.Add(InstancePagesController.Hint("生成调用此启动器的脚本，不保存账号令牌。"));
+                scripts.Children.Add(FeatureUiElements.Hint("生成调用此启动器的脚本，不保存账号令牌。"));
                 scripts.Children.Add(Button("导出启动脚本", (_, _) => workspace.InstancePagesController.ExportScript(key)));
             }
         }
@@ -727,7 +727,7 @@ internal sealed class VersionSettingsController
                 catch (Exception ex)
                 {
                     content.Children.Clear();
-                    content.Children.Add(InstancePagesController.Hint(ex.Message));
+                    content.Children.Add(FeatureUiElements.Hint(ex.Message));
                 }
             };
             menu.Children.Add(nav);

@@ -106,7 +106,7 @@ internal sealed class MiniDownloadController
         miniDownloadToggle.FontSize = 10;
         miniDownloadToggle.Width = 30;
         miniDownloadToggle.Opacity = 1;
-        var cancel = InstancePagesController.ActionButton("×", (_, e) =>
+        var cancel = FeatureUiElements.ActionButton("×", (_, e) =>
         {
             e.Handled = true;
             workspace.DownloadTaskController.CancelMiniDownload();
@@ -118,7 +118,7 @@ internal sealed class MiniDownloadController
         cancel.ToolTip = "取消当前下载";
         Grid.SetColumn(cancel, 2);
         content.Children.Add(cancel);
-        var tasks = InstancePagesController.ActionButton("⌄", (_, e) =>
+        var tasks = FeatureUiElements.ActionButton("⌄", (_, e) =>
         {
             e.Handled = true;
             workspace.DownloadTaskController.OpenDownloadTasks();

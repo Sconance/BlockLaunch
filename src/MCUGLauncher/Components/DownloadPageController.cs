@@ -49,7 +49,7 @@ internal sealed class DownloadPageController
             VerticalAlignment = VerticalAlignment.Center
         };
         target.Children.Add(workspace.Controls.InstallTarget);
-        target.Children.Add(InstancePagesController.Hint("选择下方版本后下载；已安装版本可修复。"));
+        target.Children.Add(FeatureUiElements.Hint("选择下方版本后下载；已安装版本可修复。"));
         var selectionRow = new DockPanel();
         DockPanel.SetDock(actions, Dock.Right);
         selectionRow.Children.Add(actions);
@@ -58,7 +58,7 @@ internal sealed class DownloadPageController
         selection.Child = selectionRow;
         selection.Padding = new Thickness(18, 12, 18, 12);
         var vanilla = new DockPanel();
-        var vanillaHeading = InstancePagesController.Heading("原版游戏");
+        var vanillaHeading = FeatureUiElements.Heading("原版游戏");
         DockPanel.SetDock(vanillaHeading, Dock.Top);
         vanilla.Children.Add(vanillaHeading);
         DockPanel.SetDock(selection, Dock.Top);
@@ -200,10 +200,10 @@ internal sealed class DownloadPageController
         var matching = remote.Where(r => r.Id.Contains(vanillaQuery.Text.Trim(), StringComparison.OrdinalIgnoreCase)).ToList();
         if (matching.Count == 0)
         {
-            vanillaGroups.Children.Add(InstancePagesController.Hint(remote.Count == 0 ? "版本列表尚未加载。可刷新列表，或检查下载与网络设置。" : "没有匹配的游戏版本。"));
+            vanillaGroups.Children.Add(FeatureUiElements.Hint(remote.Count == 0 ? "版本列表尚未加载。可刷新列表，或检查下载与网络设置。" : "没有匹配的游戏版本。"));
         }
 
-        var refresh = InstancePagesController.ActionButton("刷新版本列表", async (_, _) => await workspace.LaunchCoordinator.Run(workspace.LaunchCoordinator.Refresh, "刷新游戏版本"));
+        var refresh = FeatureUiElements.ActionButton("刷新版本列表", async (_, _) => await workspace.LaunchCoordinator.Run(workspace.LaunchCoordinator.Refresh, "刷新游戏版本"));
         if (remote.Count == 0)
             vanillaGroups.Children.Add(refresh);
         var local = workspace.LaunchCoordinator.LocalVersions();
@@ -212,7 +212,7 @@ internal sealed class DownloadPageController
             var row = new StackPanel();
             row.Children.Add(new TextBlock { Text = version.Id, FontWeight = FontWeights.SemiBold, FontSize = 14 });
             row.Children.Add(new TextBlock { Text = (AprilVersions.Contains(version.Id) ? "愚人节版" : Type(version, "release") ? "正式版" : Type(version, "snapshot") ? "预览版" : "远古版") + " · " + (version.Published is { } published ? "发布于 " + published.ToLocalTime().ToString("yyyy/MM/dd HH:mm") : "发布时间未知") + (local.Contains(version.Id) ? " · 已安装" : ""), Foreground = Brushes.SlateGray, FontSize = 11, Margin = new Thickness(0, 4, 0, 0) });
-            var button = InstancePagesController.ActionButton("", (_, _) =>
+            var button = FeatureUiElements.ActionButton("", (_, _) =>
             {
                 if (workspace.LaunchCoordinator.busy)
                     return;
@@ -247,7 +247,7 @@ internal sealed class DownloadPageController
                 foreach (var row in versions)
                     items.Children.Add(VersionButton(row));
                 if (versions.Count == 0)
-                    items.Children.Add(InstancePagesController.Hint("没有匹配版本"));
+                    items.Children.Add(FeatureUiElements.Hint("没有匹配版本"));
             }
 
             var expander = new Expander

@@ -22,8 +22,8 @@ internal sealed class LoaderController
             if (releases.Count == 0)
                 throw new System.IO.IOException("此游戏版本没有可用的自动安装版本。NeoForge 从 1.20.2 起支持；旧版本可使用官方安装器。");
             var body = new StackPanel();
-            body.Children.Add(InstancePagesController.Heading(loader + " · Minecraft " + gameVersion));
-            body.Children.Add(InstancePagesController.Hint("请选择加载器版本。测试版可能与模组不兼容；安装过程中请保持联网。"));
+            body.Children.Add(FeatureUiElements.Heading(loader + " · Minecraft " + gameVersion));
+            body.Children.Add(FeatureUiElements.Hint("请选择加载器版本。测试版可能与模组不兼容；安装过程中请保持联网。"));
             var list = new ListBox
             {
                 ItemsSource = releases,
@@ -33,7 +33,7 @@ internal sealed class LoaderController
             body.Children.Add(list);
             var dialog = workspace.InstancePagesController.FeatureDialog("选择加载器版本", body);
             LoaderRelease? chosen = null;
-            body.Children.Add(InstancePagesController.ActionButton("安装所选版本", (_, _) =>
+            body.Children.Add(FeatureUiElements.ActionButton("安装所选版本", (_, _) =>
             {
                 if (list.SelectedItem is LoaderRelease release)
                 {

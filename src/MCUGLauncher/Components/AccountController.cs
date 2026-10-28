@@ -34,7 +34,7 @@ internal sealed class AccountController
             workspace.AvatarController.avatarCancellation?.Cancel();
             workspace.AvatarController.avatarCancellation?.Dispose();
         };
-        ((StackPanel)workspace.Controls.AccountMode.Parent).Children.Add(InstancePagesController.ActionButton("管理正版账号", AccountManagementClick));
+        ((StackPanel)workspace.Controls.AccountMode.Parent).Children.Add(FeatureUiElements.ActionButton("管理正版账号", AccountManagementClick));
         UpdateAccountBadge();
     }
 
@@ -78,21 +78,21 @@ internal sealed class AccountController
         if (workspace.LaunchCoordinator.busy && !workspace.DownloadTaskController.DownloadInProgress)
             return;
         var body = new StackPanel();
-        body.Children.Add(InstancePagesController.Heading("微软正版账号"));
-        body.Children.Add(InstancePagesController.Hint(savedAccount == null ? "没有可用的已保存账号。" : "玩家：" + savedAccount.Username + "\nUUID：" + savedAccount.Uuid));
-        body.Children.Add(InstancePagesController.Hint("凭据使用 Windows DPAPI 加密，限定当前 Windows 用户解密。每次正版启动前会检查 / 刷新会话。此版本保存一个正版账号，重新登录成功后替换。"));
+        body.Children.Add(FeatureUiElements.Heading("微软正版账号"));
+        body.Children.Add(FeatureUiElements.Hint(savedAccount == null ? "没有可用的已保存账号。" : "玩家：" + savedAccount.Username + "\nUUID：" + savedAccount.Uuid));
+        body.Children.Add(FeatureUiElements.Hint("凭据使用 Windows DPAPI 加密，限定当前 Windows 用户解密。每次正版启动前会检查 / 刷新会话。此版本保存一个正版账号，重新登录成功后替换。"));
         var dialog = workspace.InstancePagesController.FeatureDialog("正版账号管理", body);
-        body.Children.Add(InstancePagesController.ActionButton("微软登录 / 切换账号", async (_, _) =>
+        body.Children.Add(FeatureUiElements.ActionButton("微软登录 / 切换账号", async (_, _) =>
         {
             dialog.Close();
             await workspace.DownloadTaskController.RunAccountAction(workspace.LaunchCoordinator.Login, "微软正版登录");
         }));
-        body.Children.Add(InstancePagesController.ActionButton("验证 / 刷新已保存账号", async (_, _) =>
+        body.Children.Add(FeatureUiElements.ActionButton("验证 / 刷新已保存账号", async (_, _) =>
         {
             dialog.Close();
             await workspace.DownloadTaskController.RunAccountAction(() => MicrosoftLogin(false), "刷新正版登录");
         }));
-        body.Children.Add(InstancePagesController.ActionButton("退出并清除本地账号", async (_, _) =>
+        body.Children.Add(FeatureUiElements.ActionButton("退出并清除本地账号", async (_, _) =>
         {
             dialog.Close();
             await workspace.DownloadTaskController.RunAccountAction(() =>

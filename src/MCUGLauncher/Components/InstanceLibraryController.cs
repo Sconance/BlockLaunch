@@ -25,8 +25,8 @@ internal sealed class InstanceLibraryController
             var descriptor = catalog.GetOrCreate(key);
             var directory = (descriptor.Launch ?? workspace.LaunchCoordinator.prefs.Launch).Isolation == "共享根目录" ? workspace.LaunchCoordinator.prefs.Root : catalog.DirectoryFor(key);
             var body = new StackPanel();
-            body.Children.Add(InstancePagesController.Heading("实例资料库 · " + descriptor.DisplayName));
-            body.Children.Add(InstancePagesController.Hint(directory));
+            body.Children.Add(FeatureUiElements.Heading("实例资料库 · " + descriptor.DisplayName));
+            body.Children.Add(FeatureUiElements.Hint(directory));
             var tabs = new TabControl();
             body.Children.Add(tabs);
             var worldsPanel = new StackPanel();
@@ -35,7 +35,7 @@ internal sealed class InstanceLibraryController
                 Height = 220,
                 DisplayMemberPath = "Name"
             };
-            var worldInfo = InstancePagesController.Hint("选择存档后可备份或打开目录。备份前请退出使用该存档的游戏。");
+            var worldInfo = FeatureUiElements.Hint("选择存档后可备份或打开目录。备份前请退出使用该存档的游戏。");
             worlds.SelectionChanged += (_, _) =>
             {
                 if (worlds.SelectedItem is WorldEntry world)
@@ -64,7 +64,7 @@ internal sealed class InstanceLibraryController
             dialog.Width = 820;
             var worldActions = new WrapPanel();
             worldsPanel.Children.Add(worldActions);
-            worldActions.Children.Add(InstancePagesController.ActionButton("刷新存档", (_, _) =>
+            worldActions.Children.Add(FeatureUiElements.ActionButton("刷新存档", (_, _) =>
             {
                 try
                 {
@@ -75,7 +75,7 @@ internal sealed class InstanceLibraryController
                     InlineMessageBox.Show(ex.Message);
                 }
             }));
-            worldActions.Children.Add(InstancePagesController.ActionButton("打开存档目录", (_, _) =>
+            worldActions.Children.Add(FeatureUiElements.ActionButton("打开存档目录", (_, _) =>
             {
                 try
                 {
@@ -87,7 +87,7 @@ internal sealed class InstanceLibraryController
                     InlineMessageBox.Show(ex.Message);
                 }
             }));
-            worldActions.Children.Add(InstancePagesController.ActionButton("备份所选存档为 ZIP", async (_, _) =>
+            worldActions.Children.Add(FeatureUiElements.ActionButton("备份所选存档为 ZIP", async (_, _) =>
             {
                 if (worlds.SelectedItem is not WorldEntry world)
                 {
@@ -110,7 +110,7 @@ internal sealed class InstanceLibraryController
                     workspace.LaunchCoordinator.Log("存档备份完成：" + save.FileName);
                 }, "备份存档");
             }));
-            worldActions.Children.Add(InstancePagesController.ActionButton("导入存档 ZIP（新建存档）", async (_, _) =>
+            worldActions.Children.Add(FeatureUiElements.ActionButton("导入存档 ZIP（新建存档）", async (_, _) =>
             {
                 var open = new OpenFileDialog
                 {
@@ -138,7 +138,7 @@ internal sealed class InstanceLibraryController
                 Stretch = Stretch.Uniform,
                 Margin = new Thickness(0, 12, 0, 8)
             };
-            var screenshotInfo = InstancePagesController.Hint("选择截图，在这里预览。");
+            var screenshotInfo = FeatureUiElements.Hint("选择截图，在这里预览。");
             screenshots.SelectionChanged += (_, _) =>
             {
                 preview.Source = null;
@@ -184,7 +184,7 @@ internal sealed class InstanceLibraryController
             screenshotsPanel.Children.Add(screenshotInfo);
             var screenshotActions = new WrapPanel();
             screenshotsPanel.Children.Add(screenshotActions);
-            screenshotActions.Children.Add(InstancePagesController.ActionButton("刷新截图", (_, _) =>
+            screenshotActions.Children.Add(FeatureUiElements.ActionButton("刷新截图", (_, _) =>
             {
                 try
                 {
@@ -195,7 +195,7 @@ internal sealed class InstanceLibraryController
                     InlineMessageBox.Show(ex.Message);
                 }
             }));
-            screenshotActions.Children.Add(InstancePagesController.ActionButton("打开截图文件夹", (_, _) =>
+            screenshotActions.Children.Add(FeatureUiElements.ActionButton("打开截图文件夹", (_, _) =>
             {
                 try
                 {
@@ -206,7 +206,7 @@ internal sealed class InstanceLibraryController
                     InlineMessageBox.Show(ex.Message);
                 }
             }));
-            screenshotActions.Children.Add(InstancePagesController.ActionButton("另存所选截图", (_, _) =>
+            screenshotActions.Children.Add(FeatureUiElements.ActionButton("另存所选截图", (_, _) =>
             {
                 if (screenshots.SelectedItem is not ScreenshotEntry shot)
                 {
@@ -233,7 +233,7 @@ internal sealed class InstanceLibraryController
                 }
             }));
             tabs.Items.Add(new TabItem { Header = "截图预览", Content = screenshotsPanel });
-            body.Children.Add(InstancePagesController.Hint("此窗口始终管理打开时选定的实例。存档导入会新建目录，已有存档不会被覆盖。"));
+            body.Children.Add(FeatureUiElements.Hint("此窗口始终管理打开时选定的实例。存档导入会新建目录，已有存档不会被覆盖。"));
             RefreshWorlds();
             RefreshScreenshots();
             dialog.ShowDialog();

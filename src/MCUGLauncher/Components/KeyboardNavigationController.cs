@@ -1,19 +1,15 @@
-namespace BlockLaunch;
-internal sealed class KeyboardNavigationController
-{
-    readonly LauncherWorkspace workspace;
-    internal KeyboardNavigationController(LauncherWorkspace workspace)
-    {
-        this.workspace = workspace;
-    }
+using System.Windows;
 
+namespace BlockLaunch;
+
+/// <summary>Initializes keyboard-friendly rendering and tooltips without application state.</summary>
+internal sealed class KeyboardNavigationController(Window window, Func<IEnumerable<(FrameworkElement Control, string Hint)>> getHints)
+{
     internal void BuildKeyboardNavigation()
     {
-        workspace.Window.UseLayoutRounding = true;
-        workspace.Window.SnapsToDevicePixels = true;
-        workspace.Controls.HomeNav.ToolTip = "启动首页";
-        workspace.CompactShellController.downloadNav.ToolTip = "下载";
-        workspace.Controls.SearchQuery.ToolTip = "搜索资源";
-        workspace.DownloadPageController.vanillaQuery.ToolTip = "搜索游戏版本";
+        window.UseLayoutRounding = true;
+        window.SnapsToDevicePixels = true;
+        foreach (var (control, hint) in getHints())
+            control.ToolTip = hint;
     }
 }

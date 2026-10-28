@@ -22,6 +22,18 @@ def main():
     for forbidden in ('new HttpClient', 'new MinecraftLauncher', 'Process.Start', 'JsonSerializer.'):
         if forbidden in text:
             errors.append(f'MainWindow contains application behavior: {forbidden}')
+    # These adapters have explicit dependencies. Keep the composition root out of them.
+    isolated = ('AvatarController', 'HomeAccountController', 'KeyboardNavigationController',
+                'LoaderOverviewController', 'NetworkController', 'WindowChromeController',
+                'GameWindowBehaviorController', 'InstanceSearchController')
+    for name in isolated:
+        source = app / 'Components' / f'{name}.cs'
+        if re.search(r'\bLauncherWorkspace\b', source.read_text(encoding='utf-8-sig')):
+            errors.append(f'{name} must receive its controls, state or callbacks explicitly')
+    for folder in ('Builders', 'Models', 'Views/Forms', 'Views/Shared'):
+        for source in (app / folder).glob('*.cs'):
+            if re.search(r'\bLauncherWorkspace\b', source.read_text(encoding='utf-8-sig')):
+                errors.append(f'{source.relative_to(root)} depends on the full workspace')
     presentation = '{http://schemas.microsoft.com/winfx/2006/xaml/presentation}'
     document = ET.parse(app / 'MainWindow.xaml')
     for tab in document.iter(presentation + 'TabItem'):

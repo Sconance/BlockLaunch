@@ -82,15 +82,15 @@ internal sealed class AppearanceController
     internal void OpenAppearance()
     {
         var body = new StackPanel();
-        body.Children.Add(InstancePagesController.Heading("界面与背景"));
-        body.Children.Add(InstancePagesController.Hint("Tab 切换焦点，Esc 返回。背景图片缓存在内存中；不会在滚动或下载时反复加载。"));
+        body.Children.Add(FeatureUiElements.Heading("界面与背景"));
+        body.Children.Add(FeatureUiElements.Hint("Tab 切换焦点，Esc 返回。背景图片缓存在内存中；不会在滚动或下载时反复加载。"));
         var dark = new CheckBox
         {
             Content = "深色模式",
             IsChecked = workspace.LaunchCoordinator.prefs.DarkMode
         };
         body.Children.Add(dark);
-        body.Children.Add(InstancePagesController.Hint("强调色"));
+        body.Children.Add(FeatureUiElements.Hint("强调色"));
         var accent = new ComboBox
         {
             ItemsSource = new[]
@@ -106,7 +106,7 @@ internal sealed class AppearanceController
             accent.SelectedIndex = 0;
         body.Children.Add(accent);
         var choices = (workspace.LaunchCoordinator.prefs.BackgroundImages ?? []).Where(File.Exists).Append(workspace.LaunchCoordinator.prefs.BackgroundPath).Where(File.Exists).Distinct(StringComparer.OrdinalIgnoreCase).Take(20).ToList();
-        body.Children.Add(InstancePagesController.Hint("背景图片 · 可添加多张，手动切换；不自动轮播"));
+        body.Children.Add(FeatureUiElements.Hint("背景图片 · 可添加多张，手动切换；不自动轮播"));
         var images = new ComboBox
         {
             ItemsSource = choices,
@@ -126,7 +126,7 @@ internal sealed class AppearanceController
         };
         if (fit.SelectedIndex < 0)
             fit.SelectedIndex = 0;
-        body.Children.Add(InstancePagesController.Hint("图片填充方式"));
+        body.Children.Add(FeatureUiElements.Hint("图片填充方式"));
         body.Children.Add(fit);
         var opacity = new Slider
         {
@@ -137,14 +137,14 @@ internal sealed class AppearanceController
             IsSnapToTickEnabled = false,
             ToolTip = "背景图片强度；越低遮罩越强"
         };
-        var amount = InstancePagesController.Hint($"图片强度 {opacity.Value:P0}（降低可增强文字可读性）");
+        var amount = FeatureUiElements.Hint($"图片强度 {opacity.Value:P0}（降低可增强文字可读性）");
         opacity.ValueChanged += (_, _) => amount.Text = $"图片强度 {opacity.Value:P0}（降低可增强文字可读性）";
         body.Children.Add(amount);
         body.Children.Add(opacity);
-        var status = InstancePagesController.Hint("点击应用后保存；取消或返回不会修改设置。");
+        var status = FeatureUiElements.Hint("点击应用后保存；取消或返回不会修改设置。");
         body.Children.Add(status);
         var dialog = workspace.InstancePagesController.FeatureDialog("界面设置", body);
-        body.Children.Add(InstancePagesController.ActionButton("添加本地背景图片", (_, _) =>
+        body.Children.Add(FeatureUiElements.ActionButton("添加本地背景图片", (_, _) =>
         {
             var picker = new OpenFileDialog
             {
@@ -157,14 +157,14 @@ internal sealed class AppearanceController
             images.ItemsSource = choices;
             images.SelectedItem = picker.FileNames[0];
         }));
-        body.Children.Add(InstancePagesController.ActionButton("恢复默认背景", (_, _) =>
+        body.Children.Add(FeatureUiElements.ActionButton("恢复默认背景", (_, _) =>
         {
             images.SelectedIndex = -1;
             opacity.Value = 0.22;
             fit.SelectedIndex = 0;
             status.Text = "已选择纯色背景，点击应用保存。";
         }));
-        body.Children.Add(InstancePagesController.ActionButton("应用", (_, _) =>
+        body.Children.Add(FeatureUiElements.ActionButton("应用", (_, _) =>
         {
             try
             {

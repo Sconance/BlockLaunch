@@ -92,3 +92,7 @@ dotnet run --project tools/SourceFormatter
 - 新增栏目从 `MenuExtensions.cs` 注册，入口定义在 `Navigation/LauncherMenuRegistry.cs`，宿主适配在 `Components/MenuExtensionsController.cs`。具体区域、上下文和图片图标示例见 [菜单扩展说明](MENU_EXTENSIONS.md)。
 - `Components/ResourceFavoritesController.cs` 负责收藏筛选、心形状态及视图切换，持久化复用 `ResourceBookmarkStore`，不创建第二份收藏文档。
 - 收藏兼容性检查最多并发四个请求，并跟随浏览取消；资源服务保留原始 Search 签名，通过新增重载接收受限的排序值。
+
+## test 分支的组件依赖细化
+
+查看 [窗口拆分与依赖约束](MAINWINDOW_REFACTOR.md) 和 [分支结构比较](TEST_REFACTOR_COMPARISON.md)。账号展示、加载器概览、网络编辑及原生窗口控件通过显式构造参数连接；新的小组件优先接收实际控件、只读状态或操作回调。公共 UI 元素位于 `Views/Shared`，表单位于 `Views/Forms`，数据记录位于 `Models`，纯文件构建位于 `Builders`。

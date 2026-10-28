@@ -89,7 +89,7 @@ internal sealed class ResourceWorkspaceController
             Height = GridLength.Auto
         });
         body.RowDefinitions.Add(new());
-        var back = InstancePagesController.ActionButton("← 返回搜索结果", (_, _) =>
+        var back = FeatureUiElements.ActionButton("← 返回搜索结果", (_, _) =>
         {
             workspace.ContentController.browseCancellation?.Cancel();
             ShowResourceResults();
@@ -171,16 +171,16 @@ internal sealed class ResourceWorkspaceController
         introduction.Children.Add(links);
         resourceDetailColumns.Children.Add(new ScrollViewer { Content = introduction, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
         var options = new StackPanel();
-        options.Children.Add(InstancePagesController.Heading("下载选项"));
-        options.Children.Add(InstancePagesController.Hint("资源版本"));
+        options.Children.Add(FeatureUiElements.Heading("下载选项"));
+        options.Children.Add(FeatureUiElements.Hint("资源版本"));
         workspace.Controls.ProjectVersions.Width = double.NaN;
         options.Children.Add(workspace.Controls.ProjectVersions);
         workspace.Controls.InstallContentButton.Content = "↓ 下载所选文件";
         workspace.Controls.InstallContentButton.Margin = new Thickness(0, 16, 0, 8);
         options.Children.Add(workspace.Controls.InstallContentButton);
-        options.Children.Add(InstancePagesController.Hint("依赖信息"));
+        options.Children.Add(FeatureUiElements.Hint("依赖信息"));
         options.Children.Add(resourceDependencies);
-        options.Children.Add(InstancePagesController.Hint("资源文件保存到上方独立下载目录；整合包按现有流程导入独立实例。"));
+        options.Children.Add(FeatureUiElements.Hint("资源文件保存到上方独立下载目录；整合包按现有流程导入独立实例。"));
         var optionCard = workspace.InstancePagesController.FeatureCard(options);
         optionCard.Padding = new Thickness(14);
         optionCard.VerticalAlignment = VerticalAlignment.Top;

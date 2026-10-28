@@ -289,7 +289,7 @@ internal sealed class LaunchCoordinator
         var directory = Instance();
         var descriptor = new InstanceCatalog(prefs.Root).GetOrCreate(id);
         GameDefaults.EnsureChinese(directory, workspace.ContentController.Target().GameVersion);
-        workspace.InstancePagesController.PrepareOfflineSkin(directory, workspace.ContentController.Target().GameVersion);
+        OfflineSkinPackBuilder.Prepare(prefs.Root, directory, prefs.OfflineSkin, workspace.ContentController.Target().GameVersion, workspace.Controls.AccountMode.SelectedIndex == 0);
         var launchSettings = descriptor.Launch ?? prefs.Launch;
         if (workspace.ExperienceController.nextServerAddress != null)
         {
@@ -323,7 +323,7 @@ internal sealed class LaunchCoordinator
             lastGameDirectory = directory;
             workspace.DiagnosticsController.recentDiagnosticContext = diagnosisContext;
             _ = workspace.StabilityController.ObserveGame(currentSession, diagnosisContext);
-            workspace.InstancePagesController.ApplyLaunchBehavior(process, launchSettings, currentSession);
+            _ = new GameWindowBehaviorController(workspace.Window, Log).Apply(process, launchSettings, currentSession);
         }
 
         Log("已启动 " + id + "，实例：" + directory);

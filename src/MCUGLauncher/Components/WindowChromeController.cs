@@ -9,18 +9,18 @@ using System.Windows.Shell;
 namespace BlockLaunch;
 internal sealed class WindowChromeController
 {
-    readonly LauncherWorkspace workspace;
-    internal WindowChromeController(LauncherWorkspace workspace)
+    readonly Window window;
+    internal WindowChromeController(Window window)
     {
-        this.workspace = workspace;
+        this.window = window;
     }
 
     internal void BuildWindowChrome()
     {
-        workspace.Window.WindowStyle = WindowStyle.None;
-        workspace.Window.ResizeMode = ResizeMode.CanResize;
-        WindowChrome.SetWindowChrome(workspace.Window, new WindowChrome { CaptionHeight = 48, ResizeBorderThickness = new Thickness(6), GlassFrameThickness = new Thickness(0), CornerRadius = new CornerRadius(10), UseAeroCaptionButtons = false });
-        var header = (DockPanel)((Grid)workspace.Window.Content).Children[0];
+        window.WindowStyle = WindowStyle.None;
+        window.ResizeMode = ResizeMode.CanResize;
+        WindowChrome.SetWindowChrome(window, new WindowChrome { CaptionHeight = 48, ResizeBorderThickness = new Thickness(6), GlassFrameThickness = new Thickness(0), CornerRadius = new CornerRadius(10), UseAeroCaptionButtons = false });
+        var header = (DockPanel)((Grid)window.Content).Children[0];
         var navigation = header.Children[header.Children.Count - 1];
         header.Children.Remove(navigation);
         var controls = new StackPanel
@@ -62,7 +62,7 @@ internal sealed class WindowChromeController
                 Focusable = false
             };
             button.ClearValue(Control.BackgroundProperty);
-            var style = new Style(typeof(Button), (Style)workspace.Window.FindResource(typeof(Button)));
+            var style = new Style(typeof(Button), (Style)window.FindResource(typeof(Button)));
             style.Setters.Add(new Setter(Control.BackgroundProperty, Brushes.Transparent));
             var hover = new Trigger
             {
@@ -78,10 +78,10 @@ internal sealed class WindowChromeController
             return button;
         }
 
-        Caption("\uE921", "最小化", (_, _) => workspace.Window.WindowState = WindowState.Minimized);
-        var maximize = Caption("\uE922", "最大化或还原", (_, _) => workspace.Window.WindowState = workspace.Window.WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized);
-        Caption("\uE8BB", "关闭启动器", (_, _) => workspace.Window.Close(), true);
-        workspace.Window.StateChanged += (_, _) => ((TextBlock)maximize.Content).Text = workspace.Window.WindowState == WindowState.Maximized ? "\uE923" : "\uE922";
+        Caption("\uE921", "最小化", (_, _) => window.WindowState = WindowState.Minimized);
+        var maximize = Caption("\uE922", "最大化或还原", (_, _) => window.WindowState = window.WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized);
+        Caption("\uE8BB", "关闭启动器", (_, _) => window.Close(), true);
+        window.StateChanged += (_, _) => ((TextBlock)maximize.Content).Text = window.WindowState == WindowState.Maximized ? "\uE923" : "\uE922";
         // WindowChrome calculates the work area on the active monitor; do not cap
         // the window to the primary display's height.
     }

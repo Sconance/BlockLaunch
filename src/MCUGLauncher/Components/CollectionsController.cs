@@ -4,20 +4,6 @@ using System.Windows.Controls;
 
 namespace BlockLaunch;
 
-public record BookmarkView(ResourceBookmark Item)
-{
-    public override string ToString() => Item.Project.Title + "\n" + KindName(Item.Kind) + "  ·  " + string.Join(" / ", Item.Labels);
-    public static string KindName(string kind) => kind switch
-    {
-        "mod" => "模组",
-        "modpack" => "整合包",
-        "resourcepack" => "资源包",
-        "shader" => "光影",
-        "datapack" => "数据包",
-        _ => kind
-    };
-}
-
 internal sealed class CollectionsController
 {
     readonly LauncherWorkspace workspace;
@@ -78,11 +64,11 @@ internal sealed class CollectionsController
         }
 
         var projectPanel = (StackPanel)workspace.Controls.ProjectTitle.Parent;
-        projectPanel.Children.Insert(projectPanel.Children.IndexOf(workspace.Controls.ProjectDescription) + 1, InstancePagesController.ActionButton("★ 一键收藏", (_, _) => FavoriteSelected()));
-        projectPanel.Children.Insert(projectPanel.Children.IndexOf(workspace.Controls.ProjectDescription) + 2, InstancePagesController.ActionButton("打开资源收藏夹", (_, _) => ShowBookmarks()));
+        projectPanel.Children.Insert(projectPanel.Children.IndexOf(workspace.Controls.ProjectDescription) + 1, FeatureUiElements.ActionButton("★ 一键收藏", (_, _) => FavoriteSelected()));
+        projectPanel.Children.Insert(projectPanel.Children.IndexOf(workspace.Controls.ProjectDescription) + 2, FeatureUiElements.ActionButton("打开资源收藏夹", (_, _) => ShowBookmarks()));
         var resourceFilters = (StackPanel)((Grid)workspace.Controls.SearchQuery.Parent).Parent;
         // The resource filters are a runtime StackPanel containing the original search Grid.
-        resourceFilters.Children.Add(InstancePagesController.ActionButton("★ 我的收藏夹", (_, _) => ShowBookmarks()));
+        resourceFilters.Children.Add(FeatureUiElements.ActionButton("★ 我的收藏夹", (_, _) => ShowBookmarks()));
         var grid = (Grid)workspace.Controls.InstalledContent.Parent;
         var row = grid.Children.OfType<WrapPanel>().First(p => Grid.GetRow(p) == 1);
         grid.Children.Remove(row);
@@ -198,13 +184,13 @@ internal sealed class CollectionsController
         scroll.Content = body;
         bookmarkPage.Children.Add(scroll);
         var bar = new WrapPanel();
-        bar.Children.Add(InstancePagesController.ActionButton("← 返回资源搜索", (_, _) =>
+        bar.Children.Add(FeatureUiElements.ActionButton("← 返回资源搜索", (_, _) =>
         {
             bookmarkPage.Visibility = Visibility.Collapsed;
             resourceSearchPage.Visibility = Visibility.Visible;
         }));
         body.Children.Add(bar);
-        body.Children.Add(InstancePagesController.Heading(title));
+        body.Children.Add(FeatureUiElements.Heading(title));
         return body;
     }
 
@@ -219,7 +205,7 @@ internal sealed class CollectionsController
         try
         {
             var body = BookmarkLayout("我的收藏夹");
-            body.Children.Add(InstancePagesController.Hint("收藏项目直接进入默认收藏夹；打开收藏夹后可多选并批量下载。"));
+            body.Children.Add(FeatureUiElements.Hint("收藏项目直接进入默认收藏夹；打开收藏夹后可多选并批量下载。"));
             var create = new WrapPanel();
             var name = new TextBox
             {
@@ -228,8 +214,8 @@ internal sealed class CollectionsController
                 MaxLength = 40
             };
             create.Children.Add(name);
-            var notice = InstancePagesController.Hint("");
-            create.Children.Add(InstancePagesController.ActionButton("新建收藏夹", (_, _) =>
+            var notice = FeatureUiElements.Hint("");
+            create.Children.Add(FeatureUiElements.ActionButton("新建收藏夹", (_, _) =>
             {
                 try
                 {
@@ -248,9 +234,9 @@ internal sealed class CollectionsController
             {
                 var captured = folder;
                 var card = new StackPanel();
-                card.Children.Add(InstancePagesController.Heading("☆  " + folder));
-                card.Children.Add(InstancePagesController.Hint(items.Count(i => i.Folder.Equals(folder, StringComparison.OrdinalIgnoreCase)) + " 个资源"));
-                card.Children.Add(InstancePagesController.ActionButton("打开收藏夹 →", (_, _) => RenderBookmarkItems(captured)));
+                card.Children.Add(FeatureUiElements.Heading("☆  " + folder));
+                card.Children.Add(FeatureUiElements.Hint(items.Count(i => i.Folder.Equals(folder, StringComparison.OrdinalIgnoreCase)) + " 个资源"));
+                card.Children.Add(FeatureUiElements.ActionButton("打开收藏夹 →", (_, _) => RenderBookmarkItems(captured)));
                 body.Children.Add(workspace.InstancePagesController.FeatureCard(card));
             }
         }
@@ -265,7 +251,7 @@ internal sealed class CollectionsController
         if (bookmarks == null)
             return;
         var body = BookmarkLayout("我的收藏夹 / " + folder);
-        body.Children.Insert(1, InstancePagesController.ActionButton("← 全部收藏夹", (_, _) => RenderBookmarkFolders()));
+        body.Children.Insert(1, FeatureUiElements.ActionButton("← 全部收藏夹", (_, _) => RenderBookmarkFolders()));
         var query = new TextBox
         {
             ToolTip = "搜索名称、作者、描述与标签"
@@ -299,7 +285,7 @@ internal sealed class CollectionsController
         template.VisualTree = check;
         list.ItemTemplate = template;
         body.Children.Add(list);
-        var summary = InstancePagesController.Hint("");
+        var summary = FeatureUiElements.Hint("");
         body.Children.Add(summary);
         void Render()
         {
@@ -319,12 +305,12 @@ internal sealed class CollectionsController
         query.TextChanged += (_, _) => Render();
         kind.SelectionChanged += (_, _) => Render();
         list.SelectionChanged += (_, _) => summary.Text = $"{list.Items.Count} 个资源 · 已选 {list.SelectedItems.Count} 项";
-        body.Children.Add(InstancePagesController.Hint("文件下载到独立资源目录，不修改游戏实例。"));
+        body.Children.Add(FeatureUiElements.Hint("文件下载到独立资源目录，不修改游戏实例。"));
         var actions = new WrapPanel();
         body.Children.Add(actions);
-        actions.Children.Add(InstancePagesController.ActionButton("全选", (_, _) => list.SelectAll()));
-        actions.Children.Add(InstancePagesController.ActionButton("清空选择", (_, _) => list.UnselectAll()));
-        actions.Children.Add(InstancePagesController.ActionButton("批量下载所选", async (_, _) =>
+        actions.Children.Add(FeatureUiElements.ActionButton("全选", (_, _) => list.SelectAll()));
+        actions.Children.Add(FeatureUiElements.ActionButton("清空选择", (_, _) => list.UnselectAll()));
+        actions.Children.Add(FeatureUiElements.ActionButton("批量下载所选", async (_, _) =>
         {
             if (workspace.LaunchCoordinator.busy)
                 return;
@@ -367,7 +353,7 @@ internal sealed class CollectionsController
             }, "收藏夹批量下载");
             summary.Text = prepared ? $"已加入下载队列 {queued} 项，未加入 {failed} 项。" + (errors.Count > 0 ? "\n" + string.Join("\n", errors.Take(5)) : "") : "兼容版本查询已取消或失败，未加入下载任务。";
         }));
-        actions.Children.Add(InstancePagesController.ActionButton("查看兼容版本", (_, _) =>
+        actions.Children.Add(FeatureUiElements.ActionButton("查看兼容版本", (_, _) =>
         {
             if (list.SelectedItem is not BookmarkView row)
                 return;
@@ -398,14 +384,14 @@ internal sealed class CollectionsController
         }));
         var edit = new StackPanel();
         body.Children.Add(workspace.InstancePagesController.FeatureCard(edit));
-        edit.Children.Add(InstancePagesController.Heading("整理所选资源"));
+        edit.Children.Add(FeatureUiElements.Heading("整理所选资源"));
         var folders = new ComboBox
         {
             ItemsSource = bookmarks.Folders(),
             SelectedItem = folder
         };
         edit.Children.Add(folders);
-        edit.Children.Add(InstancePagesController.ActionButton("移动所选到收藏夹", (_, _) =>
+        edit.Children.Add(FeatureUiElements.ActionButton("移动所选到收藏夹", (_, _) =>
         {
             try
             {
@@ -430,7 +416,7 @@ internal sealed class CollectionsController
             if (list.SelectedItems.Count == 1 && list.SelectedItems[0] is BookmarkView chosen)
                 labels.Text = string.Join("，", chosen.Item.Labels);
         };
-        edit.Children.Add(InstancePagesController.ActionButton("保存所选资源的标签", (_, _) =>
+        edit.Children.Add(FeatureUiElements.ActionButton("保存所选资源的标签", (_, _) =>
         {
             try
             {
@@ -445,7 +431,7 @@ internal sealed class CollectionsController
                 summary.Text = ex.Message;
             }
         }));
-        edit.Children.Add(InstancePagesController.ActionButton("取消所选收藏", (_, _) =>
+        edit.Children.Add(FeatureUiElements.ActionButton("取消所选收藏", (_, _) =>
         {
             try
             {
@@ -474,8 +460,8 @@ internal sealed class CollectionsController
             var source = effective.Isolation == "共享根目录" ? workspace.LaunchCoordinator.prefs.Root : catalog.DirectoryFor(key);
             var requirements = workspace.InstancePagesController.RequirementsFor(original.LaunchProfileId);
             var body = new StackPanel();
-            body.Children.Add(InstancePagesController.Heading("复制实例 · " + original.DisplayName));
-            body.Children.Add(InstancePagesController.Hint("复制模组、配置、资源和启动设置，创建独立实例。游戏主体、加载器和公共库沿用已有安装；存档、截图和服务器列表按需勾选。复制前请退出使用源实例的游戏。"));
+            body.Children.Add(FeatureUiElements.Heading("复制实例 · " + original.DisplayName));
+            body.Children.Add(FeatureUiElements.Hint("复制模组、配置、资源和启动设置，创建独立实例。游戏主体、加载器和公共库沿用已有安装；存档、截图和服务器列表按需勾选。复制前请退出使用源实例的游戏。"));
             var name = new TextBox
             {
                 Text = original.DisplayName + " - 副本",
@@ -499,7 +485,7 @@ internal sealed class CollectionsController
             body.Children.Add(servers);
             var dialog = workspace.InstancePagesController.FeatureDialog("复制独立实例", body);
             dialog.Height = 490;
-            body.Children.Add(InstancePagesController.ActionButton("开始复制", async (_, _) =>
+            body.Children.Add(FeatureUiElements.ActionButton("开始复制", async (_, _) =>
             {
                 var chosenName = name.Text;
                 var options = new CloneOptions(saves.IsChecked == true, shots.IsChecked == true, servers.IsChecked == true);

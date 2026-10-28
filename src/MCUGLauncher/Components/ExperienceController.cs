@@ -66,7 +66,7 @@ internal sealed class ExperienceController
         }
 
         )
-            queue.Children.Add(InstancePagesController.ActionButton(pair.Item1, (_, _) =>
+            queue.Children.Add(FeatureUiElements.ActionButton(pair.Item1, (_, _) =>
             {
                 if (workspace.Controls.TaskHistoryList.SelectedItem is OperationRecord record)
                 {
@@ -74,7 +74,7 @@ internal sealed class ExperienceController
                     workspace.StabilityController.RefreshOperations();
                 }
             }));
-        queue.Children.Add(InstancePagesController.ActionButton("下载限速", (_, _) => OpenDownloadLimit()));
+        queue.Children.Add(FeatureUiElements.ActionButton("下载限速", (_, _) => OpenDownloadLimit()));
         workspace.Window.Width = Math.Min(workspace.Window.Width, Math.Max(780, SystemParameters.WorkArea.Width - 24));
         workspace.Window.Height = Math.Min(workspace.Window.Height, Math.Max(540, SystemParameters.WorkArea.Height - 24));
         workspace.Window.MinWidth = 780;
@@ -101,14 +101,14 @@ internal sealed class ExperienceController
     internal bool ConfirmModScan(ModScan scan, string title)
     {
         var panel = new StackPanel();
-        panel.Children.Add(InstancePagesController.Heading(scan.Summary));
-        panel.Children.Add(InstancePagesController.Hint("只检查已启用 JAR 的可识别元数据；未知条件不当作兼容结论。不会自动移动或删除模组。"));
+        panel.Children.Add(FeatureUiElements.Heading(scan.Summary));
+        panel.Children.Add(FeatureUiElements.Hint("只检查已启用 JAR 的可识别元数据；未知条件不当作兼容结论。不会自动移动或删除模组。"));
         foreach (var finding in scan.Findings.Take(200))
-            panel.Children.Add(InstancePagesController.Hint($"{finding.Severity} · {finding.File}\n{finding.Message}"));
+            panel.Children.Add(FeatureUiElements.Hint($"{finding.Severity} · {finding.File}\n{finding.Message}"));
         var dialog = workspace.InstancePagesController.FeatureDialog(title, panel);
         var actions = new WrapPanel();
-        actions.Children.Add(InstancePagesController.ActionButton("返回检查", (_, _) => dialog.DialogResult = false));
-        actions.Children.Add(InstancePagesController.ActionButton("了解风险，继续启动", (_, _) => dialog.DialogResult = true));
+        actions.Children.Add(FeatureUiElements.ActionButton("返回检查", (_, _) => dialog.DialogResult = false));
+        actions.Children.Add(FeatureUiElements.ActionButton("了解风险，继续启动", (_, _) => dialog.DialogResult = true));
         panel.Children.Add(actions);
         return dialog.ShowDialog() == true;
     }
@@ -121,16 +121,16 @@ internal sealed class ExperienceController
             var req = workspace.InstancePagesController.RequirementsFor(descriptor.LaunchProfileId);
             var scan = await Task.Run(() => ModPreflight.Scan(directory, req.Minecraft, req.Loader, JavaDiscovery.RequiredMajor(workspace.LaunchCoordinator.prefs.Root, descriptor.LaunchProfileId), req.LoaderVersion));
             var panel = new StackPanel();
-            panel.Children.Add(InstancePagesController.Heading(scan.Summary));
-            panel.Children.Add(InstancePagesController.Hint("扫描启用的 JAR，含 Fabric 内嵌模组；复杂条件或未知元数据会提示人工核对。"));
+            panel.Children.Add(FeatureUiElements.Heading(scan.Summary));
+            panel.Children.Add(FeatureUiElements.Hint("扫描启用的 JAR，含 Fabric 内嵌模组；复杂条件或未知元数据会提示人工核对。"));
             foreach (var finding in scan.Findings.Take(200))
-                panel.Children.Add(workspace.InstancePagesController.FeatureCard(new StackPanel { Children = { InstancePagesController.Heading(finding.Severity + " · " + finding.File), InstancePagesController.Hint(finding.Message) } }));
+                panel.Children.Add(workspace.InstancePagesController.FeatureCard(new StackPanel { Children = { FeatureUiElements.Heading(finding.Severity + " · " + finding.File), FeatureUiElements.Hint(finding.Message) } }));
             if (scan.Findings.Count == 0)
-                panel.Children.Add(InstancePagesController.Hint("未发现已知元数据问题；仍需由加载器完成实际兼容性验证。"));
+                panel.Children.Add(FeatureUiElements.Hint("未发现已知元数据问题；仍需由加载器完成实际兼容性验证。"));
             var dialog = workspace.InstancePagesController.FeatureDialog("本地 Mod 检查", panel);
             dialog.Owner = owner ?? workspace.Window;
-            panel.Children.Add(InstancePagesController.ActionButton("打开 Mod 文件夹", (_, _) => workspace.LaunchCoordinator.OpenFolder(Path.Combine(directory, "mods"))));
-            panel.Children.Add(InstancePagesController.ActionButton("修复后重新检查", async (_, _) =>
+            panel.Children.Add(FeatureUiElements.ActionButton("打开 Mod 文件夹", (_, _) => workspace.LaunchCoordinator.OpenFolder(Path.Combine(directory, "mods"))));
+            panel.Children.Add(FeatureUiElements.ActionButton("修复后重新检查", async (_, _) =>
             {
                 dialog.Close();
                 await ShowModScan(key, directory, owner);
@@ -146,8 +146,8 @@ internal sealed class ExperienceController
     internal void OpenDownloadLimit()
     {
         var body = new StackPanel();
-        body.Children.Add(InstancePagesController.Heading("下载限速"));
-        body.Children.Add(InstancePagesController.Hint("单位 KiB/s，0 为不限速。对启动器 HTTP 下载立即生效；外部 Forge/NeoForge 安装器自身的网络请求不受此限制。"));
+        body.Children.Add(FeatureUiElements.Heading("下载限速"));
+        body.Children.Add(FeatureUiElements.Hint("单位 KiB/s，0 为不限速。对启动器 HTTP 下载立即生效；外部 Forge/NeoForge 安装器自身的网络请求不受此限制。"));
         var input = new TextBox
         {
             Text = workspace.LaunchCoordinator.prefs.Network.LimitKibPerSecond.ToString()
@@ -155,7 +155,7 @@ internal sealed class ExperienceController
         body.Children.Add(input);
         var dialog = workspace.InstancePagesController.FeatureDialog("下载限速", body);
         dialog.Height = 290;
-        body.Children.Add(InstancePagesController.ActionButton("应用", (_, _) =>
+        body.Children.Add(FeatureUiElements.ActionButton("应用", (_, _) =>
         {
             try
             {
@@ -181,8 +181,8 @@ internal sealed class ExperienceController
             var key = workspace.LaunchCoordinator.Selected();
             var directory = workspace.LaunchCoordinator.Instance();
             var body = new StackPanel();
-            body.Children.Add(InstancePagesController.Heading("存档保护与恢复"));
-            body.Children.Add(InstancePagesController.Hint("修改加载器和确认整合包升级前备份。恢复创建新世界，不覆盖现有存档。备份按当前实例独立保留。"));
+            body.Children.Add(FeatureUiElements.Heading("存档保护与恢复"));
+            body.Children.Add(FeatureUiElements.Hint("修改加载器和确认整合包升级前备份。恢复创建新世界，不覆盖现有存档。备份按当前实例独立保留。"));
             var enabled = new CheckBox
             {
                 Content = "操作前自动备份存档",
@@ -193,7 +193,7 @@ internal sealed class ExperienceController
                 Text = workspace.LaunchCoordinator.prefs.SaveBackupCount.ToString()
             };
             body.Children.Add(enabled);
-            body.Children.Add(InstancePagesController.Hint("保留最近几次备份（1–100）"));
+            body.Children.Add(FeatureUiElements.Hint("保留最近几次备份（1–100）"));
             body.Children.Add(count);
             var choices = new ListBox
             {
@@ -202,7 +202,7 @@ internal sealed class ExperienceController
                 DisplayMemberPath = "Label"
             };
             body.Children.Add(choices);
-            var preview = InstancePagesController.Hint("选择备份查看内容。");
+            var preview = FeatureUiElements.Hint("选择备份查看内容。");
             body.Children.Add(preview);
             void RefreshList()
             {
@@ -220,7 +220,7 @@ internal sealed class ExperienceController
                 }
             };
             var dialog = workspace.InstancePagesController.FeatureDialog("存档保护", body);
-            body.Children.Add(InstancePagesController.ActionButton("保存策略", (_, _) =>
+            body.Children.Add(FeatureUiElements.ActionButton("保存策略", (_, _) =>
             {
                 if (!int.TryParse(count.Text, out var keep) || keep is < 1 or > 100)
                 {
@@ -233,7 +233,7 @@ internal sealed class ExperienceController
                 workspace.LaunchCoordinator.settings.Save(workspace.LaunchCoordinator.prefs);
                 preview.Text = "策略已保存。";
             }));
-            body.Children.Add(InstancePagesController.ActionButton("立即备份所有世界", async (_, _) =>
+            body.Children.Add(FeatureUiElements.ActionButton("立即备份所有世界", async (_, _) =>
             {
                 if (workspace.LaunchCoordinator.busy)
                 {
@@ -248,7 +248,7 @@ internal sealed class ExperienceController
                 }, "备份存档");
                 RefreshList();
             }));
-            body.Children.Add(InstancePagesController.ActionButton("确认预览，恢复为新世界", async (_, _) =>
+            body.Children.Add(FeatureUiElements.ActionButton("确认预览，恢复为新世界", async (_, _) =>
             {
                 if (choices.SelectedItem is not SaveChoice item || workspace.LaunchCoordinator.busy)
                     return;
@@ -260,7 +260,7 @@ internal sealed class ExperienceController
                     preview.Text = "已恢复为独立世界：" + restored;
                 }, "恢复存档副本");
             }));
-            body.Children.Add(InstancePagesController.ActionButton("打开备份目录", (_, _) => workspace.LaunchCoordinator.OpenFolder(SaveProtection.DirectoryFor(SaveBackupRoot, directory))));
+            body.Children.Add(FeatureUiElements.ActionButton("打开备份目录", (_, _) => workspace.LaunchCoordinator.OpenFolder(SaveProtection.DirectoryFor(SaveBackupRoot, directory))));
             dialog.ShowDialog();
         }
         catch (Exception ex)
@@ -273,8 +273,8 @@ internal sealed class ExperienceController
     internal void OpenServers()
     {
         var body = new StackPanel();
-        body.Children.Add(InstancePagesController.Heading("服务器收藏"));
-        body.Children.Add(InstancePagesController.Hint("收藏保存在启动器配置中。点击查询才连接服务器，显示 MOTD、版本、人数和 Ping；暂不解析 DNS SRV，必要时填写实际端口。"));
+        body.Children.Add(FeatureUiElements.Heading("服务器收藏"));
+        body.Children.Add(FeatureUiElements.Hint("收藏保存在启动器配置中。点击查询才连接服务器，显示 MOTD、版本、人数和 Ping；暂不解析 DNS SRV，必要时填写实际端口。"));
         var list = new ListBox
         {
             MinHeight = 70,
@@ -295,11 +295,11 @@ internal sealed class ExperienceController
             ItemsSource = workspace.LaunchCoordinator.LocalVersions().Order().ToList(),
             SelectedItem = workspace.Controls.Versions.SelectedValue as string
         };
-        body.Children.Add(InstancePagesController.Hint("名称 / 地址 / 启动实例"));
+        body.Children.Add(FeatureUiElements.Hint("名称 / 地址 / 启动实例"));
         body.Children.Add(name);
         body.Children.Add(address);
         body.Children.Add(profiles);
-        var status = InstancePagesController.Hint("选择或添加服务器。");
+        var status = FeatureUiElements.Hint("选择或添加服务器。");
         body.Children.Add(status);
         void Reload()
         {
@@ -322,7 +322,7 @@ internal sealed class ExperienceController
         var dialog = workspace.InstancePagesController.FeatureDialog("服务器收藏", body);
         using var cts = new CancellationTokenSource();
         dialog.Closed += (_, _) => cts.Cancel();
-        body.Children.Add(InstancePagesController.ActionButton("新增 / 保存", (_, _) =>
+        body.Children.Add(FeatureUiElements.ActionButton("新增 / 保存", (_, _) =>
         {
             try
             {
@@ -345,13 +345,13 @@ internal sealed class ExperienceController
                 status.Text = ex.Message;
             }
         }));
-        body.Children.Add(InstancePagesController.ActionButton("清空选择，添加新收藏", (_, _) =>
+        body.Children.Add(FeatureUiElements.ActionButton("清空选择，添加新收藏", (_, _) =>
         {
             list.SelectedItem = null;
             name.Clear();
             address.Clear();
         }));
-        body.Children.Add(InstancePagesController.ActionButton("查询在线状态", async (_, _) =>
+        body.Children.Add(FeatureUiElements.ActionButton("查询在线状态", async (_, _) =>
         {
             var captured = address.Text;
             status.Text = "正在查询…";
@@ -371,7 +371,7 @@ internal sealed class ExperienceController
                 status.Text = "无法查询：" + ex.Message;
             }
         }));
-        body.Children.Add(InstancePagesController.ActionButton("启动并连接所选服务器", async (_, _) =>
+        body.Children.Add(FeatureUiElements.ActionButton("启动并连接所选服务器", async (_, _) =>
         {
             if (workspace.LaunchCoordinator.busy || list.SelectedItem is not ServerFavorite item)
                 return;
@@ -393,7 +393,7 @@ internal sealed class ExperienceController
                 nextServerAddress = null;
             }
         }));
-        body.Children.Add(InstancePagesController.ActionButton("移除收藏", (_, _) =>
+        body.Children.Add(FeatureUiElements.ActionButton("移除收藏", (_, _) =>
         {
             if (list.SelectedItem is ServerFavorite item)
             {
