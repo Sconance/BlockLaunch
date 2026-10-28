@@ -12,8 +12,6 @@ using Microsoft.Win32;
 
 namespace BlockLaunch;
 
-public record VersionRow(string Id, string Label, string Type, DateTimeOffset? Published = null);
-
 public partial class MainWindow : Window
 {
     readonly string settingsDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), Brand.StorageDirectory);

@@ -178,12 +178,10 @@ public static class Program
             Capture("v0202-favorites.png");
             Wait((Task)Call("ToggleResourceFavoriteFilter")!);
             Call("NavigateDownloads", "模组加载器");
-            var minecraftChoice = (ComboBox)Field("loaderMinecraft");
+            var minecraftChoice = ((LoaderConfigurationView)Field("loaderConfigurationView")).Minecraft;
             minecraftChoice.SelectedItem = liveRows.First(r => r.Id == "1.21.1");
             Wait((Task)Call("LoadConfigurationVersions")!);
-            var loaderRows = (System.Collections.IDictionary)Field("loaderRows");
-            var fabricControls = loaderRows["fabric"]!;
-            var fabricVersions = (ComboBox)fabricControls.GetType().GetField("Item1")!.GetValue(fabricControls)!;
+            var fabricVersions = ((LoaderConfigurationView)Field("loaderConfigurationView")).Rows["fabric"].Versions;
             Assert(fabricVersions.Items.Count > 0 && fabricVersions.SelectedItem is LoaderRelease, "inline loader versions load from official metadata");
             Call("QueueConfiguredLoader", "fabric");
             var chosenLoader = (LoaderRelease)fabricVersions.SelectedItem;

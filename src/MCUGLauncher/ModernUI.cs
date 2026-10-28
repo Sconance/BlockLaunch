@@ -62,36 +62,12 @@ public partial class MainWindow
             left.Children.Add(accountScroll);
             left.Children.Add(launch);
             left.Children.Add(new Border());
-            if (accountScroll.Content is Border card && card.Child is Grid account)
+            if (accountScroll.Content is Border card && accountPanel != null)
             {
                 card.Padding = new Thickness(12);
                 card.CornerRadius = new CornerRadius(10);
                 card.VerticalAlignment = VerticalAlignment.Top;
-                account.RowDefinitions[1].Height = GridLength.Auto;
-                var identity = (StackPanel)account.Children[1];
-                identity.VerticalAlignment = VerticalAlignment.Top;
-                identity.Margin = new Thickness(0, 5, 0, 0);
-                var avatar = (Border)SkinAvatar.Parent;
-                avatar.Width = 64;
-                avatar.Height = 64;
-                avatar.Margin = new Thickness(0, 4, 0, 8);
-                AvatarPlayerName.FontSize = 17;
-                AvatarPlayerName.MaxWidth = 196;
-                AvatarPlayerName.ToolTip = AvatarPlayerName.Text;
-                AccountStatus.Margin = new Thickness(0, 4, 0, 9);
-                AccountStatus.MaxWidth = 196;
-                foreach (var chip in new[] {
-                    microsoftChip,
-                    offlineChip,
-                    muaChip
-                }
-
-                )
-                    if (chip != null)
-                    {
-                        chip.FontSize = 11;
-                        chip.Margin = new Thickness(0);
-                    }
+                accountPanel.ApplyCompactLayout();
             }
 
             LaunchGameButton.Padding = new Thickness(10, 9, 10, 9);
