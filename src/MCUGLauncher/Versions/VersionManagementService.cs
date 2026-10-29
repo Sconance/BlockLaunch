@@ -96,9 +96,28 @@ public sealed class VersionManagementService(HttpClient http)
     }
 
     public Task<UninstallPlan> PlanUninstall(string root, string key, LaunchSettings defaults, bool deleteSharedData = false) =>
-        Task.Run(() => InstanceUninstaller.Plan(root, key, defaults, deleteSharedData));
+        Task.Run(() =>
+        {
+            var plan = InstanceUninstaller.Plan(root, key, defaults, deleteSharedData);
+            RequireUnsharedDeletion(plan, defaults);
+            return plan;
+        });
 
-    public Task Uninstall(UninstallPlan plan, LaunchSettings defaults) => Task.Run(() => InstanceUninstaller.Delete(plan, defaults));
+    public Task Uninstall(UninstallPlan plan, LaunchSettings defaults) => Task.Run(() =>
+    {
+        RequireUnsharedDeletion(plan, defaults);
+        InstanceUninstaller.Delete(plan, defaults);
+    });
+
+    void RequireUnsharedDeletion(UninstallPlan plan, LaunchSettings defaults)
+    {
+        if (!plan.SharedData || !plan.DeleteSharedData)
+            return;
+        foreach (var other in ProfileKeys(plan.Root).Where(key => !key.Equals(plan.Key, StringComparison.OrdinalIgnoreCase)))
+            if (Path.TrimEndingDirectorySeparator(Path.GetFullPath(InstanceDirectory(plan.Root, other, defaults)))
+                .Equals(Path.TrimEndingDirectorySeparator(Path.GetFullPath(plan.Root)), StringComparison.OrdinalIgnoreCase))
+                throw new IOException("其他实例仍在使用共享目录，请保留共享内容：" + other);
+    }
 
     public InstanceTarget Target(string root, string key, IEnumerable<VersionRow> versions)
     {

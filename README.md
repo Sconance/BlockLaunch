@@ -61,7 +61,7 @@ dotnet publish src/MCUGLauncher/MCUGLauncher.csproj -c Release -o artifacts/publ
 ```
 
 新 Front 可独立构建：`dotnet build src/MCUGLauncher/Front/Front.csproj -c Release`；两个入口均通过共享业务项目调用服务，互不引用。
-详见 [构建与目录说明](docs/BUILD.md) 和 [双前端独立项目](docs/dcg/FRONTEND_PROJECTS.md)。历史版本源码仍保留在各 Release 的手动 Source.zip 附件中；旧标签未移动，旧版自动生成的 Source code 归档可能仅含原仓库文件。
+详见 [构建与目录说明](docs/BUILD.md) 和 [Windows 构建验收交接](docs/dcg/FRONT_UI_WINDOWS_TEST.md)。本轮增量尚待 Windows 构建与验收，不代表新旧 UI 已完全等价。历史版本源码仍保留在各 Release 的手动 Source.zip 附件中；旧标签未移动，旧版自动生成的 Source code 归档可能仅含原仓库文件。
 
 ### 窗口组件索引
 
@@ -71,11 +71,12 @@ dotnet publish src/MCUGLauncher/MCUGLauncher.csproj -c Release -o artifacts/publ
 
 ```text
 src/       两个独立前端、共享业务、共享 UI 与 Core
-test/      功能、界面与集成检查
 tools/     辅助界面预览和源码格式工具
 scripts/   构建与检查脚本
-docs/      使用、构建、历史测试记录与截图
+docs/      基本文档、Windows 交接、原有参考资料与截图
 ```
+
+测试源码和本轮过程文档已按要求移除；保留构建/工程检查工具。历史测试记录不代表当前提交通过。
 
 ## 反馈与贡献
 

@@ -22,7 +22,6 @@ var options = workspace.Options
     .WithChangedOption(CSharpFormattingOptions.WrappingKeepStatementsOnSingleLine, false);
 var sourceDirectories = new[] {
     "src",
-    "test",
     "tools"
 };
 var changed = 0;

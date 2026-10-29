@@ -16,6 +16,10 @@ public sealed class ResourceBrowserViewModel(IFrontResourceBrowser browser, IFro
     string loader = "";
     string kind = "mod";
     string sort = "relevance";
+    bool favoritesOnly;
+    string favoriteLabels = "";
+    string favoriteFolder = "默认收藏夹";
+    string favoriteStatus = "";
     string status = "输入关键词搜索，或直接浏览资源。";
     string detailStatus = "选择项目查看兼容版本。";
     bool isBusy;
@@ -36,6 +40,10 @@ public sealed class ResourceBrowserViewModel(IFrontResourceBrowser browser, IFro
     public string Loader { get => loader; set => Set(ref loader, value); }
     public string Kind { get => kind; set => Set(ref kind, value); }
     public string Sort { get => sort; set => Set(ref sort, value); }
+    public bool FavoritesOnly { get => favoritesOnly; set => Set(ref favoritesOnly, value); }
+    public string FavoriteLabels { get => favoriteLabels; set => Set(ref favoriteLabels, value); }
+    public string FavoriteFolder { get => favoriteFolder; set => Set(ref favoriteFolder, value); }
+    public string FavoriteStatus { get => favoriteStatus; private set => Set(ref favoriteStatus, value); }
     public string Status { get => status; private set => Set(ref status, value); }
     public string DetailStatus { get => detailStatus; private set => Set(ref detailStatus, value); }
     public bool IsBusy { get => isBusy; private set => Set(ref isBusy, value); }
@@ -50,7 +58,7 @@ public sealed class ResourceBrowserViewModel(IFrontResourceBrowser browser, IFro
     public bool CanPrevious => !IsBusy && currentQuery != null && offset > 0;
     public bool CanNext => !IsBusy && currentQuery != null && Items.Count > 0 && offset + Items.Count < total;
 
-    public Task Search() => Load(new(QueryText.Trim(), GameVersion.Trim(), Loader.Trim(), Kind, Sort: Sort));
+    public Task Search() => Load(new(QueryText.Trim(), GameVersion.Trim(), Loader.Trim(), Kind, Sort: Sort, FavoritesOnly: FavoritesOnly));
 
     public Task Previous() => CanPrevious ? Load(currentQuery! with { Offset = Math.Max(0, offset - 15) }) : Task.CompletedTask;
 
@@ -124,6 +132,13 @@ public sealed class ResourceBrowserViewModel(IFrontResourceBrowser browser, IFro
         DetailStatus = "正在读取兼容版本…";
         try
         {
+            if (browser is IFrontResourceCollections collections)
+            {
+                var bookmark = collections.ReadBookmark(item.Id);
+                FavoriteLabels = bookmark?.Labels ?? "";
+                FavoriteFolder = bookmark?.Folder ?? "默认收藏夹";
+                FavoriteStatus = bookmark == null ? "尚未收藏" : "已收藏";
+            }
             var result = await browser.Versions(item.Id, query, cancellation.Token);
             if (disposed || !ReferenceEquals(detailCancellation, cancellation))
                 return;
@@ -188,6 +203,24 @@ public sealed class ResourceBrowserViewModel(IFrontResourceBrowser browser, IFro
         {
             isDownloading = false;
             PropertyChanged?.Invoke(this, new(nameof(CanDownload)));
+        }
+    }
+
+    public void SaveFavorite(bool remove)
+    {
+        try
+        {
+            if (disposed || Selected == null || currentQuery == null || browser is not IFrontResourceCollections collections)
+                throw new InvalidOperationException("请选择支持收藏的资源。");
+            if (remove)
+                collections.RemoveBookmark(Selected.Id);
+            else
+                collections.SaveBookmark(Selected, currentQuery.Kind, FavoriteLabels, FavoriteFolder);
+            FavoriteStatus = remove ? "已取消收藏；仅收藏列表可重新搜索刷新。" : "收藏与标签已保存。";
+        }
+        catch (Exception exception)
+        {
+            FavoriteStatus = "收藏操作失败：" + exception.Message;
         }
     }
 

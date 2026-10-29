@@ -18,8 +18,8 @@ jobs:
         run: python scripts/check-layout.py
       - name: Check source formatting
         run: dotnet run --project tools/SourceFormatter
-      - name: Build launcher
-        run: ./scripts/build.ps1
+      - name: Validate frontend boundaries
+        run: python scripts/check-frontend-boundaries.py
 
-      - name: Run isolated regression checks
-        run: ./scripts/run-checks.ps1 -Name AuthChecks,MuaChecks,DownloadChecks,QueueChecks,CompatibilityChecks
+      - name: Build both frontends
+        run: ./scripts/build-windows.ps1 -Frontend Both

@@ -52,6 +52,8 @@ public partial class ResourceBrowserView : UserControl
     async void PreviousClick(object sender, RoutedEventArgs args) => await model.Previous();
     async void NextClick(object sender, RoutedEventArgs args) => await model.Next();
     void CancelClick(object sender, RoutedEventArgs args) => model.Cancel();
+    void SaveFavoriteClick(object sender, RoutedEventArgs args) => model.SaveFavorite(false);
+    void RemoveFavoriteClick(object sender, RoutedEventArgs args) => model.SaveFavorite(true);
     async void DownloadClick(object sender, RoutedEventArgs args)
     {
         if (MessageBox.Show(Window.GetWindow(this), "将所选资源加入真实下载队列？", "确认下载", MessageBoxButton.OKCancel) == MessageBoxResult.OK)

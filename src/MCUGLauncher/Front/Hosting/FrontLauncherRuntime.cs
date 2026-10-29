@@ -4,7 +4,7 @@ using BlockLaunch.Contracts;
 
 namespace BlockLaunch.Front;
 
-public sealed class FrontLauncherRuntime : IFrontLauncher, IFrontSettings, IFrontPreferences, IFrontVersions, IGameLaunchInteraction, IDisposable
+public sealed class FrontLauncherRuntime : IFrontLauncher, IFrontSettings, IFrontPreferences, IFrontVersions, IFrontManagement, IGameLaunchInteraction, IDisposable
 {
     readonly SettingsStore store;
     readonly Preferences prefs;
@@ -14,6 +14,7 @@ public sealed class FrontLauncherRuntime : IFrontLauncher, IFrontSettings, IFron
     readonly MuaAccountService mua;
     readonly AccountSessionService accounts;
     readonly VersionManagementService versions;
+    readonly Dictionary<string, PackUpgradePreview> packUpgrades = new();
     readonly ResourceManagementService resources;
     readonly OperationCoordinator operations;
     readonly DownloadQueueService queue;
@@ -75,7 +76,7 @@ public sealed class FrontLauncherRuntime : IFrontLauncher, IFrontSettings, IFron
             accounts = new AccountSessionService(new MicrosoftAccountService(configurationDirectory, http, microsoftBrowser), mua);
             versions = new VersionManagementService(http);
             resources = new ResourceManagementService(http);
-            ResourceBrowser = new FrontResourceBrowserAdapter(resources);
+            ResourceBrowser = new FrontResourceBrowserAdapter(resources, new ResourceBookmarkStore(configurationDirectory));
             operations = new OperationCoordinator(Path.Combine(configurationDirectory, "tasks"));
             queue = new DownloadQueueService(operations, new DownloadPauseStore(store, () => prefs));
             Downloads = new DownloadFrontendService(queue);
@@ -457,6 +458,175 @@ public sealed class FrontLauncherRuntime : IFrontLauncher, IFrontSettings, IFron
         System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(directory) { UseShellExecute = true });
     }
 
+    public async Task<UninstallPlan> PlanUninstall(string key, bool deleteSharedData, CancellationToken token)
+    {
+        RequireIdle();
+        RequireProfile(key);
+        token.ThrowIfCancellationRequested();
+        var plan = await versions.PlanUninstall(prefs.Root, key, prefs.Launch, deleteSharedData);
+        token.ThrowIfCancellationRequested();
+        return plan;
+    }
+
+    public Task Uninstall(UninstallPlan plan, CancellationToken token) => Exclusive(async cancellation =>
+    {
+        if (!SamePath(plan.Root, prefs.Root))
+            throw new IOException("删除计划不属于当前游戏目录，请重新读取。");
+        RequireProfile(plan.Key);
+        cancellation.ThrowIfCancellationRequested();
+        var directory = versions.InstanceDirectory(prefs.Root, plan.Key, prefs.Launch);
+        var related = operations.History().Where(record => record.Download != null && SamePath(record.Root, plan.Root)
+            && (record.Target == plan.Key || record.Download.Destination.Length > 0 && SamePath(record.Download.Destination, directory)
+                || record.Download.BackupInstanceDirectory.Length > 0 && SamePath(record.Download.BackupInstanceDirectory, directory)))
+            .Where(record => record.State is OperationState.Queued or OperationState.Paused or OperationState.Failed or OperationState.Interrupted).ToArray();
+        foreach (var record in related)
+            if (!queue.Change(record.Id, OperationState.Cancelled).Changed)
+                throw new IOException("无法取消关联下载任务，请先在下载列表处理：" + record.Name);
+        await versions.Uninstall(plan, prefs.Launch);
+        if (selectedVersion == plan.Key)
+            selectedVersion = "";
+        Report("实例已删除：" + plan.Name);
+    }, token);
+
+    public async Task<IReadOnlyList<FrontJava>> ScanJava(CancellationToken token)
+    {
+        RequireOpen();
+        var values = await JavaDiscovery.Scan(prefs.Root, prefs.ExtraJavaPaths, token);
+        return values.Select(value => new FrontJava(value.Path, value.Major, value.Architecture, value.Vendor, value.Error)).ToArray();
+    }
+
+    public async Task<IReadOnlyList<FrontContentUpdate>> CheckContentUpdates(string key, CancellationToken token)
+    {
+        RequireIdle();
+        var instance = ReadInstance(key);
+        var values = await resources.CheckUpdates(instance.Directory, instance.Minecraft, instance.Loader, IsGameRunning, token);
+        return values.Select(value => new FrontContentUpdate(value.Current.ProjectId, value.Current.RelativePath, value.Current.Name,
+            value.Current.VersionId, value.Latest?.VersionNumber ?? "", value.Error, value.Latest?.Id ?? "")).ToArray();
+    }
+
+    public Task EnqueueContentUpdates(string key, IReadOnlyList<string> projectIds, CancellationToken token) => Exclusive(async cancellation =>
+    {
+        if (projectIds.Count == 0)
+            throw new ArgumentException("请选择至少一项内容更新。");
+        var instance = ReadInstance(key);
+        var managed = ContentService.ReadManaged(instance.Directory);
+        var selected = new List<ContentVersion>();
+        foreach (var projectId in projectIds.Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            var item = managed.FirstOrDefault(value => value.ProjectId == projectId) ?? throw new IOException("更新项目已变化，请重新检查。");
+            var kind = ContentUpdates.Kind(item);
+            var candidates = await resources.Versions(projectId, new("", instance.Minecraft, kind == "datapack" ? "datapack" : instance.Loader, kind), cancellation);
+            var latest = candidates.Where(value => value.VersionType == "release").OrderByDescending(value => value.DatePublished).FirstOrDefault();
+            if (latest != null && latest.Id != item.VersionId)
+                selected.Add(latest);
+        }
+        var preview = await resources.PreviewUpdates(instance.Directory, selected, instance.Minecraft, instance.Loader, IsGameRunning, cancellation);
+        var request = resources.PrepareUpdate(preview, instance.Directory, instance.Minecraft, instance.Loader);
+        request.Java = prefs.Java;
+        queue.Enqueue("更新实例内容 · " + instance.Name, prefs.Root, key, request);
+        Report("内容更新已加入队列。");
+    }, token);
+
+    public Task RestoreLatestContent(string key, CancellationToken token) => Exclusive(async cancellation =>
+    {
+        var instance = ReadInstance(key);
+        await resources.Restore(instance.Directory, IsGameRunning, cancellation);
+        Report("已恢复最近一次内容事务。");
+    }, token);
+
+    public IReadOnlyList<FrontBackup> ReadBackups(string key)
+    {
+        var instance = ReadInstance(key);
+        return SaveProtection.List(Path.Combine(configurationDirectory, "world-backups"), instance.Directory).Select(value =>
+            new FrontBackup(value.Id, value.Reason, value.Created, value.Worlds.Select(world => world.World).ToArray())).ToArray();
+    }
+
+    public Task CreateBackup(string key, string reason, CancellationToken token) => Exclusive(async cancellation =>
+    {
+        var instance = ReadInstance(key);
+        var backup = await Task.Run(() => SaveProtection.Create(instance.Directory, Path.Combine(configurationDirectory, "world-backups"), reason, prefs.SaveBackupCount, cancellation), cancellation);
+        Report(backup == null ? "当前实例没有需要备份的存档。" : "存档备份已完成。");
+    }, token);
+
+    public Task RestoreBackup(string key, string backupId, string world, CancellationToken token) => Exclusive(async cancellation =>
+    {
+        var instance = ReadInstance(key);
+        var root = Path.Combine(configurationDirectory, "world-backups");
+        var backup = SaveProtection.List(root, instance.Directory).SingleOrDefault(value => value.Id == backupId)
+            ?? throw new IOException("备份已变化，请刷新列表。");
+        var item = backup.Worlds.SingleOrDefault(value => value.World == world) ?? throw new IOException("请选择备份内的世界。");
+        var archive = SaveProtection.ArchivePath(root, instance.Directory, backup, item);
+        var restored = await Task.Run(() => WorldArchives.Import(instance.Directory, archive, progress: Report, token: cancellation), cancellation);
+        Report("存档已恢复为新世界：" + restored);
+    }, token);
+
+    public async Task SaveJava(string key, string path, bool global, CancellationToken token)
+    {
+        string? verifiedPath = null;
+        await Exclusive(async cancellation =>
+        {
+            RequireProfile(key);
+            var found = (await JavaDiscovery.Scan(prefs.Root, prefs.ExtraJavaPaths.Append(path), cancellation))
+                .FirstOrDefault(value => SamePath(value.Path, path) && value.Error.Length == 0)
+                ?? throw new IOException("此 Java 无法使用，请重新扫描。");
+            var required = JavaDiscovery.RequiredMajor(prefs.Root, versions.LaunchProfile(prefs.Root, key));
+            if (required > 0 && found.Major != required)
+                throw new IOException($"当前实例需要 Java {required}，所选版本为 {found.Major}。");
+            verifiedPath = found.Path;
+        }, token);
+        token.ThrowIfCancellationRequested();
+        RequireIdle();
+        var instance = ReadInstance(key);
+        var value = global ? ReadPreferences().Launch : instance.Launch;
+        value.Java = verifiedPath ?? throw new IOException("Java 校验未完成。");
+        if (global)
+            settings.SaveGlobalLaunch(prefs, value);
+        else
+            versions.SaveLaunch(prefs.Root, key, value);
+        Report(global ? "全局 Java 已保存。" : "实例 Java 已保存。");
+    }
+
+    public async Task<FrontPackUpgrade> PreparePackUpgrade(string key, string archive, CancellationToken token)
+    {
+        FrontPackUpgrade? result = null;
+        await Exclusive(async cancellation =>
+        {
+            var instance = ReadInstance(key);
+            var preview = await new PackUpgradeService(http).Prepare(prefs.Root, key, instance.Directory, archive,
+                instance.Launch.Java, prefs.Network ?? new(), Report, cancellation);
+            var id = Guid.NewGuid().ToString("N");
+            packUpgrades.Add(id, preview);
+            result = new(id, preview.Files.Select(file => new FrontUpgradeFile(file.Relative, file.Reason, file.Conflict, file.KeepOld)).ToArray(), preview.HasBaseline);
+            Report("升级预览已准备；原实例尚未修改。");
+        }, token);
+        return result ?? throw new IOException("整合包升级预览未完成。");
+    }
+
+    public async Task<string> CommitPackUpgrade(string key, string previewId, IReadOnlyList<string> keepOld, CancellationToken token)
+    {
+        string? created = null;
+        await Exclusive(async cancellation =>
+        {
+            var instance = ReadInstance(key);
+            if (!packUpgrades.TryGetValue(previewId, out var preview) || preview.OriginalKey != key || !SamePath(preview.Root, prefs.Root))
+                throw new IOException("升级预览已失效，请重新准备。");
+            created = await new PackUpgradeService(http).Commit(preview, keepOld, instance.Launch, Report, cancellation);
+            try { DiscardPackUpgrade(previewId); }
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException) { Report("升级已提交，但清理暂存失败：" + exception.Message); }
+            Report("升级副本已创建；旧实例仍保留。");
+        }, token);
+        return created ?? throw new IOException("整合包升级未完成。");
+    }
+
+    public void DiscardPackUpgrade(string previewId)
+    {
+        if (packUpgrades.TryGetValue(previewId, out var preview))
+        {
+            preview.Dispose();
+            packUpgrades.Remove(previewId);
+        }
+    }
+
     public Task<FrontSettingsSnapshot> Read(CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
@@ -630,6 +800,8 @@ public sealed class FrontLauncherRuntime : IFrontLauncher, IFrontSettings, IFron
         disposed = true;
         closing = true;
         lifetime.Cancel();
+        foreach (var id in packUpgrades.Keys.ToArray())
+            try { DiscardPackUpgrade(id); } catch (Exception exception) when (exception is IOException or UnauthorizedAccessException) { Report("清理升级预览失败：" + exception.Message); }
         mua.Dispose();
         http.Dispose();
         lease.Dispose();

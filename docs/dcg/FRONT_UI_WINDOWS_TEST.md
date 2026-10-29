@@ -1,77 +1,94 @@
-# Front 界面与共享业务验收
+# 双前端 Windows 构建与验收交接
 
-## 范围与安全
+## 1. 状态与限制
 
-本说明适用于本次 Front 界面重构提交。先记录 `git status --short`、分支和提交；不要重置工作区。只使用测试程序创建的临时目录，或自行创建的专用测试配置与游戏目录。默认 Front 会读取正式配置并恢复排队下载，未经授权不要直接运行默认入口。
+本轮在 `refactor-dcg` 继续补充 Front 维护入口，包括内容更新/事务恢复、实例卸载、Java 扫描与保存、存档备份/恢复、资源收藏和整合包升级副本。
+本轮增量按用户要求**未在开发端编译、运行或做本地测试**，以前的构建或测试结果不证明当前提交通过。
+`test/` 全部测试源码和 `scripts/run-checks.ps1` 已删除，不要执行旧文档中的测试项目命令。
 
-**最新交接状态：用户要求跳过 Linux 本地测试，直接在 Windows 构建和测试。最新实例克隆、启动脚本导出、参数解析和启动确认增量未编译、未运行；此前构建成功记录只属于较早代码。若构建失败，先修复并记录失败位置，不标记验收通过。**
+技术栈仍是 C# / .NET 8 / WPF / XAML，不是 Tauri、Vue 或 React。
+Front 是真实业务宿主；旧 UI 仍保留，尚不能宣称视觉或功能完全等价，也不要删除旧 UI。
+完整 Java 管理器（额外目录/全盘搜索 UI）、在线头像、旧扩展菜单、资源卡片/列表切换和像素级样式仍有差异；资源下载默认保存到外部目录，不等于自动安装到实例。验收时明确记录，不能将缺失入口标为通过。
 
-开发环境是 Linux，以下原生 WPF 测试未执行；交叉编译通过不是点击或视觉验收通过。测试结果追加到本文件末尾，所有当前必测项完成后才删除根目录 `AGENT.md`。
+## 2. 记录环境并构建
 
-## 1. 构建和自动化断言
-
-在 Windows x64 安装 `global.json` 指定 SDK，从仓库根目录打开 PowerShell：
+Windows x64，SDK 使用 `global.json` 的 8.0.426。记录以下输出及每条命令的退出码：
 
 ```powershell
+git branch --show-current
+git rev-parse HEAD
+git status --short
+dotnet --info
+python --version
+python scripts/check-layout.py
+python scripts/check-frontend-boundaries.py
 .\scripts\build-windows.ps1 -Frontend Both
-dotnet run --project test/BuilderChecks/BuilderChecks.csproj -c Release
-dotnet run --project test/FrontRuntimeChecks/FrontRuntimeChecks.csproj -c Release
-dotnet run --project test/FrontRuntimeChecks/FrontRuntimeChecks.csproj -c Release -- --ui-structure
-dotnet run --project test/CompatibilityChecks/CompatibilityChecks.csproj -c Release -- --business-services
-dotnet run --project test/CompatibilityChecks/CompatibilityChecks.csproj -c Release -- --management
-dotnet run --project test/CompatibilityChecks/CompatibilityChecks.csproj -c Release -- --front
-dotnet run --project test/CompatibilityChecks/CompatibilityChecks.csproj -c Release -- --front-settings
+.\scripts\build-windows.ps1 -Frontend Both -Publish
 python scripts/check-frontend-boundaries.py --build
 ```
 
-逐条确认退出码，不要只看最后一条命令。`FrontRuntimeChecks` 普通模式预期包含 `ALL_FRONT_RUNTIME_CHECKS_PASSED`；UI 模式预期包含 `ALL_FRONT_UI_STRUCTURE_CHECKS_PASSED`。其他模式未必有专用结束标记，检查退出码和逐项 PASS。
+NuGet 还原失败与源码编译失败分开记录；不要擅自升级依赖或降低目标框架。
+最后一项在临时副本中验证：删 Front 后旧入口可构建，删旧 UI 后 Front 可构建。
+编译错误先修复本轮引入部分，随后重新构建两个入口。界面验收只能在构建成功后进行。
+构建输出详见 [BUILD.md](../BUILD.md)。两个入口不能同时使用同一配置目录。
 
-UI 结构模式在 STA 主线程加载 Front 资源，不显示主窗口，不查询互联网，不输入账号，不启动游戏。通过注入空资源服务，重复切换下载、Mod、设置、启动、本地整合包，检查控件父级释放及重复导航。它不是 Windows 鼠标或截图验收。
+## 3. 安全的临时数据准备
 
-## 2. 以独立配置打开界面
+仅使用可丢弃目录。新配置默认仍可能指向正式游戏目录，因此**必须在首次启动前写入临时 Root**。
+下面两个前端顺序使用同一临时配置，便于核对互通；每次切换先完全退出另一个入口。
 
 ```powershell
-$testDir = Join-Path $env:TEMP ('MCUG-ui-' + [guid]::NewGuid().ToString('N'))
-$gameDir = Join-Path $testDir 'minecraft'
-New-Item -ItemType Directory -Path $testDir, $gameDir | Out-Null
-@{ SchemaVersion = 2; Root = $gameDir; Player = 'Fixture'; Ram = 4096; Width = 1280; Height = 720; DownloadsPaused = $true } |
-  ConvertTo-Json | Set-Content (Join-Path $testDir 'settings.json') -Encoding utf8
-& '.\artifacts\windows\front\Release\build\MCUGLauncher.Front.exe' --settings-dir $testDir
+$testDir = Join-Path $env:TEMP ("MCUG-Front-Acceptance-" + [guid]::NewGuid().ToString("N"))
+$configDir = Join-Path $testDir 'config'
+$gameDir = Join-Path $testDir 'game'
+$downloadDir = Join-Path $testDir 'downloads'
+New-Item -ItemType Directory -Force $configDir, $gameDir, $downloadDir | Out-Null
+$settings = @{
+    Root = $gameDir
+    ResourceDownloadDirectory = $downloadDir
+    PreferMicrosoft = $false
+    PreferMua = $false
+    Player = 'FrontTest'
+}
+$json = $settings | ConvertTo-Json -Depth 8
+[System.IO.File]::WriteAllText((Join-Path $configDir 'settings.json'), $json, [System.Text.UTF8Encoding]::new($false))
+& .\artifacts\windows\front\Release\build\MCUGLauncher.Front.exe --settings-dir $configDir
 ```
 
-打开资源页会发起真实 Modrinth 查询，刷新版本会查询在线版本清单。无网络时记录错误提示，不把空列表当功能通过。新旧启动器共用同一测试配置时必须先退出另一端；同时打开应明确报告目录已占用。
+首次启动确认界面显示的游戏目录确实是 `$gameDir`。若不是，立即退出并排查配置解析，不能继续下载或删除。
+JSON 字段名使用上面的大写形式，与 `Settings/Preferences.cs` 中的 `SettingsStore` 一致；禁止回退到正式配置目录。
+旧入口目前不接受 `--settings-dir`。只在 Windows Sandbox/独立测试账户等隔离环境验收旧入口；若无法隔离，旧 UI 回归标记“未测”，不要直接运行它触达正式配置。
+在隔离系统里，可先将上面生成的设置复制到该系统自己的 `%LOCALAPPDATA%\BlockLaunch\settings.json`，再顺序使用默认配置启动两个入口以验收互通；此操作仅允许在可丢弃的测试系统执行。
+只复制获授权的测试整合包/实例到临时目录。不得复制账号缓存，不使用正式下载历史或真实存档。
+真实微软/MUA 登录、游戏下载和游戏启动必须获得设备所有者许可；缺许可标记“未测”。
 
-## 3. 视觉与操作清单
+## 4. 原生操作清单
 
-| 检查面 | 操作与预期 | 状态 |
-|---|---|---|
-| 主窗口 | 对照旧 UI 截图；1060×740、最小 940×650；48px 标题栏；拖动、双击、最大化、还原、缩放、关闭 | 未测 |
-| 主页 | 左侧账号卡在启动卡上方；右侧版本区默认隐藏；点击 `>` 展开/收回；切换账号模式不丢失页面 | 未测 |
-| 导航 | 下载→原版→Mod→设置→启动→下载→本地整合包→更多/内容中心，重复 3 次，无重复父级异常 | 未测 |
-| 下载页 | 8 类按钮可见且高亮正确；原版/加载器显示版本表单；本地整合包只显示导入内容 | 未测 |
-| 资源页 | 搜索/Enter/分页；项目进入详情；介绍/版本切换；返回保留结果；取消/断网有状态提示 | 未测 |
-| 设置 | 目录与 Java 文件选择；非法内存拒绝；高级启动设置保存；外观重启恢复；代理重启生效 | 未测 |
-| 外观 | 四种主题色与深浅主题；背景路径清空、错误图片、大图片；100%/150%/200% DPI 不截断关键按钮 | 未测 |
-| 版本管理 | 仅用获授权的测试实例；概览、设置、修改、Mod 管理、导出左侧导航；保存后重新打开核对 | 未测 |
-| 版本资源 | 测试包导入/切换状态/打开目录；存档只列含 level.dat 的世界；导出不包含凭据 | 未测 |
-| 日志 | 实时输出、自动滚动、复制；选中实例后读取 latest.log；缺失日志有提示，大日志仅末尾读取 | 未测 |
-| 运行状态 | 获授权后验证游戏运行时停止按钮、启动禁用、保存门禁；关闭等待不强杀游戏 | 未测 |
+每项记录“通过 / 失败 / 未测”、实际操作、截图或日志路径。任何未亲自执行的项目只能标记未测。
 
-视觉与原生运行项每项记录 Windows 版本、DPI、截图路径和复现步骤；不具备真实实例或授权时标记未测。
+| 范围 | 操作及预期 |
+| --- | --- |
+| 双入口/配置 | 新旧入口分别打开；账号选择、设置和测试实例互通；相同配置第二入口应被拒绝，不损坏文件 |
+| 窗口与导航 | 主页、账号、下载各分类、设置、版本管理、日志；返回、最大化、拖动、最小化和关闭；100%/150%/200% DPI，无关键按钮截断 |
+| 设置 | 临时游戏目录、Java、内存、分辨率、高级启动、网络、限速、外观；非法输入拒绝，保存后重开恢复；运行/忙碌门禁不失效 |
+| 账号 | 离线名字保存；获许可后测试微软/MUA 登录、取消、刷新、退出和多角色；令牌不出现在日志、脚本或导出包中 |
+| 下载 | 原版、加载器、整合包和外部资源入队；暂停/继续/重试/取消/重开恢复；新旧界面顺序操作同一测试队列，不重复执行 |
+| 资源收藏 | 在资源详情保存/取消收藏，修改标签和收藏夹；“仅收藏”搜索、类型/兼容筛选、分页和重开持久化；旧 UI 能读取同一收藏 |
+| 版本基本管理 | 概览/分类/收藏/独立设置与全局设置、加载器安装、修复、Mod/资源包/光影/数据包导入与启停；仅操作测试实例 |
+| 内容更新 | 维护页检查兼容正式版、选择更新入队；已最新/无兼容/网络错误有提示；依赖冲突拒绝，下载后刷新；事务恢复先确认，检查文件回退 |
+| Java | 扫描显示路径、主版本、架构和错误；有效选择写入实例或全局设置并重开核对；不兼容/不可执行路径拒绝，失败不写设置 |
+| 备份恢复 | 含 level.dat 的测试世界手动备份、列表/时间/世界显示；选世界恢复为新目录，原世界及备份不被覆盖；空世界、损坏 ZIP 与链接路径应安全拒绝 |
+| 整合包升级 | 对已导入且独立隔离的测试实例选择新版 mrpack/ZIP；展示保留选项和冲突/缺少基线警告；确认创建升级副本，源实例不变；取消/关闭清理暂存，源变化后提交拒绝 |
+| 实例卸载 | 确认框展示实际路径与共享数据保留策略；取消不删除；确认后关联待执行任务取消、实例列表刷新；共享依赖/越界/链接目录拒绝，重要数据不参与 |
+| 克隆/导出 | 复制可选存档/截图/服务器列表，生成独立实例并选中；导出 ZIP 不含账号；cmd/ps1 脚本含正确入口与配置参数，不含凭据；中文/空格路径可用 |
+| 启动/日志/退出 | 获许可后测试原版/加载器启动、停止、预检、实时日志与 latest.log；关闭等待任务与进程结束，不在提交文件时退出；无许可标未测 |
+| 旧 UI 回归 | 顺序切换到旧入口重复核心操作，共享模块变化不破坏旧入口；不把 Front 构建成功当作旧入口回归成功 |
 
-## 4. 当前明确差异
+## 5. 结果与结束条件
 
-参见 `FRONT_UI_PARITY.md`。旧 UI 的卸载、更新与事务回退、整合包升级、Java 管理器、在线头像与备份恢复尚未全部迁移。克隆与启动脚本已增加代码入口，但未经编译和运行验收。不要删除旧 UI，不要把未显示入口当成已通过。
+在本节追加：提交哈希、是否包含本地修复、系统/SDK、命令与退出码、逐项结果、缺陷与修复文件、截图/日志、剩余阻塞。
+本文件是保留的 Windows 交接与结果记录，不因清理文档而删除。
+只有必测项全部完成并记录后才删除根目录 `AGENT.md`；有未测项继续保留。
+不要自动提交或推送 Windows 修复，先向用户汇报。不要把删除测试源码当作功能通过，也不要重新添加测试项目。
 
-## 5. 克隆与脚本增量（未编译、未测）
-
-1. 仅使用获授权的测试实例，进入版本设置→修改→复制为独立实例。默认不勾选存档、截图和服务器列表。核对新实例可在关闭设置窗口后刷新并选中，模组/配置复制、数据目录独立、原实例不变。分别勾选可选内容并检查对应文件；空名称、过长名称、源实例不完整、游戏运行和下载占用时必须拒绝或显示错误，不留下半成品。
-2. 进入版本设置→导出→导出启动脚本，分别保存 `.cmd` 与 `.ps1`。脚本应指向 `MCUGLauncher.Front.exe` 并包含 `--root`、`--instance`、`--account`、`--settings-dir`；不含密码或账号令牌。非 `.cmd/.ps1` 目标应被拒绝。测试含空格、中文、单引号、百分号的路径；PowerShell 脚本执行策略按设备规则处理，不修改全局策略。
-3. 退出 Front 后运行导出的脚本。必须先显示 Front 启动确认；取消时不得启动游戏或改变账号选择。确认后才进行账号选择、授权和启动预检。使用未安装实例、过期游戏目录或重复/缺失参数时应明确拒绝，不自动覆盖当前游戏目录。真实授权和游戏启动需要设备所有者许可。
-4. 检查旧 UI 的实例克隆和脚本导出回归。两个入口共用 `Versions/VersionManagementService.Clone` 与 `Builders/LaunchScriptExporter`；旧脚本仍使用原有旧入口 CLI 行为，不应被改为调用 Front。脚本路径校验和字符转义由共享 Builders 模块处理。
-
-当前 `BuilderChecks` 不包含全部新增参数解析/克隆断言；Windows agent 可补充针对性自动化用例，不能只凭旧测试通过宣称增量已验收。记录每项操作与证据，发现实现错误先修复再重测。
-
-## 验收记录
-
-待 Windows 设备填写：分支/提交/工作区、SDK 与系统版本、每条命令退出码、清单结果、问题修复、截图与日志位置。
+当前状态：**待 Windows 构建与验收。**

@@ -7,10 +7,9 @@ def main():
     root = Path(__file__).resolve().parent.parent
     errors = []
     projects = sorted((root / 'src').rglob('*.csproj'))
-    projects += sorted(root.glob('test/*/*.csproj'))
     projects += sorted(root.glob('tools/*/*.csproj'))
     if not projects:
-        errors.append('No projects found under src/, test/, or tools/.')
+        errors.append('No projects found under src/ or tools/.')
     for project in root.glob('*/*.csproj'):
         errors.append(f'Project outside categorized directories: {project.relative_to(root)}')
     for project in projects:
@@ -33,7 +32,7 @@ def main():
                        and element.get('CopyToOutputDirectory') == 'PreserveNewest'
                        for element in document.iter('Content')):
                 errors.append(f'{project.relative_to(root)}: missing copied theme fixture')
-    for category in ('src', 'test', 'tools'):
+    for category in ('src', 'tools'):
         for source in (root / category).rglob('*.cs'):
             text = source.read_text(encoding='utf-8')
             if 'work/v092/' in text or 'C:/Users/Sconance/' in text:

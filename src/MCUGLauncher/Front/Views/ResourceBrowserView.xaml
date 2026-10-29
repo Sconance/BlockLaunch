@@ -17,6 +17,7 @@
           <TextBox Text="{Binding QueryText, UpdateSourceTrigger=PropertyChanged}" ToolTip="搜索名称或描述" KeyDown="SearchKeyDown" />
         </DockPanel>
         <WrapPanel Margin="0,12,0,0">
+          <CheckBox Content="仅收藏" IsChecked="{Binding FavoritesOnly}" VerticalAlignment="Center" Margin="0,0,12,0" />
           <StackPanel Margin="0,0,12,0">
             <TextBlock Text="资源类型" Style="{StaticResource Caption}" />
             <ComboBox Width="130" SelectedValuePath="Tag" SelectedValue="{Binding Kind}">
@@ -81,6 +82,13 @@
       <DockPanel>
         <StackPanel DockPanel.Dock="Top">
           <Button Content="← 返回搜索结果" HorizontalAlignment="Left" Click="BackClick" />
+          <WrapPanel Margin="0,12,0,8">
+            <TextBox Width="130" Text="{Binding FavoriteFolder, UpdateSourceTrigger=PropertyChanged}" ToolTip="收藏夹名称" />
+            <TextBox Width="180" Text="{Binding FavoriteLabels, UpdateSourceTrigger=PropertyChanged}" ToolTip="收藏标签，用逗号分隔" Margin="8,0" />
+            <Button Content="保存收藏" Click="SaveFavoriteClick" />
+            <Button Content="取消收藏" Click="RemoveFavoriteClick" />
+            <TextBlock Text="{Binding FavoriteStatus}" VerticalAlignment="Center" Margin="8,0" />
+          </WrapPanel>
           <DockPanel Margin="0,14">
             <Image Source="{Binding Selected.IconUrl}" Width="56" Height="56" Margin="0,0,14,0" DockPanel.Dock="Left" />
             <StackPanel>
