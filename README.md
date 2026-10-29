@@ -29,16 +29,17 @@ MCUG Launcher 提供游戏启动、分类下载、账号登录和实例内容管
 
 ## 功能
 
-| 方向 | 已有能力 |
-| --- | --- |
-| 账号与启动 | 微软正版、离线角色、MUA 认证，头像与会话刷新 |
-| 游戏下载 | 原版分类、模组加载器安装相关流程 |
-| 资源中心 | Modrinth 模组、整合包、资源包、光影、数据包，收藏与标签 |
-| 实例管理 | 多目录、隔离、分类、搜索、直接启动、启动参数与内容管理 |
-| 整合包 | Modrinth、MultiMC / Prism 导入，清单预检与可选内容导出 |
-| Java | 常见位置扫描、指定目录与全盘搜索、手动指定、版本匹配 |
-| 下载任务 | 紧凑进度与速度、暂停继续、失败重试、任务恢复 |
-| 辅助工具 | 存档备份、截图预览、日志、崩溃线索与诊断导出 |
+
+| 方向       | 已有能力                                                |
+| ---------- | ------------------------------------------------------- |
+| 账号与启动 | 微软正版、离线角色、MUA 认证，头像与会话刷新            |
+| 游戏下载   | 原版分类、模组加载器安装相关流程                        |
+| 资源中心   | Modrinth 模组、整合包、资源包、光影、数据包，收藏与标签 |
+| 实例管理   | 多目录、隔离、分类、搜索、直接启动、启动参数与内容管理  |
+| 整合包     | Modrinth、MultiMC / Prism 导入，清单预检与可选内容导出  |
+| Java       | 常见位置扫描、指定目录与全盘搜索、手动指定、版本匹配    |
+| 下载任务   | 紧凑进度与速度、暂停继续、失败重试、任务恢复            |
+| 辅助工具   | 存档备份、截图预览、日志、崩溃线索与诊断导出            |
 
 当前资源平台以 Modrinth 为主，CurseForge 在线服务未接入。蓝图入口浏览实例的 schematics 目录。社区、在线公告及新闻尚未实现。
 
@@ -77,6 +78,27 @@ docs/      使用、构建、类文档（classes/）、历史归档（archive/�
 
 ## 近期更新
 
+### [0.22.0](https://github.com/Sconance/MCUGLauncher/releases/tag/v0.22.0)
+
+准备合并到 `main` 的结构与文档版本。`refactor` 分支已废弃，相关记录归档到 [docs/archive/branch_refactor/](docs/archive/branch_refactor/README.md)。
+
+- `Components/` 按 Accounts、Shell、Downloads、Resources、Instances、Launch、Experience、Bookmarks、Support 九个功能域重组；10 个控制器按职责改名（`Sketch`→`InstanceContent`、`Content`→`ResourceBrowser`、`Pack`→`Modpack`、`Stability`→`TaskRecovery` 等）。
+- 补齐 `src/MCUGLauncher` 全部 142 个顶层类型的类文档，归档到 [docs/classes/](docs/classes/README.md)，新增 `scripts/check-class-docs.py` 与 CI 检查。
+- 文档体系整理：refactor 时代的对照、迁移与合并记录移入 [历史归档](docs/archive/branch_refactor/README.md)；新增 [合并到主分支前的说明](docs/MERGE_TO_MAIN.md)。
+- 记录前后端分界评估结论与后续项，写入 [重构路线图](TODO.md)。
+
+### [0.21.0]
+
+- warning 由于test的更新，refactor分支废弃，本版本不发布，仅用于声明连续性
+`test` 主干与 `refactor` 全量整合后的版本。结构以 `test` 的原生窗口 shell、九个独立 XAML 页面与组合根为准；`refactor` 的文档规则、版本控制与 0.20.1 / 0.20.2 功能内容全部并入，`refactor` 不再单独递增版本号。
+
+- 合并 `refactor`（`db0ab6a`）：86 个 `MainWindow` partial 与 51 篇逐类文档按结构退役，历史内容保留在 `refactor` 分支，迁移去向见 [refactor 分支整合记录](docs/archive/branch_refactor/REFACTOR_INTEGRATION.md)。
+- 版本号改为单一来源 `Directory.Build.props` 的 `McugVersion`，运行期统一读取 `ProductInfo.Version`。
+- 修复诊断信息 `0.20.0`、导航区 `0.15.2`、关于区 `0.20.2` 与两处 User-Agent 的写死版本。
+- 新增 `scripts/check-version.py` 与 CI 版本校验，发版标签、CHANGELOG、README 与程序集元数据必须一致。
+- 新增 [版本号控制](docs/VERSIONING.md)、[refactor 分支整合记录](docs/archive/branch_refactor/REFACTOR_INTEGRATION.md)、[重构路线图](TODO.md) 与 [develop 与 refactor 功能对照](docs/archive/branch_refactor/COMPARE_DEVELOP_REFACTOR.md)，把整合与拆分检查要点沉淀为长期规则。
+- 保留 `test` 的 Esc 关闭页内选择器、嵌套改名后实例列表与首页名称同步修复
+
 ### [0.20.2](https://github.com/Sconance/MCUGLauncher/releases/tag/v0.20.2)
 
 - 按蓝白效果图完善多列资源卡片、心形收藏和详情布局。
@@ -100,8 +122,6 @@ docs/      使用、构建、类文档（classes/）、历史归档（archive/�
 - 顶栏下载进度、任务栏进度与内嵌下载列表，支持暂停、继续、取消和失败重试。
 - 下载期间保留账号切换和版本浏览；认证操作先提示暂停下载，安装与启动仍保持互斥。
 
-
-
 ### [0.19.1](https://github.com/Sconance/MCUGLauncher/releases/tag/v0.19.1)
 
 - 启动页移除 Java 筛选与搜索图标，新增搜索占位提示。
@@ -109,30 +129,14 @@ docs/      使用、构建、类文档（classes/）、历史归档（archive/�
 - 版本内容管理增加目录切换，标题整合到顶栏，列表和滚动条更紧凑。
 - 强化导入区域分隔，修复内嵌页面切换深色主题时的背景。
 
-
-
 ### [0.19.0](https://github.com/Sconance/MCUGLauncher/releases/tag/v0.19.0)
 
 - 最终名称确定为 MCUG Launcher，统一界面、程序元数据、仓库与文档。
 - 源码项目目录和构建入口同步更名，保留现有账号、配置与实例兼容。
 
 
-
-### [0.18.3](https://github.com/Sconance/MCUGLauncher/releases/tag/v0.18.3)
-
-- 完善 Java 发现、目录搜索、取消与自动匹配。
-- 统一版本识别，修复旧式 NeoForge 分类。
-- 首页 Java 筛选、下载失败重试、整合包预检。
-- 本地背景、填充方式、图片强度与主题强调色。
-
-### [0.18.2](https://github.com/Sconance/MCUGLauncher/releases/tag/v0.18.2)
-
-- 启动页与公共 UI 样式现代化。
-- 修订最大化后的拖动恢复与布局适配。
-
 [完整更新记录](CHANGELOG.md) · [全部历史版本](https://github.com/Sconance/MCUGLauncher/releases)
 
 MCUG Launcher 为独立项目，非 Mojang 或 Microsoft 官方产品。第三方组件见 [依赖清单](docs/DEPENDENCIES.md) 与程序内声明。项目整体许可证尚未指定，不代表自动授予任意使用或再分发许可。
-
 
 开发者可从 [开发导览](docs/DEVELOPMENT.md) 查看功能入口、模块边界与编码约定。
