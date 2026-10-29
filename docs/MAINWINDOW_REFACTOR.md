@@ -70,3 +70,11 @@
 测试仅在 `test/Support/LauncherTestAccess.cs` 中使用模块检查适配器，原有功能断言继续执行，不在生产窗口保留用于兼容测试的私有字段或业务方法。该适配器仅链接到检查/预览项目。
 
 真实微软/MUA 人工授权及完整游戏启动矩阵未重跑。组件检查、真实资源下载和合成实例检查不能替代这些验收。本轮尚未发布，不覆盖现有 Release 与本地正式 EXE。
+
+## refactor 分支合并与版本控制
+
+`refactor`（`db0ab6a`）已在 `145bf37` 合入主干，父提交为 `0eaf5ec`（原文 `test`）与 `db0ab6a`。合并保持本文件的窗口 shell、九个 XAML 页面与组合根结构；`refactor` 的 86 个 `partial MainWindow` 文件与 51 篇逐类文档按结构退役，逐项去向、退役理由与验证记录见 [整合记录](REFACTOR_INTEGRATION.md)。
+
+- 版本号改为单一来源：`Directory.Build.props` 的 `McugVersion` 派生程序集元数据，运行期读取 `ProductInfo.Version`，界面、User-Agent 与诊断信息不再写死；规则见 [版本号控制](VERSIONING.md)。
+- 补充 `scripts/check-version.py` 与 CI 检查，避免 CHANGELOG、README、程序集版本与标签再次不一致。
+- 剩余拆分工作（实例概览、资源工作区、任务与启动协调、400 行以上模块、前后端分离）记录在 [重构路线图](../TODO.md)，仍不在窗口内恢复业务字段或 partial 组织。
