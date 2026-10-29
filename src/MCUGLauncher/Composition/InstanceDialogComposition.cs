@@ -6,24 +6,24 @@ internal sealed partial class LauncherWorkspace
         () => LaunchCoordinator.busy,
         () => LaunchCoordinator.prefs,
         () => LaunchCoordinator.settings.Save(LaunchCoordinator.prefs),
-        ContentController.RequireStopped,
-        InstancePagesController.FeatureDialog,
+        ResourceBrowserController.RequireStopped,
+        InstanceWorkspaceController.FeatureDialog,
         () =>
         {
             Controls.Memory.Text = LaunchCoordinator.prefs.Ram.ToString();
             Controls.JavaPath.Text = LaunchCoordinator.prefs.Java;
             Controls.GameWidth.Text = LaunchCoordinator.prefs.Width.ToString();
             Controls.GameHeight.Text = LaunchCoordinator.prefs.Height.ToString();
-        }), LaunchCoordinator.settingsDir, InstancePagesController.ApplyPersonalization, AppearanceController.OpenAppearance);
+        }), LaunchCoordinator.settingsDir, InstanceWorkspaceController.ApplyPersonalization, AppearanceController.OpenAppearance);
 
     internal InstancePackExportDialog CreateInstancePackExportDialog() => new(new(
         () => LaunchCoordinator.busy,
         () => LaunchCoordinator.prefs.Root,
         () => LaunchCoordinator.prefs.Launch,
-        InstancePagesController.FeatureDialog,
+        InstanceWorkspaceController.FeatureDialog,
         (action, name) => LaunchCoordinator.Run(action, name),
-        ContentController.RequireStopped,
-        InstancePagesController.RequirementsFor,
+        ResourceBrowserController.RequireStopped,
+        InstanceWorkspaceController.RequirementsFor,
         () => LaunchCoordinator.CurrentToken,
         LaunchCoordinator.Log));
 
@@ -31,23 +31,23 @@ internal sealed partial class LauncherWorkspace
         new(() => LaunchCoordinator.prefs.Root,
             () => LaunchCoordinator.prefs.GameRoots,
             () => LaunchCoordinator.prefs.Launch,
-            () => (InstancePagesController.instanceList.ItemsSource as System.ComponentModel.ICollectionView)?.SourceCollection.Cast<InstanceView>()),
+            () => (InstanceWorkspaceController.instanceList.ItemsSource as System.ComponentModel.ICollectionView)?.SourceCollection.Cast<InstanceView>()),
         new(() => !LaunchCoordinator.busy || DownloadTaskController.DownloadInProgress,
             () => LaunchCoordinator.busy,
-            InstancePagesController.RefreshInstanceViews,
-            e => PackController.ImportPackClick(Window, e),
+            InstanceWorkspaceController.RefreshInstanceViews,
+            e => ModpackController.ImportPackClick(Window, e),
             VersionSettingsController.OpenVersionSettings,
             VersionSettingsController.OpenVersionSection,
             UninstallController.UninstallInstance,
             LaunchCoordinator.OpenFolder,
             ExperienceController.OpenServers,
             key => InstanceLibraryController.OpenInstanceLibrary(key),
-            InstancePagesController.SwitchRoot,
+            InstanceWorkspaceController.SwitchRoot,
             (panel, page, getKey) => MenuExtensionsController.AttachExtensionButtons(LauncherMenuArea.InstanceContent,
                 panel, lifetime: page, instanceIdProvider: getKey)),
         new(key => DropFeedbackController.sketchManagerKey = key,
             refresh => DropFeedbackController.refreshSketchManager = refresh,
-            refresh => InstancePagesController.InstanceViewsChanged += refresh,
-            refresh => InstancePagesController.InstanceViewsChanged -= refresh),
+            refresh => InstanceWorkspaceController.InstanceViewsChanged += refresh,
+            refresh => InstanceWorkspaceController.InstanceViewsChanged -= refresh),
         showSketchVersions);
 }

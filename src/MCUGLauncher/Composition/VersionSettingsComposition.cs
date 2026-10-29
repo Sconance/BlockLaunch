@@ -7,14 +7,14 @@ internal sealed partial class LauncherWorkspace
     {
         var key = context.Key;
         var window = context.View.Window;
-        var tasks = new VersionTaskActions(() => LaunchCoordinator.busy, ContentController.RequireStopped,
+        var tasks = new VersionTaskActions(() => LaunchCoordinator.busy, ResourceBrowserController.RequireStopped,
             (action, name) => LaunchCoordinator.Run(action, name), () => LaunchCoordinator.CurrentToken, () => LaunchCoordinator.http);
-        var identity = new VersionIdentityEditor(context, tasks.IsBusy, tasks.RequireStopped, InstancePagesController.FeatureDialog);
+        var identity = new VersionIdentityEditor(context, tasks.IsBusy, tasks.RequireStopped, InstanceWorkspaceController.FeatureDialog);
         var overview = new VersionOverviewPage(context, new(
             tasks.IsBusy,
             () => InstanceLibraryController.OpenInstanceLibrary(key),
             LaunchCoordinator.OpenFolder,
-            () => InstancePagesController.ExportScript(key),
+            () => InstanceWorkspaceController.ExportScript(key),
             DownloadQueueController.EnqueueDownload,
             directory => PackUpgradeController.UpgradePack(key, directory, window),
             () => PackUpgradeController.ReturnToOriginal(key, window),
@@ -23,11 +23,11 @@ internal sealed partial class LauncherWorkspace
             () => LaunchCoordinator.prefs.Launch,
             select => JavaManagerController.OpenJavaManager(context.Root, context.Descriptor.LaunchProfileId, select, window)));
         var loader = new VersionLoaderPage(context, tasks, new(
-            DownloadQueueController.EnqueueDownload, () => CollectionsController.CloneInstanceDialog(key)));
+            DownloadQueueController.EnqueueDownload, () => BookmarkLibraryController.CloneInstanceDialog(key)));
         var mods = new VersionModPage(context, tasks, new(
             directory => ExperienceController.ShowModScan(key, directory, window),
-            directory => UpdatesController.OpenContentUpdates(directory, key, context.Requirements.Minecraft, context.Requirements.Loader, owner: window),
-            UpdatesController.RestoreContent,
+            directory => ContentUpdatesController.OpenContentUpdates(directory, key, context.Requirements.Minecraft, context.Requirements.Loader, owner: window),
+            ContentUpdatesController.RestoreContent,
             () => LaunchCoordinator.LocalVersions().Contains(key),
             () =>
             {
@@ -36,7 +36,7 @@ internal sealed partial class LauncherWorkspace
                 window.Close();
                 Controls.DiscoverNav.IsChecked = true;
             }));
-        var export = new VersionExportPage(context, tasks, () => InstancePagesController.ExportScript(key));
+        var export = new VersionExportPage(context, tasks, () => InstanceWorkspaceController.ExportScript(key));
         return new Dictionary<string, Action>
         {
             ["概览"] = overview.Build,

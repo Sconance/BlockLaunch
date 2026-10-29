@@ -22,7 +22,7 @@ internal sealed partial class LauncherWorkspace
     {
         get;
     }
-    internal CollectionsController CollectionsController
+    internal BookmarkLibraryController BookmarkLibraryController
     {
         get;
     }
@@ -30,7 +30,7 @@ internal sealed partial class LauncherWorkspace
     {
         get;
     }
-    internal ContentController ContentController
+    internal ResourceBrowserController ResourceBrowserController
     {
         get;
     }
@@ -78,7 +78,7 @@ internal sealed partial class LauncherWorkspace
     {
         get;
     }
-    internal InstancePagesController InstancePagesController
+    internal InstanceWorkspaceController InstanceWorkspaceController
     {
         get;
     }
@@ -94,7 +94,7 @@ internal sealed partial class LauncherWorkspace
     {
         get;
     }
-    internal LoaderController LoaderController
+    internal LoaderSelectionController LoaderSelectionController
     {
         get;
     }
@@ -106,11 +106,11 @@ internal sealed partial class LauncherWorkspace
     {
         get;
     }
-    internal MiniDownloadController MiniDownloadController
+    internal DownloadMiniBarController DownloadMiniBarController
     {
         get;
     }
-    internal ModernController ModernController
+    internal ModernShellController ModernShellController
     {
         get;
     }
@@ -122,7 +122,7 @@ internal sealed partial class LauncherWorkspace
     {
         get;
     }
-    internal PackController PackController
+    internal ModpackController ModpackController
     {
         get;
     }
@@ -150,11 +150,11 @@ internal sealed partial class LauncherWorkspace
     {
         get;
     }
-    internal SketchController SketchController
+    internal InstanceContentController InstanceContentController
     {
         get;
     }
-    internal StabilityController StabilityController
+    internal TaskRecoveryController TaskRecoveryController
     {
         get;
     }
@@ -162,7 +162,7 @@ internal sealed partial class LauncherWorkspace
     {
         get;
     }
-    internal UpdatesController UpdatesController
+    internal ContentUpdatesController ContentUpdatesController
     {
         get;
     }
@@ -180,9 +180,9 @@ internal sealed partial class LauncherWorkspace
         Controls = new LauncherControls(window.HomePageView, window.InstallPageView, window.ResourcePageView, window.ContentManagementPageView, window.SettingsPageView, window.LogsPageView, window.TasksPageView, window.NavigationPageView, window.HeadingPageView);
         AccountController = new AccountController(this);
         AppearanceController = new AppearanceController(this);
-        CollectionsController = new CollectionsController(this);
+        BookmarkLibraryController = new BookmarkLibraryController(this);
         CompactShellController = new CompactShellController(this);
-        ContentController = new ContentController(this);
+        ResourceBrowserController = new ResourceBrowserController(this);
         DiagnosticsController = new DiagnosticsController(this);
         DownloadNavigationController = new DownloadNavigationController(this);
         DownloadPageController = new DownloadPageController(this);
@@ -193,34 +193,34 @@ internal sealed partial class LauncherWorkspace
         ExperienceThemeController = new ExperienceThemeController(this);
         InlineHostController = new InlineHostController(this);
         InstanceLibraryController = new InstanceLibraryController(this);
-        InstancePagesController = new InstancePagesController(this);
+        InstanceWorkspaceController = new InstanceWorkspaceController(this);
         JavaManagerController = new JavaManagerController(this);
         LaunchCoordinator = new LaunchCoordinator(this, configurationDirectory);
-        LoaderController = new LoaderController(this);
+        LoaderSelectionController = new LoaderSelectionController(this);
         MenuExtensionsController = new MenuExtensionsController(this);
-        MiniDownloadController = new MiniDownloadController(this);
-        ModernController = new ModernController(this);
+        DownloadMiniBarController = new DownloadMiniBarController(this);
+        ModernShellController = new ModernShellController(this);
         MuaAccountController = new MuaAccountController(this);
         NetworkController = new NetworkController(() => LaunchCoordinator.prefs.Network, value =>
         {
             LaunchCoordinator.prefs.Network = value;
             LaunchCoordinator.settings.Save(LaunchCoordinator.prefs);
-        }, (title, content) => InstancePagesController.FeatureDialog(title, content));
-        PackController = new PackController(this);
+        }, (title, content) => InstanceWorkspaceController.FeatureDialog(title, content));
+        ModpackController = new ModpackController(this);
         PackUpgradeController = new PackUpgradeController(this);
         ResourceFavoritesController = CreateResourceFavorites();
         ResourceFiltersController = new ResourceFiltersController(this);
         ResourcePresentationController = new ResourcePresentationController(this);
         ResourceWorkspaceController = new ResourceWorkspaceController(this);
         ResourceSearchLayoutController = CreateResourceSearchLayout();
-        SketchController = new SketchController(this);
-        StabilityController = new StabilityController(this);
+        InstanceContentController = new InstanceContentController(this);
+        TaskRecoveryController = new TaskRecoveryController(this);
         UninstallController = new UninstallController(this);
-        UpdatesController = new UpdatesController(new(
+        ContentUpdatesController = new ContentUpdatesController(new(
             window, () => LaunchCoordinator.busy, () => LaunchCoordinator.http, () => LaunchCoordinator.CurrentToken,
-            (action, name) => LaunchCoordinator.Run(action, name), ContentController.RequireStopped,
-            InstancePagesController.FeatureDialog, DownloadQueueController.EnqueueDownload,
-            ContentController.Target, ContentController.ManagedDirectory, ContentController.RefreshLocalContent, LaunchCoordinator.Log));
+            (action, name) => LaunchCoordinator.Run(action, name), ResourceBrowserController.RequireStopped,
+            InstanceWorkspaceController.FeatureDialog, DownloadQueueController.EnqueueDownload,
+            ResourceBrowserController.Target, ResourceBrowserController.ManagedDirectory, ResourceBrowserController.RefreshLocalContent, LaunchCoordinator.Log));
         VersionSettingsController = new VersionSettingsController(this);
         WindowChromeController = new WindowChromeController(window);
         AvatarController = new AvatarController(Controls.SkinAvatar, Controls.AvatarCaption, Controls.AvatarPlayerName,
@@ -247,7 +247,7 @@ internal sealed partial class LauncherWorkspace
             {
                 try
                 {
-                    ContentController.RequireStopped();
+                    ResourceBrowserController.RequireStopped();
                     DownloadQueueController.EnqueueDownload(selection.Loader + " · " + selection.Minecraft, selection.Minecraft,
                         new()
                         {

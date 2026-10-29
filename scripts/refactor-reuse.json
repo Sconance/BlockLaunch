@@ -13,12 +13,12 @@
     },
     {
       "source": "src/MCUGLauncher/MainWindow/Controllers/GameWindowBehaviorController.cs",
-      "target": "src/MCUGLauncher/Components/GameWindowBehaviorController.cs",
+      "target": "src/MCUGLauncher/Components/Launch/GameWindowBehaviorController.cs",
       "sha256_lf": "78281e85bdbfe8b6d4c9a54d7142ad39cacb879ba53eda7089dcad185f61a854"
     },
     {
       "source": "src/MCUGLauncher/MainWindow/Controllers/InstanceSearchController.cs",
-      "target": "src/MCUGLauncher/Components/InstanceSearchController.cs",
+      "target": "src/MCUGLauncher/Components/Instances/InstanceSearchController.cs",
       "sha256_lf": "1d3b57f094a3d06e9ff35f665027aa3e2059eed00813fe2809de8282a90a3bc1"
     },
     {

@@ -25,10 +25,14 @@ def main():
     # These adapters have explicit dependencies. Keep the composition root out of them.
     isolated = ('AvatarController', 'HomeAccountController', 'KeyboardNavigationController',
                 'LoaderOverviewController', 'NetworkController', 'WindowChromeController',
-                'GameWindowBehaviorController', 'InstanceSearchController', 'VersionIdentityEditor', 'UpdatesController',
+                'GameWindowBehaviorController', 'InstanceSearchController', 'VersionIdentityEditor', 'ContentUpdatesController',
                 'ResourceFavoritesController', 'ResourceSearchLayoutController')
+    components = {path.stem: path for path in (app / 'Components').rglob('*.cs')}
     for name in isolated:
-        source = app / 'Components' / f'{name}.cs'
+        source = components.get(name)
+        if source is None:
+            errors.append(f'Missing component module: {name}')
+            continue
         if re.search(r'\bLauncherWorkspace\b', source.read_text(encoding='utf-8-sig')):
             errors.append(f'{name} must receive its controls, state or callbacks explicitly')
     for folder in ('Builders', 'Models', 'Views/Forms', 'Views/Shared'):
@@ -49,7 +53,7 @@ def main():
             errors.append(f'Missing independent version page: {name}')
         elif re.search(r'\b(LauncherWorkspace|MainWindow)\b', source.read_text(encoding='utf-8-sig')):
             errors.append(f'{name} must use per-instance context and explicit actions')
-    if len((app / 'Components/VersionSettingsController.cs').read_text(encoding='utf-8-sig').splitlines()) > 200:
+    if len((app / 'Components/Instances/VersionSettingsController.cs').read_text(encoding='utf-8-sig').splitlines()) > 200:
         errors.append('Version settings coordinator exceeds its lifetime/navigation boundary')
     presentation = '{http://schemas.microsoft.com/winfx/2006/xaml/presentation}'
     document = ET.parse(app / 'MainWindow.xaml')

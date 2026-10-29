@@ -30,6 +30,6 @@ public partial class MainWindow : Window
     void CancelTaskClick(object sender, RoutedEventArgs args)
     {
         if (Workspace != null)
-            Workspace.StabilityController.CancelTaskClick(sender, args);
+            Workspace.TaskRecoveryController.CancelTaskClick(sender, args);
     }
 }
