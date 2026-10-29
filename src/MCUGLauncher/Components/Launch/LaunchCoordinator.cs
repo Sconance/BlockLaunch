@@ -475,7 +475,7 @@ internal sealed class LaunchCoordinator
         {
             workspace.TaskRecoveryController.ApplyOperation(record);
             workspace.DownloadMiniBarController.RefreshMiniDownloads(true);
-            if (workspace.Window.MainTabs.SelectedIndex == 6)
+            if (workspace.Window.MainTabs.SelectedIndex == 6 || workspace.Window.MainTabs.SelectedIndex == 4 && workspace.SettingsNavigationController?.SelectedSettingsSection == "tasks")
                 workspace.TaskRecoveryController.RefreshOperations();
         });
         workspace.Controls.GameRoot.Text = prefs.Root;

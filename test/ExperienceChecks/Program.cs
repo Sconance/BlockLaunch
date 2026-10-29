@@ -395,8 +395,10 @@ static class Program
             Call("ThemeWindow", window);
             Capture("v016-compact-download.png", 820, 600);
             Check(((SolidColorBrush)window.Background).Color.R > 200, "light theme restores original brushes");
-            var menu = (MenuItem)Field("moreMenu");
-            Check(menu.Items.OfType<MenuItem>().Any(i => Equals(i.Header, "Java 管理")) && menu.Items.OfType<MenuItem>().Any(i => Equals(i.Header, "服务器收藏")), "utility features reachable through More menu");
+            Call("SelectSettingsSection", "java");
+            Check(((TabControl)Field("MainTabs")).SelectedIndex == 4, "Java management is hosted in settings");
+            Call("SelectSettingsSection", "servers");
+            Check(((TabControl)Field("MainTabs")).SelectedIndex == 4, "server favorites remain reachable through settings navigation");
             completion.SetResult();
             Wait(download);
             LauncherTestAccess.Set(window, "busy", false);

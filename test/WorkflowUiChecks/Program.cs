@@ -298,6 +298,63 @@ public static class Program
                 if (approved == null || !approved.SequenceEqual(new[] { "saves/world/level.dat" }))
                     throw new Exception("Pack conflict UI choice lost");
                 Console.WriteLine("PASS in-process WPF pack conflict choice keeps worlds and uses new config");
+                var mainTabs = (TabControl)LauncherTestAccess.Get(window, "MainTabs");
+                var settingsView = (FrameworkElement)((TabItem)mainTabs.Items[4]).Content;
+                var expectedSettings = new[] { "launch", "java", "network", "appearance", "servers", "saves", "downloads", "tasks", "logs", "diagnostics", "about" };
+                var settingsButtons = Descendants(settingsView).OfType<RadioButton>().Where(button => button.Tag is string)
+                    .ToDictionary(button => (string)button.Tag);
+                if (expectedSettings.Any(id => !settingsButtons.ContainsKey(id)))
+                    throw new Exception("Settings lost a utility category");
+                foreach (var id in expectedSettings.Concat(new[] { "launch", "about", "appearance", "about" }))
+                {
+                    LauncherTestAccess.Invoke(window, "SelectSettingsSection", [id]);
+                    if (mainTabs.SelectedIndex != 4 || (string)LauncherTestAccess.Get(window, "SelectedSettingsSection") != id ||
+                        Descendants(settingsView).OfType<TextBlock>().Any(text => text.Text.StartsWith("无法打开设置栏目")))
+                        throw new Exception("Settings category cannot be embedded: " + id);
+                }
+                LauncherTestAccess.Invoke(window, "SelectSettingsSection", ["network"]);
+                Descendants(settingsView).OfType<ComboBox>().Single(combo => combo.Items.Contains("仅官方")).SelectedItem = "仅官方";
+                Descendants(settingsView).OfType<Button>().Single(button => Equals(button.Content, "保存，下次启动生效"))
+                    .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                if ((string)LauncherTestAccess.Get(window, "SelectedSettingsSection") != "launch" ||
+                    new SettingsStore(settings).Load().Network.DownloadSource != "仅官方")
+                    throw new Exception("Embedded network save failed to persist or return");
+                LauncherTestAccess.Invoke(window, "SelectSettingsSection", ["java"]);
+                Descendants(settingsView).OfType<Button>().Single(button => Equals(button.Content, "恢复自动选择"))
+                    .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                if ((string)LauncherTestAccess.Get(window, "SelectedSettingsSection") != "launch")
+                    throw new Exception("Embedded Java selection lost its close/return lifecycle");
+                LauncherTestAccess.Invoke(window, "OpenDownloadTasks");
+                if ((string)LauncherTestAccess.Get(window, "SelectedSettingsSection") != "downloads" ||
+                    !Descendants(settingsView).OfType<Button>().Any(button => Equals(button.Content, "刷新任务")))
+                    throw new Exception("Download shortcut did not reach settings download tasks");
+                ((RadioButton)LauncherTestAccess.Get(window, "HomeNav")).IsChecked = true;
+                if (LauncherTestAccess.Get(window, "downloadTasksPage") != null)
+                    throw new Exception("Leaving settings retained the embedded download page lifetime");
+                foreach (var area in new[] { LauncherMenuArea.Settings, LauncherMenuArea.More })
+                {
+                    var id = "ui-settings-" + area;
+                    window.MenuPages.Register(area, new(id, "扩展栏目 " + area, _ => new TextBlock { Text = "extension-marker-" + area }));
+                    if (mainTabs.SelectedIndex != 0)
+                        throw new Exception("Registering a settings extension unexpectedly navigated away from home");
+                    LauncherTestAccess.Invoke(window, "SelectSettingsSection", [$"extension:{area}:{id}"]);
+                    if (!Descendants(settingsView).OfType<TextBlock>().Any(text => text.Text == "extension-marker-" + area))
+                        throw new Exception("Legacy extension area lost settings content: " + area);
+                    ((RadioButton)LauncherTestAccess.Get(window, "HomeNav")).IsChecked = true;
+                }
+                mainTabs.SelectedIndex = 5;
+                if (mainTabs.SelectedIndex != 4 || (string)LauncherTestAccess.Get(window, "SelectedSettingsSection") != "logs")
+                    throw new Exception("Legacy log navigation did not redirect to settings");
+                mainTabs.SelectedIndex = 6;
+                if (mainTabs.SelectedIndex != 4 || (string)LauncherTestAccess.Get(window, "SelectedSettingsSection") != "tasks")
+                    throw new Exception("Legacy task navigation did not redirect to settings");
+                LauncherTestAccess.Invoke(window, "SelectSettingsSection", ["appearance"]);
+                var settingsRoot = (Grid)window.Content;
+                var previousBackground = settingsRoot.Background;
+                settingsRoot.Background = window.Background;
+                Save(settingsRoot, "v0221-settings-navigation.png");
+                settingsRoot.Background = previousBackground;
+                Console.WriteLine("PASS settings categories, utility lifetimes, legacy routes and Settings/More extensions");
                 Console.WriteLine("ALL_WORKFLOW_UI_COMPONENT_CHECKS_PASSED (not native input acceptance)");
             }
             catch (Exception ex)

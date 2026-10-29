@@ -154,3 +154,7 @@ WorkflowUiChecks 直接触发首页 StopGameButton 并断言 inlinePages 中出�
 MiniDownloadChecks 检查右上角锚定及跨页面可见；InlineUiChecks 继续覆盖暂停、继续、取消及进度位置，并断言任务栏不重复显示进度条。启动及普通操作不显示底部进度表面。
 
 本批全部 23 项非真实游戏检查通过；移除进度表面后，“取消当前操作”复用原按钮移至任务页，并额外复核启动/游戏启动不显示进度条、实际入口与确认遮罩。
+
+### 设置导航迁移回归
+
+WorkflowUiChecks 逐项进入 11 个内置分类，重复进入关于页、验证 Java 应用后的返回、下载快捷入口和离开页面清理；动态注册 Settings 与 More 扩展，确认页面可见且注册不会劫持当前主页；旧日志/任务路由转入设置对应栏目。SessionControllerChecks 在无 WPF 项目中验证栏目选择、未知 ID、扩展刷新保留状态与事件退订。ExperienceChecks 和 InlineUiChecks 的工具入口、下载暂停/继续/取消断言改为检查真实设置宿主。

@@ -145,3 +145,11 @@ dotnet run --project tools/SourceFormatter
 - 运行会话登记包含运行期角色名和离线标记。同目录离线身份按忽略大小写的角色 ID 去重，不同 ID 可以共存；启动第二个会话时不重写语言和离线皮肤包配置。用户配置及认证协议没有新增字段。
 - 控制器通过展示端口请求确认，确认后再次核对会话；GameCloseConfirmationView 只管理主窗口内的紧凑遮罩，不接触进程或注册表。
 - 组合层负责真正显示运行列表。全局操作进度表面不再显示，下载进度只在标题栏右上角显示；任务列表保留文本状态与百分比。
+
+### 设置与工具导航
+
+- `SettingsNavigationController` 只处理纯数据栏目和选择命令，通过 `ISettingsNavigationView` 与展示分离；控制器继续在无 WPF 的 SessionControllerChecks 中直接编译。
+- `SettingsNavigationView` 复用与下载页一致的导航样式和侧栏宽度，保留图标图片映射。`SettingsPageHost` 与 `SettingsPageContent` 管理惰性内容和清理，切换栏目或离开设置都会取消工具页面的后台操作、解除页面事件。
+- `Composition/SettingsComposition.cs` 集中登记内置分类、连接原有工具页面工厂、兼容日志/任务旧路由。不把服务或工作区塞进新控制器。
+- 原 `LauncherMenuArea.Settings` 与 `More` 的注册接口不变，两者分别进入设置侧栏的扩展设置/工具扩展组；原 More 头部菜单已删除。扩展刷新只更新栏目，不强制跳转或重建用户当前页面。
+- 原有设置控件、保存回调和实例数据格式保持；工具方法拆出 Create...Page 工厂，其他入口仍可使用原来的内嵌对话框包装。没有复制业务流程或引入新的 UI 框架。

@@ -228,3 +228,12 @@
 - [RunningGamesView](Views/RunningGamesView.md) — WPF 视图适配器。
 
 - [GameCloseConfirmationView](Views/GameCloseConfirmationView.md) — 游戏关闭的紧凑二次确认。
+
+## 设置导航组件
+
+- [SettingsSection](Presentation/SettingsSection.md) — 设置栏目的纯数据定义：ID、标题、分类与图标后备字符。
+- [ISettingsNavigationView](Presentation/ISettingsNavigationView.md) — 与 WPF 无关的设置导航端口，渲染分类并发出选择命令。
+- [SettingsNavigationController](Components/Shell/SettingsNavigationController.md) — 协调设置分类选择，不创建控件、不读取配置或持有工作区。
+- [SettingsNavigationView](Views/SettingsNavigationView.md) — 设置左侧导航与内容宿主的 WPF 布局，支持图片图标与长标题截断。
+- [SettingsPageContent](Presentation/SettingsPageContent.md) — 嵌入页面与清理操作的生命周期；复用既有工具页面时解除事件并取消后台操作。
+- [SettingsPageHost](Presentation/SettingsPageHost.md) — 按需创建、释放和切换设置页面，避免业务入口混入导航控制器。

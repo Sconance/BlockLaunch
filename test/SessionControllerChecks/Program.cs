@@ -15,6 +15,20 @@ void Check(bool condition, string label)
     Console.WriteLine("PASS " + label);
 }
 
+var settingsView = new FakeSettingsView();
+var activations = new List<string>();
+using (var settingsNavigation = new SettingsNavigationController(settingsView, activations.Add))
+{
+    settingsNavigation.SetSettingsSections([new("launch", "启动", "设置"), new("logs", "日志", "工具")]);
+    Check(activations.Count == 0, "settings registration does not unexpectedly navigate");
+    settingsView.Request("logs");
+    settingsView.Request("unknown");
+    Check(activations.SequenceEqual(new[] { "logs" }) && settingsNavigation.SelectedSettingsSection == "logs", "settings commands select only registered categories");
+    settingsNavigation.SetSettingsSections([new("launch", "启动", "设置"), new("logs", "日志", "工具"), new("extension", "扩展", "扩展")]);
+    Check(settingsView.Selected == "logs" && activations.Count == 1, "settings extension refresh preserves selection without reopening content");
+}
+Check(settingsView.Subscribers == 0, "settings controller detaches navigation commands");
+
 var root = Path.Combine(Path.GetTempPath(), "MCUG-controller-" + Guid.NewGuid().ToString("N"));
 var view = new FakeRunningView();
 var logs = new List<string>();
@@ -85,4 +99,16 @@ sealed class FakeRunningView : IRunningGamesView
     public Task<bool> ConfirmClose(RunningGameRow game) => Task.FromResult(false);
     public void RequestClose(Guid id) => CloseRequested?.Invoke(id);
     public void RequestLog(Guid id) => LogRequested?.Invoke(id);
+}
+
+sealed class FakeSettingsView : ISettingsNavigationView
+{
+    public event Action<string>? SectionRequested;
+    public string? Selected;
+    public int Subscribers => SectionRequested?.GetInvocationList().Length ?? 0;
+    public void RenderSections(IReadOnlyList<SettingsSection> sections)
+    {
+    }
+    public void SelectSection(string id) => Selected = id;
+    public void Request(string id) => SectionRequested?.Invoke(id);
 }

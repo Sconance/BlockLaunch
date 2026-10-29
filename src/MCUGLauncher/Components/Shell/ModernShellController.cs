@@ -46,13 +46,6 @@ internal sealed class ModernShellController
             radio.Style = style;
         foreach (var hint in nav.Children.OfType<TextBlock>())
             hint.Visibility = Visibility.Collapsed;
-        if (workspace.CompactShellController.moreMenu.Header is TextBlock more)
-        {
-            more.SetResourceReference(TextBlock.ForegroundProperty, "ThemeTextBrush");
-            more.FontSize = 12;
-        }
-
-        workspace.CompactShellController.moreMenu.Padding = new Thickness(12, 7, 12, 7);
         if (workspace.InstanceContentController.sketchHome != null)
         {
             workspace.InstanceContentController.sketchHome.ColumnDefinitions[0].Width = new GridLength(224);

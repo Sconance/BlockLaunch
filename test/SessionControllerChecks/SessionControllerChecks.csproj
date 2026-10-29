@@ -10,5 +10,7 @@
     <Compile Include="../../src/MCUGLauncher/Components/Launch/RunningGamesController.cs" Link="Session/RunningGamesController.cs" />
     <Compile Include="../../src/MCUGLauncher/Components/Launch/RunningGameActions.cs" Link="Session/RunningGameActions.cs" />
     <Compile Include="../../src/MCUGLauncher/Presentation/IRunningGamesView.cs" Link="Session/IRunningGamesView.cs" />
+    <Compile Include="../../src/MCUGLauncher/Components/Shell/SettingsNavigationController.cs" Link="Settings/SettingsNavigationController.cs" />
+    <Compile Include="../../src/MCUGLauncher/Presentation/ISettingsNavigationView.cs" Link="Settings/ISettingsNavigationView.cs" />
   </ItemGroup>
 </Project>

@@ -21,7 +21,6 @@ internal sealed class CompactShellController
     };
     internal bool compactShellReady;
     internal RadioButton downloadNav = null!;
-    internal MenuItem moreMenu = null!;
     internal static IEnumerable<DependencyObject> Elements(DependencyObject parent)
     {
         foreach (var child in LogicalTreeHelper.GetChildren(parent).OfType<DependencyObject>())
@@ -89,34 +88,6 @@ internal sealed class CompactShellController
                 hidden.Children.Add(radio);
         }
 
-        var menu = new Menu
-        {
-            Background = Brushes.Transparent,
-            Foreground = Brushes.White,
-            VerticalAlignment = VerticalAlignment.Center
-        };
-        var more = new MenuItem
-        {
-            Header = new TextBlock
-            {
-                Text = "▦  更多",
-                Foreground = Brushes.White
-            },
-            Padding = new Thickness(16, 7, 16, 7)
-        };
-        menu.Items.Add(more);
-        moreMenu = more;
-        foreach (var radio in radios.Where(r => r.Tag?.ToString() is "5" or "6" || r.Tag == null))
-        {
-            var item = new MenuItem
-            {
-                Header = radio.Content
-            };
-            item.Click += (_, _) => radio.IsChecked = true;
-            more.Items.Add(item);
-        }
-
-        visible.Children.Add(menu);
         header.Children.Add(hidden);
         header.Children.Add(visible);
         root.Children.Add(header);

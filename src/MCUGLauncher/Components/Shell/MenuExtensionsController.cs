@@ -21,32 +21,11 @@ internal sealed partial class MenuExtensionsController
         ConfigureMenuExtensions(MenuPages);
         AttachExtensionButtons(LauncherMenuArea.Top, (StackPanel)workspace.Controls.HomeNav.Parent, true);
         AttachExtensionButtons(LauncherMenuArea.Download, downloadNavigationPanel!);
-        var settingsPanel = (StackPanel)((ScrollViewer)((TabItem)workspace.Window.MainTabs.Items[4]).Content).Content;
-        AttachExtensionButtons(LauncherMenuArea.Settings, settingsPanel);
         var homeExtensions = new StackPanel();
         ((DockPanel)workspace.InstanceContentController.sketchHome!.Children[0]).Children.Add(homeExtensions);
         AttachExtensionButtons(LauncherMenuArea.Home, homeExtensions);
         AttachExtensionTabs(LauncherMenuArea.ResourceDetails, resourceDetailTabs!);
-        void RefreshMore(LauncherMenuArea area)
-        {
-            if (area != LauncherMenuArea.More)
-                return;
-            foreach (var item in workspace.CompactShellController.moreMenu.Items.OfType<MenuItem>().Where(i => i.Tag is LauncherMenuPage).ToArray())
-                workspace.CompactShellController.moreMenu.Items.Remove(item);
-            foreach (var page in MenuPages.Pages(area))
-            {
-                var item = new MenuItem
-                {
-                    Header = page.Title,
-                    Tag = page
-                };
-                item.Click += (_, _) => OpenMenuExtension(page);
-                workspace.CompactShellController.moreMenu.Items.Add(item);
-            }
-        }
-
-        MenuPages.Changed += RefreshMore;
-        RefreshMore(LauncherMenuArea.More);
+        workspace.BuildSettingsNavigation();
     }
 
     internal FrameworkElement MenuPageLabel(LauncherMenuPage page)

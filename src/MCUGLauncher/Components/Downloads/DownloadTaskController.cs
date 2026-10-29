@@ -17,14 +17,12 @@ internal sealed class DownloadTaskController
     internal StackPanel? downloadTaskRows;
     internal ScrollViewer? downloadTaskScroll;
     internal DateTime downloadTaskRefresh;
-    internal void OpenDownloadTasks()
+    internal void OpenDownloadTasks() => workspace.SettingsNavigationController.SelectSettingsSection("downloads");
+
+    internal InlineDialog CreateDownloadTasksPage()
     {
         if (downloadTasksPage != null)
-        {
-            downloadTasksPage.Activate();
-            return;
-        }
-
+            return downloadTasksPage;
         var body = new DockPanel();
         var heading = new StackPanel();
         DockPanel.SetDock(heading, Dock.Top);
@@ -52,7 +50,7 @@ internal sealed class DownloadTaskController
             downloadTaskScroll = null;
         };
         RefreshDownloadTasks(true);
-        downloadTasksPage.Show();
+        return downloadTasksPage;
     }
 
     internal void RefreshDownloadTasks(bool force = false)

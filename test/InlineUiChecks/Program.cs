@@ -657,7 +657,8 @@ static class Program
             Check(((ComboBox)Field("AccountMode")).IsEnabled && ((ComboBox)Field("Versions")).IsEnabled && !((Button)Field("LaunchGameButton")).IsEnabled, "download keeps account and version browsing enabled while launch stays protected");
             Check(Grid.GetRow((Border)Field("miniDownload")) == 0 && window.TaskbarItemInfo!.ProgressState == System.Windows.Shell.TaskbarItemProgressState.None, "download progress appears only in caption");
             Call("OpenDownloadTasks");
-            Check(Pages().Single().Title == "下载任务" && Buttons(Pages().Single()).Any(b => Equals(b.Content, "取消")), "download task list has explicit cancel action");
+            Check((string)Field("SelectedSettingsSection") == "downloads" &&
+                Buttons((StackPanel)Field("downloadTaskRows")).Any(b => Equals(b.Content, "取消")), "settings download task list has explicit cancel action");
             Capture("v0192-tasks.png");
             Call("ChangeDownloadById", live192.Id, OperationState.Paused);
             Wait(run192);
@@ -669,7 +670,8 @@ static class Program
             Check(queue192.History().Single(r => r.Id == live192.Id).State == OperationState.Queued, "task list resumes queued transfer");
             Call("ChangeDownloadById", live192.Id, OperationState.Cancelled);
             Check(queue192.History().Single(r => r.Id == live192.Id).State == OperationState.Cancelled, "task list cancels resumed transfer");
-            Pages().Last().Close();
+            Call("SelectSettingsSection", "launch");
+            ((RadioButton)Field("HomeNav")).IsChecked = true;
             var escapeCombo = new ComboBox { ItemsSource = new[] { "first", "second" }, SelectedIndex = 0 };
             var escapePage = new InlineDialog { Owner = window, Title = "Escape routing fixture", Content = escapeCombo };
             var keyboardSource = System.Windows.Interop.HwndSource.FromHwnd(

@@ -20,44 +20,6 @@ internal sealed class ExperienceController
 
     internal void BuildExperienceUI()
     {
-        var downloadTasks = new MenuItem
-        {
-            Header = "下载任务"
-        };
-        downloadTasks.Click += (_, _) => workspace.DownloadTaskController.OpenDownloadTasks();
-        workspace.CompactShellController.moreMenu.Items.Add(downloadTasks);
-        var tools = new MenuItem
-        {
-            Header = "Java 管理"
-        };
-        tools.Click += (_, _) => workspace.JavaManagerController.OpenJavaManager(workspace.LaunchCoordinator.prefs.Root, workspace.Controls.Versions.SelectedValue as string ?? "", path =>
-        {
-            if (workspace.LaunchCoordinator.busy)
-                throw new IOException("请等待任务完成再更改 Java。");
-            workspace.LaunchCoordinator.prefs.Java = path;
-            workspace.LaunchCoordinator.prefs.Launch.Java = path;
-            workspace.Controls.JavaPath.Text = path;
-            workspace.LaunchCoordinator.settings.Save(workspace.LaunchCoordinator.prefs);
-        });
-        workspace.CompactShellController.moreMenu.Items.Add(tools);
-        var backups = new MenuItem
-        {
-            Header = "存档保护与恢复"
-        };
-        backups.Click += (_, _) => OpenSaveProtection();
-        workspace.CompactShellController.moreMenu.Items.Add(backups);
-        var servers = new MenuItem
-        {
-            Header = "服务器收藏"
-        };
-        servers.Click += (_, _) => OpenServers();
-        workspace.CompactShellController.moreMenu.Items.Add(servers);
-        var appearance = new MenuItem
-        {
-            Header = "界面与辅助功能"
-        };
-        appearance.Click += (_, _) => workspace.AppearanceController.OpenAppearance();
-        workspace.CompactShellController.moreMenu.Items.Add(appearance);
         var queue = (WrapPanel)((Grid)((TabItem)workspace.Window.MainTabs.Items[6]).Content).Children.OfType<WrapPanel>().Single();
         foreach (var pair in new[]
         {
@@ -174,7 +136,9 @@ internal sealed class ExperienceController
         dialog.ShowDialog();
     }
 
-    internal void OpenSaveProtection()
+    internal void OpenSaveProtection() => CreateSaveProtectionPage().ShowDialog();
+
+    internal InlineDialog CreateSaveProtectionPage()
     {
         try
         {
@@ -261,16 +225,19 @@ internal sealed class ExperienceController
                 }, "恢复存档副本");
             }));
             body.Children.Add(FeatureUiElements.ActionButton("打开备份目录", (_, _) => workspace.LaunchCoordinator.OpenFolder(SaveProtection.DirectoryFor(SaveBackupRoot, directory))));
-            dialog.ShowDialog();
+            return dialog;
         }
         catch (Exception ex)
         {
-            InlineMessageBox.Show(workspace.Window, ex.Message, "存档保护");
+            return workspace.InstanceWorkspaceController.FeatureDialog("存档保护",
+                new StackPanel { Children = { FeatureUiElements.Hint(ex.Message) } });
         }
     }
 
     internal record SaveChoice(SaveBackup Backup, SaveBackupItem World, string Label);
-    internal void OpenServers()
+    internal void OpenServers() => CreateServersPage().ShowDialog();
+
+    internal InlineDialog CreateServersPage()
     {
         var body = new StackPanel();
         body.Children.Add(FeatureUiElements.Heading("服务器收藏"));
@@ -320,8 +287,8 @@ internal sealed class ExperienceController
         };
         Reload();
         var dialog = workspace.InstanceWorkspaceController.FeatureDialog("服务器收藏", body);
-        using var cts = new CancellationTokenSource();
-        dialog.Closed += (_, _) => cts.Cancel();
+        var cts = new CancellationTokenSource();
+        dialog.Closed += (_, _) => { cts.Cancel(); cts.Dispose(); };
         body.Children.Add(FeatureUiElements.ActionButton("新增 / 保存", (_, _) =>
         {
             try
@@ -402,6 +369,6 @@ internal sealed class ExperienceController
                 Reload();
             }
         }));
-        dialog.ShowDialog();
+        return dialog;
     }
 }

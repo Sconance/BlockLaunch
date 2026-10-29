@@ -27,7 +27,7 @@ def main():
                 'LoaderOverviewController', 'NetworkController', 'WindowChromeController',
                 'GameWindowBehaviorController', 'InstanceSearchController', 'VersionIdentityEditor', 'ContentUpdatesController',
                 'ResourceFavoritesController', 'ResourceSearchLayoutController',
-                'RunningGamesController', 'VersionCatalogController')
+                'RunningGamesController', 'VersionCatalogController', 'SettingsNavigationController')
     components = {path.stem: path for path in (app / 'Components').rglob('*.cs')}
     for name in isolated:
         source = components.get(name)
@@ -36,6 +36,9 @@ def main():
             continue
         if re.search(r'\bLauncherWorkspace\b', source.read_text(encoding='utf-8-sig')):
             errors.append(f'{name} must receive its controls, state or callbacks explicitly')
+    settings_controller = (app / 'Components/Shell/SettingsNavigationController.cs').read_text(encoding='utf-8-sig')
+    if re.search(r'System\.Windows|\b(UIElement|FrameworkElement|StackPanel|ScrollViewer|InlineDialog)\b', settings_controller):
+        errors.append('SettingsNavigationController must select plain categories through its presentation port')
     session_controller = (app / 'Components/Launch/RunningGamesController.cs').read_text(encoding='utf-8-sig')
     if re.search(r'System\.Windows|\b(Button|UIElement|StackPanel|TextBox|ScrollViewer|FeatureUiElements|SharedLogs|Dispatcher)\b', session_controller):
         errors.append('RunningGamesController must use the presentation port, not WPF or file readers')

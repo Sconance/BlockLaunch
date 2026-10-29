@@ -11,7 +11,10 @@ internal sealed class JavaManagerController
         this.workspace = workspace;
     }
 
-    internal void OpenJavaManager(string root, string profile, Action<string> select, object? owner = null)
+    internal void OpenJavaManager(string root, string profile, Action<string> select, object? owner = null) =>
+        CreateJavaManagerPage(root, profile, select, owner).ShowDialog();
+
+    internal InlineDialog CreateJavaManagerPage(string root, string profile, Action<string> select, object? owner = null)
     {
         var panel = new StackPanel();
         var required = profile.Length > 0 ? JavaDiscovery.RequiredMajor(root, profile) : 0;
@@ -46,12 +49,13 @@ internal sealed class JavaManagerController
         panel.Children.Add(state);
         var dialog = workspace.InstanceWorkspaceController.FeatureDialog("Java 管理", panel);
         dialog.Owner = owner ?? workspace.Window;
-        using var lifetime = new CancellationTokenSource();
+        var lifetime = new CancellationTokenSource();
         CancellationTokenSource? active = null;
         dialog.Closed += (_, _) =>
         {
             lifetime.Cancel();
             active?.Cancel();
+            lifetime.Dispose();
         };
         var items = new List<JavaInstallation>();
         void Filter()
@@ -195,6 +199,6 @@ internal sealed class JavaManagerController
                 state.Text = ex.Message;
             }
         }));
-        dialog.ShowDialog();
+        return dialog;
     }
 }

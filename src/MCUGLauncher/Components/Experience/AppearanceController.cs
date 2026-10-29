@@ -79,7 +79,9 @@ internal sealed class AppearanceController
         }
     }
 
-    internal void OpenAppearance()
+    internal void OpenAppearance() => CreateAppearancePage().ShowDialog();
+
+    internal InlineDialog CreateAppearancePage()
     {
         var body = new StackPanel();
         body.Children.Add(FeatureUiElements.Heading("界面与背景"));
@@ -184,6 +186,6 @@ internal sealed class AppearanceController
                 status.Text = "未能应用外观：" + ex.Message;
             }
         }));
-        dialog.ShowDialog();
+        return dialog;
     }
 }

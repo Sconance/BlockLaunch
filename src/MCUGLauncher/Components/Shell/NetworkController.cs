@@ -9,7 +9,9 @@ internal sealed class NetworkController(
     Action<NetworkSettings> saveSettings,
     Func<string, StackPanel, InlineDialog> createDialog)
 {
-    internal void NetworkClick(object sender, RoutedEventArgs e)
+    internal void NetworkClick(object sender, RoutedEventArgs e) => CreateNetworkPage().ShowDialog();
+
+    internal InlineDialog CreateNetworkPage()
     {
         var form = new NetworkSettingsForm(getSettings());
         var dialog = createDialog("下载与网络设置", form);
@@ -27,6 +29,6 @@ internal sealed class NetworkController(
                 InlineMessageBox.Show(dialog, ex.Message);
             }
         }));
-        dialog.ShowDialog();
+        return dialog;
     }
 }
