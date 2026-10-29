@@ -27,6 +27,7 @@ public partial class FrontWindow : Window
     bool closing;
     bool canClose;
     bool navigating;
+    public FrontMenuRegistry MenuPages { get; } = new();
 
     public FrontWindow(IFrontResourceBrowser resourceBrowser, IFrontSettings settingsService, IFrontDownloadTasks downloads, IFrontLauncher launcher, string mode,
         Func<CancellationToken, Task>? startupAction = null)
@@ -47,7 +48,7 @@ public partial class FrontWindow : Window
         WindowChrome.SetIsHitTestVisibleInChrome(NavigationPanel, true);
         WindowChrome.SetIsHitTestVisibleInChrome(HeaderBar.Children.OfType<StackPanel>().First(), true);
         ToolTip = mode;
-        resources = new ResourceBrowserViewModel(resourceBrowser, launcher) { Destination = launcher.DownloadDirectory };
+        resources = new ResourceBrowserViewModel(resourceBrowser, launcher, launcher) { Destination = launcher.DownloadDirectory };
         browser = new ResourceBrowserView(resources);
         settings = new SettingsViewModel(settingsService);
         settingsView = new SettingsView(settings);
@@ -56,6 +57,17 @@ public partial class FrontWindow : Window
         logView = new LogView(launcher, () => launcherView.SelectedProfile);
         launcherView.RequestPage += NavigatePage;
         downloadView = new DownloadBrowserView(launcherView, browser, resources);
+        launcherView.MenuPages = MenuPages;
+        FrontMenuContext Context() => new(this, launcher, launcherView.SelectedProfile, resources.Selected);
+        MenuPages.Attach(FrontMenuArea.Top, NavigationPanel, Context);
+        var more = new StackPanel { Orientation = Orientation.Horizontal };
+        NavigationPanel.Children.Add(more);
+        MenuPages.Attach(FrontMenuArea.More, more, Context);
+        MenuPages.Wrap(FrontMenuArea.Download, downloadView, Context);
+        MenuPages.Wrap(FrontMenuArea.Settings, settingsView, Context);
+        MenuPages.Wrap(FrontMenuArea.ResourceDetails, browser, Context);
+        MenuPages.Wrap(FrontMenuArea.Home, launcherView, Context);
+        MenuPages.Wrap(FrontMenuArea.InstanceContent, launcherView, Context);
         if (launcher is IFrontPreferences preferences)
         {
             settingsView.ConfigurePreferences(preferences);

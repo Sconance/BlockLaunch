@@ -6,7 +6,7 @@
 - 新入口：`src/MCUGLauncher/Front/Program.cs`，界面全部在 `Front/Views/`、`ViewModels/`、`Styles/`。
 - 业务目录位于 `MainWindow` 同级：`Accounts`、`Downloads`、`Settings`、`Versions`、`Resources`、`Launch`、`Builders`。
 - `MCUGLauncher.Application.csproj` 通过源码链接编译这些目录、`Contracts` 与 `Adapters`；不要再复制一套“共享业务”。
-- `Front/Hosting/FrontLauncherRuntime.cs` 负责契约适配与生命周期；不属于纯视图，也不应承载新的领域算法。
+- `Launch/LauncherRuntime.cs` 负责契约适配与生命周期；`Front/Hosting/FrontLauncherRuntime.cs` 仅保留 Front 入口兼容壳，不承载领域算法。
 - Core 提供底层实现；SharedUI 只提供可复用 WPF 控件。新旧前端均不能直接依赖另一套前端。
 
 拆分模块时先定义参数、取消令牌、进度与结果，再让两个前端分别适配。不能为 Front 调用重新依赖旧 MainWindow。

@@ -17,6 +17,14 @@ public sealed record FrontPackUpgrade(string Id, IReadOnlyList<FrontUpgradeFile>
 
 public interface IFrontManagement
 {
+    Task<IReadOnlyList<FrontJava>> SearchJava(string directory, CancellationToken token);
+    void SaveJavaPaths(IReadOnlyList<string> paths);
+    Task<DiagnosticSnapshot> ReadDiagnostics(string key, CancellationToken token);
+    Task ExportDiagnostics(IReadOnlyList<FeedbackDocument> documents, string target, CancellationToken token);
+    IReadOnlyList<ScreenshotEntry> ReadScreenshots(string key);
+    Task ImportWorld(string key, string archive, CancellationToken token);
+    Task BackupWorld(string key, string world, string target, CancellationToken token);
+    void OpenScreenshot(string key, string file);
     Task<UninstallPlan> PlanUninstall(string key, bool deleteSharedData, CancellationToken token);
     Task Uninstall(UninstallPlan plan, CancellationToken token);
     Task<IReadOnlyList<FrontJava>> ScanJava(CancellationToken token);

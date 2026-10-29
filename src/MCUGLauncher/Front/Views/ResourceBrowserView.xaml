@@ -11,12 +11,13 @@
     <Border x:Name="SearchPanel" Style="{StaticResource Card}" Padding="18">
       <StackPanel>
         <TextBlock Text="发现属于你的游戏内容" FontSize="20" FontWeight="SemiBold" />
-        <TextBlock Text="Modrinth · 调用真实资源服务；资源下载到外部目录，不自动安装到实例。" Style="{StaticResource Caption}" Margin="0,8,0,12" TextWrapping="Wrap" />
+        <TextBlock Text="Modrinth · 可下载到外部目录，也可选择已安装实例直接加入安装队列。" Style="{StaticResource Caption}" Margin="0,8,0,12" TextWrapping="Wrap" />
         <DockPanel>
           <Button DockPanel.Dock="Right" Content="搜索" Click="SearchClick" Margin="8,0,0,0" />
           <TextBox Text="{Binding QueryText, UpdateSourceTrigger=PropertyChanged}" ToolTip="搜索名称或描述" KeyDown="SearchKeyDown" />
         </DockPanel>
         <WrapPanel Margin="0,12,0,0">
+          <Button x:Name="LayoutButton" Content="切换卡片视图" Click="LayoutClick" Margin="0,0,12,0" />
           <CheckBox Content="仅收藏" IsChecked="{Binding FavoritesOnly}" VerticalAlignment="Center" Margin="0,0,12,0" />
           <StackPanel Margin="0,0,12,0">
             <TextBlock Text="资源类型" Style="{StaticResource Caption}" />
@@ -115,8 +116,12 @@
                 <Button Content="重新读取兼容版本" HorizontalAlignment="Left" Click="ReloadVersionsClick" />
               </StackPanel>
               <StackPanel DockPanel.Dock="Bottom">
+                <ComboBox ItemsSource="{Binding Targets}" SelectedItem="{Binding SelectedTarget}" DisplayMemberPath="Label" ToolTip="安装目标实例" Margin="0,8" />
                 <TextBox Text="{Binding Destination, UpdateSourceTrigger=PropertyChanged}" ToolTip="外部资源下载目录；留空使用默认目录" Margin="0,8" />
-                <Button Content="下载所选版本" IsEnabled="{Binding CanDownload}" Click="DownloadClick" HorizontalAlignment="Left" />
+                <WrapPanel>
+                  <Button Content="安装到选中实例" IsEnabled="{Binding CanInstall}" Click="InstallClick" HorizontalAlignment="Left" />
+                  <Button Content="下载到外部目录" IsEnabled="{Binding CanDownload}" Click="DownloadClick" HorizontalAlignment="Left" Margin="8,0,0,0" />
+                </WrapPanel>
                 <TextBlock Text="{Binding DownloadStatus}" TextWrapping="Wrap" Margin="0,8" />
               </StackPanel>
               <ListBox ItemsSource="{Binding Versions}" SelectedItem="{Binding SelectedVersion}" DisplayMemberPath="Label" BorderThickness="0" Background="{DynamicResource ThemeSurfaceBrush}" />

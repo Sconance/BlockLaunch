@@ -10,6 +10,16 @@ public sealed record FrontProfiles(string Root, IReadOnlyList<FrontProfile> Item
 public sealed record FrontLoader(string Id, string Label);
 public sealed record FrontIdentity(string Id, string Name);
 public sealed record FrontLocalContent(string Path, string Name, string Detail, string State);
+public sealed record FrontInstallTarget(string Id, string Label, string Directory)
+{
+    public string World { get; init; } = "";
+}
+
+public interface IFrontResourceInstaller
+{
+    Task<IReadOnlyList<FrontInstallTarget>> ReadResourceTargets(string kind, CancellationToken token);
+    Task<bool> EnqueueResourceInstallation(string project, string version, FrontResourceQuery query, string target, string world, Func<string, bool> confirm, CancellationToken token);
+}
 
 public interface IFrontResourceDownloads
 {
@@ -17,7 +27,7 @@ public interface IFrontResourceDownloads
     Task EnqueueResource(string project, string version, FrontResourceQuery query, string destination, CancellationToken token);
 }
 
-public interface IFrontLauncher : IFrontResourceDownloads
+public interface IFrontLauncher : IFrontResourceDownloads, IFrontResourceInstaller
 {
     bool IsBusy { get; }
     bool IsGameRunning { get; }
@@ -25,6 +35,8 @@ public interface IFrontLauncher : IFrontResourceDownloads
     IReadOnlyList<string> Logs { get; }
     Task Initialize(CancellationToken token);
     FrontAccounts ReadAccounts();
+    Task<byte[]?> ReadAccountSkin(CancellationToken token);
+    void SaveOfflineSkin(string path);
     Task LoginMicrosoft(CancellationToken token);
     Task LoginMua(string account, string password, Func<IReadOnlyList<FrontIdentity>, Task<FrontIdentity?>> select, CancellationToken token);
     void SelectAccount(string kind, string offlineName);

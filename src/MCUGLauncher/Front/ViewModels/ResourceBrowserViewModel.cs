@@ -4,7 +4,7 @@ using BlockLaunch.Contracts;
 
 namespace BlockLaunch.Front;
 
-public sealed class ResourceBrowserViewModel(IFrontResourceBrowser browser, IFrontResourceDownloads? downloads = null) : INotifyPropertyChanged, IDisposable
+public sealed class ResourceBrowserViewModel(IFrontResourceBrowser browser, IFrontResourceDownloads? downloads = null, IFrontResourceInstaller? installer = null) : INotifyPropertyChanged, IDisposable
 {
     public event PropertyChangedEventHandler? PropertyChanged;
     CancellationTokenSource? searchCancellation;
@@ -34,6 +34,8 @@ public sealed class ResourceBrowserViewModel(IFrontResourceBrowser browser, IFro
     FrontResourceItem? selected;
     IReadOnlyList<FrontResourceItem> items = [];
     IReadOnlyList<FrontResourceVersion> versions = [];
+    IReadOnlyList<FrontInstallTarget> targets = [];
+    FrontInstallTarget? selectedTarget;
 
     public string QueryText { get => queryText; set => Set(ref queryText, value); }
     public string GameVersion { get => gameVersion; set => Set(ref gameVersion, value); }
@@ -50,11 +52,14 @@ public sealed class ResourceBrowserViewModel(IFrontResourceBrowser browser, IFro
     public bool IsDetailBusy { get => isDetailBusy; private set => Set(ref isDetailBusy, value); }
     public IReadOnlyList<FrontResourceItem> Items { get => items; private set => Set(ref items, value); }
     public IReadOnlyList<FrontResourceVersion> Versions { get => versions; private set => Set(ref versions, value); }
+    public IReadOnlyList<FrontInstallTarget> Targets { get => targets; private set => Set(ref targets, value); }
+    public FrontInstallTarget? SelectedTarget { get => selectedTarget; set => Set(ref selectedTarget, value); }
     public FrontResourceItem? Selected { get => selected; private set => Set(ref selected, value); }
     public FrontResourceVersion? SelectedVersion { get => selectedVersion; set => Set(ref selectedVersion, value); }
     public string Destination { get => destination; set => Set(ref destination, value); }
     public string DownloadStatus { get => downloadStatus; private set => Set(ref downloadStatus, value); }
     public bool CanDownload => downloads != null && Selected != null && SelectedVersion != null && currentQuery != null && !IsBusy && !IsDetailBusy && !isDownloading && !disposed;
+    public bool CanInstall => installer != null && Selected != null && SelectedVersion != null && SelectedTarget != null && currentQuery != null && !IsBusy && !IsDetailBusy && !isDownloading && !disposed;
     public bool CanPrevious => !IsBusy && currentQuery != null && offset > 0;
     public bool CanNext => !IsBusy && currentQuery != null && Items.Count > 0 && offset + Items.Count < total;
 
@@ -139,6 +144,14 @@ public sealed class ResourceBrowserViewModel(IFrontResourceBrowser browser, IFro
                 FavoriteFolder = bookmark?.Folder ?? "默认收藏夹";
                 FavoriteStatus = bookmark == null ? "尚未收藏" : "已收藏";
             }
+            if (installer != null)
+            {
+                var available = await installer.ReadResourceTargets(query.Kind, cancellation.Token);
+                if (disposed || !ReferenceEquals(detailCancellation, cancellation))
+                    return;
+                Targets = available;
+                SelectedTarget = Targets.FirstOrDefault();
+            }
             var result = await browser.Versions(item.Id, query, cancellation.Token);
             if (disposed || !ReferenceEquals(detailCancellation, cancellation))
                 return;
@@ -184,7 +197,7 @@ public sealed class ResourceBrowserViewModel(IFrontResourceBrowser browser, IFro
         try
         {
             isDownloading = true;
-            PropertyChanged?.Invoke(this, new(nameof(CanDownload)));
+            NotifyActions();
             await downloads!.EnqueueResource(project, version, query, target, lifetime.Token);
             if (!disposed)
                 DownloadStatus = "已加入真实下载队列。";
@@ -202,7 +215,36 @@ public sealed class ResourceBrowserViewModel(IFrontResourceBrowser browser, IFro
         finally
         {
             isDownloading = false;
-            PropertyChanged?.Invoke(this, new(nameof(CanDownload)));
+            NotifyActions();
+        }
+    }
+
+    public async Task InstallSelected(Func<string, bool> confirm)
+    {
+        if (!CanInstall || installer == null)
+            return;
+        try
+        {
+            isDownloading = true;
+            NotifyActions();
+            var enqueued = await installer.EnqueueResourceInstallation(Selected!.Id, SelectedVersion!.Id, currentQuery!, SelectedTarget!.Id, SelectedTarget.World, confirm, lifetime.Token);
+            if (!disposed)
+                DownloadStatus = enqueued ? "已加入实例安装队列。" : "已取消安装。";
+        }
+        catch (OperationCanceledException)
+        {
+            if (!disposed)
+                DownloadStatus = "加入安装队列已取消。";
+        }
+        catch (Exception exception)
+        {
+            if (!disposed)
+                DownloadStatus = "加入安装队列失败：" + exception.Message;
+        }
+        finally
+        {
+            isDownloading = false;
+            NotifyActions();
         }
     }
 
@@ -248,6 +290,12 @@ public sealed class ResourceBrowserViewModel(IFrontResourceBrowser browser, IFro
         PropertyChanged?.Invoke(this, new(nameof(CanNext)));
     }
 
+    void NotifyActions()
+    {
+            NotifyActions();
+        PropertyChanged?.Invoke(this, new(nameof(CanInstall)));
+    }
+
     void Set<T>(ref T field, T value, [CallerMemberName] string? property = null)
     {
         if (EqualityComparer<T>.Default.Equals(field, value))
@@ -255,6 +303,6 @@ public sealed class ResourceBrowserViewModel(IFrontResourceBrowser browser, IFro
         field = value;
         PropertyChanged?.Invoke(this, new(property));
         if (property != nameof(CanDownload))
-            PropertyChanged?.Invoke(this, new(nameof(CanDownload)));
+            NotifyActions();
     }
 }

@@ -1,6 +1,4 @@
 using System.IO;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using System.Windows;
 using System.Windows.Controls;
 using BlockLaunch.Contracts;
@@ -18,15 +16,17 @@ public partial class LauncherView : UserControl, IDisposable
     IReadOnlyList<FrontProfile> profileSnapshot = [];
     public string? SelectedProfile => (Profiles.SelectedItem as FrontProfile)?.Id;
     public event Action<string>? RequestPage;
+    public FrontMenuRegistry? MenuPages { get; set; }
     string loadedMinecraft = "";
     string loadedLoader = "";
+    int skinRevision;
 
     public LauncherView(IFrontLauncher launcher)
     {
         this.launcher = launcher;
         InitializeComponent();
         controlsReady = true;
-        Avatar.Source = DefaultAvatar();
+        Avatar.Source = AvatarRenderer.Default();
         Loaded += (_, _) => ReadAccounts();
     }
 
@@ -167,6 +167,7 @@ public partial class LauncherView : UserControl, IDisposable
             MicrosoftMode.IsChecked = account.Selected == "microsoft";
             MuaMode.IsChecked = account.Selected == "mua";
             PlayerLabel.Text = account.Selected == "microsoft" ? account.MicrosoftName : account.Selected == "mua" ? account.MuaName : account.OfflineName;
+            _ = RefreshSkin();
         }
         catch (Exception exception)
         {
@@ -175,6 +176,37 @@ public partial class LauncherView : UserControl, IDisposable
     }
 
     void AccountsClick(object sender, RoutedEventArgs args) => ReadAccounts();
+    async void RefreshSkinClick(object sender, RoutedEventArgs args) => await RefreshSkin();
+
+    async void SelectSkinClick(object sender, RoutedEventArgs args) => await Run(async () =>
+    {
+        var picker = new OpenFileDialog { Filter = "皮肤 PNG|*.png", CheckFileExists = true };
+        if (picker.ShowDialog(Window.GetWindow(this)) != true)
+            return;
+        if (new FileInfo(picker.FileName).Length > 2 * 1024 * 1024)
+            throw new IOException("皮肤文件不能超过 2 MiB。");
+        AvatarRenderer.FromSkin(await File.ReadAllBytesAsync(picker.FileName, lifetime.Token));
+        launcher.SaveOfflineSkin(picker.FileName);
+        await RefreshSkin();
+    });
+
+    async Task RefreshSkin()
+    {
+        var revision = ++skinRevision;
+        Avatar.Source = AvatarRenderer.Default();
+        try
+        {
+            var data = await launcher.ReadAccountSkin(lifetime.Token);
+            if (!disposed && revision == skinRevision && data != null)
+                Avatar.Source = AvatarRenderer.FromSkin(data);
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception exception)
+        {
+            if (!disposed && revision == skinRevision)
+                Avatar.ToolTip = "头像暂不可用：" + exception.Message;
+        }
+    }
     async void OfflineClick(object sender, RoutedEventArgs args) => await Run(() => Done(() => { launcher.SelectAccount("offline", OfflineName.Text.Trim()); ReadAccounts(); }));
     async void SelectMicrosoftClick(object sender, RoutedEventArgs args) => await Run(() => Done(() => { launcher.SelectAccount("microsoft", ""); ReadAccounts(); }));
     async void SelectMuaClick(object sender, RoutedEventArgs args) => await Run(() => Done(() => { launcher.SelectAccount("mua", ""); ReadAccounts(); }));
@@ -285,7 +317,7 @@ public partial class LauncherView : UserControl, IDisposable
         }
         try
         {
-            var dialog = new VersionManagerWindow(launcher, versions, profile.Id) { Owner = Window.GetWindow(this) };
+            var dialog = new VersionManagerWindow(launcher, versions, profile.Id, MenuPages) { Owner = Window.GetWindow(this) };
             dialog.ShowDialog();
             await RefreshProfiles();
             if (!disposed && dialog.CreatedInstance != null)
@@ -301,28 +333,6 @@ public partial class LauncherView : UserControl, IDisposable
     {
         StopButton.Visibility = launcher.IsGameRunning ? Visibility.Visible : Visibility.Collapsed;
         LaunchButton.IsEnabled = !busy && !launcher.IsBusy && !launcher.IsGameRunning && Profiles.SelectedItem != null;
-    }
-
-    static BitmapSource DefaultAvatar()
-    {
-        var pixels = new byte[8 * 8 * 4];
-        for (var row = 0; row < 8; row++)
-            for (var column = 0; column < 8; column++)
-            {
-                var color = row < 2 ? Color.FromRgb(71, 47, 34) : Color.FromRgb(187, 135, 97);
-                if (row == 4 && column is 1 or 2 or 5 or 6)
-                    color = column is 2 or 5 ? Color.FromRgb(56, 91, 159) : Colors.White;
-                if (row == 6 && column is >= 2 and <= 5)
-                    color = Color.FromRgb(103, 64, 46);
-                var offset = (row * 8 + column) * 4;
-                pixels[offset] = color.B;
-                pixels[offset + 1] = color.G;
-                pixels[offset + 2] = color.R;
-                pixels[offset + 3] = 255;
-            }
-        var result = BitmapSource.Create(8, 8, 96, 96, PixelFormats.Bgra32, null, pixels, 32);
-        result.Freeze();
-        return result;
     }
 
     public void Dispose()

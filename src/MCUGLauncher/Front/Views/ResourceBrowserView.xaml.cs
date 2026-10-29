@@ -9,6 +9,26 @@ public partial class ResourceBrowserView : UserControl
 {
     readonly ResourceBrowserViewModel model;
     bool initialized;
+    bool cards;
+
+    void LayoutClick(object sender, RoutedEventArgs args)
+    {
+        cards = !cards;
+        var panel = new FrameworkElementFactory(cards ? typeof(WrapPanel) : typeof(StackPanel));
+        if (cards)
+            panel.SetValue(WrapPanel.ItemWidthProperty, 280d);
+        Results.ItemsPanel = new ItemsPanelTemplate(panel);
+        var container = new Style(typeof(ListBoxItem));
+        container.Setters.Add(new Setter(HorizontalContentAlignmentProperty, HorizontalAlignment.Stretch));
+        container.Setters.Add(new Setter(VerticalContentAlignmentProperty, VerticalAlignment.Stretch));
+        if (cards)
+        {
+            container.Setters.Add(new Setter(WidthProperty, 278d));
+            container.Setters.Add(new Setter(MinHeightProperty, 150d));
+        }
+        Results.ItemContainerStyle = container;
+        LayoutButton.Content = cards ? "切换列表视图" : "切换卡片视图";
+    }
 
     public ResourceBrowserView(ResourceBrowserViewModel model)
     {
@@ -58,6 +78,10 @@ public partial class ResourceBrowserView : UserControl
     {
         if (MessageBox.Show(Window.GetWindow(this), "将所选资源加入真实下载队列？", "确认下载", MessageBoxButton.OKCancel) == MessageBoxResult.OK)
             await model.DownloadSelected();
+    }
+    async void InstallClick(object sender, RoutedEventArgs args)
+    {
+        await model.InstallSelected(summary => MessageBox.Show(Window.GetWindow(this), summary, "确认资源及依赖安装", MessageBoxButton.OKCancel) == MessageBoxResult.OK);
     }
     async void ProjectChanged(object sender, SelectionChangedEventArgs args)
     {

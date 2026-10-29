@@ -33,10 +33,14 @@
                   <RadioButton x:Name="OfflineMode" Content="♧ 离线" Tag="offline" GroupName="HomeAccount" Style="{StaticResource AccountLoginChip}" Checked="AccountModeChanged" />
                   <RadioButton x:Name="MuaMode" Content="MUA 登录" Tag="mua" GroupName="HomeAccount" Style="{StaticResource AccountLoginChip}" Checked="AccountModeChanged" />
                 </UniformGrid>
-                <Border Width="64" Height="64" CornerRadius="10" Background="{DynamicResource ThemeInputBrush}" Padding="4" Margin="0,4,0,8" ToolTip="默认头像；在线皮肤资料尚未接入此接口">
+                <Border Width="64" Height="64" CornerRadius="10" Background="{DynamicResource ThemeInputBrush}" Padding="4" Margin="0,4,0,8" ToolTip="玩家皮肤头像；读取失败时使用默认头像">
                   <Image x:Name="Avatar" RenderOptions.BitmapScalingMode="NearestNeighbor" />
                 </Border>
                 <TextBlock x:Name="PlayerLabel" Text="Player" FontSize="17" FontWeight="SemiBold" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" MaxWidth="196" />
+                <WrapPanel HorizontalAlignment="Center">
+                  <Button Content="刷新头像" Click="RefreshSkinClick" />
+                  <Button Content="离线皮肤" Click="SelectSkinClick" />
+                </WrapPanel>
                 <TextBlock x:Name="AccountSummary" Style="{StaticResource Caption}" Margin="0,4,0,9" TextWrapping="Wrap" TextAlignment="Center" />
                 <StackPanel x:Name="OfflineIdentity">
                   <TextBlock Text="离线角色名" Style="{StaticResource Caption}" />

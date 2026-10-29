@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using BlockLaunch.Contracts;
+using Microsoft.Win32;
 
 namespace BlockLaunch.Front;
 
@@ -34,6 +35,32 @@ public sealed class LogView : DockPanel
         };
         toolbar.Children.Add(refresh);
         toolbar.Children.Add(copy);
+        var diagnostics = new Button { Content = "导出诊断包" };
+        diagnostics.Click += async (_, _) =>
+        {
+            try
+            {
+                if (launcher is not IFrontManagement management || selected() is not { } key)
+                    throw new InvalidOperationException("请先选择实例。");
+                var snapshot = await management.ReadDiagnostics(key, CancellationToken.None);
+                var documents = Diagnostics.Preview(snapshot, new());
+                var preview = new Window
+                {
+                    Owner = Window.GetWindow(this), Title = "检查诊断包内容（不会自动上传）",
+                    Width = 820, Height = 620, WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                    Content = DiagnosticPreview(documents)
+                };
+                if (preview.ShowDialog() != true)
+                    return;
+                var picker = new SaveFileDialog { Filter = "诊断 ZIP|*.zip", FileName = "MCUG-diagnostics.zip" };
+                if (picker.ShowDialog(Window.GetWindow(this)) != true)
+                    return;
+                await management.ExportDiagnostics(documents, picker.FileName, CancellationToken.None);
+                status.Text = "诊断包已导出；分享前请检查内容。";
+            }
+            catch (Exception exception) { status.Text = "诊断导出失败：" + exception.Message; }
+        };
+        toolbar.Children.Add(diagnostics);
         toolbar.Children.Add(follow);
         SetDock(toolbar, Dock.Top);
         Children.Add(toolbar);
@@ -42,6 +69,33 @@ public sealed class LogView : DockPanel
         tabs.Items.Add(new TabItem { Header = "实时输出", Content = live });
         tabs.Items.Add(new TabItem { Header = "游戏日志", Content = latest });
         Children.Add(tabs);
+    }
+
+    static UIElement DiagnosticPreview(IReadOnlyList<FeedbackDocument> documents)
+    {
+        var panel = new DockPanel { Margin = new Thickness(14) };
+        var actions = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
+        var reviewed = new CheckBox { Content = "我已检查文本，确认可能包含需要隐藏的个人信息。", Margin = new Thickness(0, 0, 14, 0), VerticalAlignment = VerticalAlignment.Center };
+        var confirm = new Button { Content = "继续导出", IsEnabled = false, MinWidth = 100 };
+        var cancel = new Button { Content = "取消", MinWidth = 80 };
+        reviewed.Checked += (_, _) => confirm.IsEnabled = true;
+        reviewed.Unchecked += (_, _) => confirm.IsEnabled = false;
+        confirm.Click += (_, _) => Window.GetWindow(panel)!.DialogResult = true;
+        cancel.Click += (_, _) => Window.GetWindow(panel)!.DialogResult = false;
+        actions.Children.Add(reviewed);
+        actions.Children.Add(confirm);
+        actions.Children.Add(cancel);
+        DockPanel.SetDock(actions, Dock.Bottom);
+        panel.Children.Add(actions);
+        var tabs = new TabControl();
+        foreach (var document in documents)
+            tabs.Items.Add(new TabItem { Header = document.Name, Content = new TextBox
+            {
+                Text = document.Text, IsReadOnly = true, AcceptsReturn = true, TextWrapping = TextWrapping.Wrap,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Auto
+            } });
+        panel.Children.Add(tabs);
+        return panel;
     }
 
     static TextBox Output() => new()
