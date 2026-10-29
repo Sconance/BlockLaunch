@@ -11,6 +11,8 @@
 - `Components/`：各功能控制器拥有各自字段、事件和操作。启动协调位于 `LaunchCoordinator`，版本设置位于 `VersionSettingsController`，实例管理位于 `InstancePagesController` 和 `SketchController`，资源和任务也各自独立。
 - `Views/`、`Presentation/`：第一批独立控件和加载器 Presenter 继续使用，不退回主窗口大类。
 
+每个顶层类型的职责、入口与源码位置见 [类文档目录](classes/README.md)；页面与模块调整后同步更新对应页面。
+
 ## 页面组合与兼容
 
 已有动态布局会移动或重组控件。为了保持视图树和行为，本轮由 `LauncherPage.Materialize` 将独立 XAML 的内容放入原来的宿主，保留页面工厂持有的命名控件与事件，随后使用强类型绑定连接控制器。页面不依赖 MainWindow 的私有字段。

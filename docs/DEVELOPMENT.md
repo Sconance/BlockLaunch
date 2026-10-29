@@ -17,6 +17,8 @@ MCUG Launcher 是 .NET 8 / WPF 应用。先从本文件定位功能，再阅读�
 `LauncherWorkspace` 只负责组合，不拥有下载、账号或实例业务状态。不要重新添加 `partial MainWindow` 功能文件。
 页面迁移时保留原有动态布局的视图树形状；详细说明见 [MainWindow 重构记录](MAINWINDOW_REFACTOR.md)。
 
+每个顶层类型的职责、主要入口与源码位置见 [类文档目录](classes/README.md)；新增或拆分类型时同步补页，`python scripts/check-class-docs.py` 校验覆盖与索引。
+
 ## 功能定位
 
 | 想修改的内容 | 界面入口 | 服务或数据 |

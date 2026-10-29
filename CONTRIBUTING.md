@@ -18,3 +18,4 @@
 - 合并或迁移其他分支时按功能与责任组件迁移，不使用旧版整文件替换实现，不重新引入 `partial MainWindow`；检查要点见 [重构路线图](TODO.md)。
 - 版本号只改 `Directory.Build.props` 的 `McugVersion`，源码和界面读取 `ProductInfo.Version`；发版前运行 `python scripts/check-version.py`（需要标签时加 `--tag`），规则见 [版本号控制](docs/VERSIONING.md)。
 - 新增页面与栏目沿用 [菜单扩展说明](docs/MENU_EXTENSIONS.md) 与 `LauncherPage` 动作边界；源码格式、布局检查、UI 边界检查与相关 `test/*Checks` 必须通过。
+- `src/MCUGLauncher/` 的每个顶层类型在 [类文档目录](docs/classes/README.md) 有一页说明；新增、重命名或拆分类型时同步补页与索引，`python scripts/check-class-docs.py` 会校验覆盖。
