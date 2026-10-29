@@ -237,3 +237,14 @@
 - [SettingsNavigationView](Views/SettingsNavigationView.md) — 设置左侧导航与内容宿主的 WPF 布局，支持图片图标与长标题截断。
 - [SettingsPageContent](Presentation/SettingsPageContent.md) — 嵌入页面与清理操作的生命周期；复用既有工具页面时解除事件并取消后台操作。
 - [SettingsPageHost](Presentation/SettingsPageHost.md) — 按需创建、释放和切换设置页面，避免业务入口混入导航控制器。
+
+### 独立设置页面
+
+- [SettingsToolView](Views/Settings/SettingsToolView.md)
+- [AppearanceSettingsPage](Views/Settings/AppearanceSettingsPage.md)
+- [JavaSettingsPage](Views/Settings/JavaSettingsPage.md)
+- [SaveProtectionSettingsPage](Views/Settings/SaveProtectionSettingsPage.md)
+- [SaveProtectionSettingsActions](Views/Settings/SaveProtectionSettingsActions.md)
+- [ServerSettingsPage](Views/Settings/ServerSettingsPage.md)
+- [ServerSettingsActions](Views/Settings/ServerSettingsActions.md)
+- [SettingsDialogPresenter](Presentation/SettingsDialogPresenter.md)

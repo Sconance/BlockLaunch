@@ -7,14 +7,14 @@ namespace BlockLaunch;
 internal sealed class NetworkController(
     Func<NetworkSettings> getSettings,
     Action<NetworkSettings> saveSettings,
-    Func<string, StackPanel, InlineDialog> createDialog)
+    Action<Func<Action, SettingsPageContent>> showPage,
+    Action<string> showError)
 {
-    internal void NetworkClick(object sender, RoutedEventArgs e) => CreateNetworkPage().ShowDialog();
+    internal void NetworkClick(object sender, RoutedEventArgs e) => showPage(CreateNetworkPage);
 
-    internal InlineDialog CreateNetworkPage()
+    internal SettingsPageContent CreateNetworkPage(Action close)
     {
         var form = new NetworkSettingsForm(getSettings());
-        var dialog = createDialog("下载与网络设置", form);
         form.Children.Add(FeatureUiElements.ActionButton("保存，下次启动生效", (_, _) =>
         {
             try
@@ -22,13 +22,13 @@ internal sealed class NetworkController(
                 var value = form.Read(getSettings().LimitKibPerSecond);
                 value.Validate();
                 saveSettings(value);
-                dialog.DialogResult = true;
+                close();
             }
             catch (Exception ex)
             {
-                InlineMessageBox.Show(dialog, ex.Message);
+                showError(ex.Message);
             }
         }));
-        return dialog;
+        return new(new SettingsToolView(form));
     }
 }

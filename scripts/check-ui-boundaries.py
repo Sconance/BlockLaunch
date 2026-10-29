@@ -39,6 +39,15 @@ def main():
     settings_controller = (app / 'Components/Shell/SettingsNavigationController.cs').read_text(encoding='utf-8-sig')
     if re.search(r'System\.Windows|\b(UIElement|FrameworkElement|StackPanel|ScrollViewer|InlineDialog)\b', settings_controller):
         errors.append('SettingsNavigationController must select plain categories through its presentation port')
+    for source in (app / 'Views/Settings').glob('*.cs'):
+        if re.search(r'\b(LauncherWorkspace|MainWindow|InlineDialog)\b', source.read_text(encoding='utf-8-sig')):
+            errors.append(f'{source.relative_to(root)} must be an independent settings view with explicit operations')
+    composition = (app / 'Composition/SettingsComposition.cs').read_text(encoding='utf-8-sig')
+    if re.search(r'MainTabs\.Items\[|Children\.OfType|\.Parent|FromDialog|PrepareContent|ForceClose', composition):
+        errors.append('Settings composition must use named page hosts and direct page factories, not visual-tree/dialog extraction')
+    page_content = (app / 'Presentation/SettingsPageContent.cs').read_text(encoding='utf-8-sig')
+    if re.search(r'\bInlineDialog\b|FromDialog|PrepareContent|ForceClose', page_content):
+        errors.append('SettingsPageContent must own a page independently of any dialog')
     session_controller = (app / 'Components/Launch/RunningGamesController.cs').read_text(encoding='utf-8-sig')
     if re.search(r'System\.Windows|\b(Button|UIElement|StackPanel|TextBox|ScrollViewer|FeatureUiElements|SharedLogs|Dispatcher)\b', session_controller):
         errors.append('RunningGamesController must use the presentation port, not WPF or file readers')

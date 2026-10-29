@@ -300,6 +300,10 @@ public static class Program
                 Console.WriteLine("PASS in-process WPF pack conflict choice keeps worlds and uses new config");
                 var mainTabs = (TabControl)LauncherTestAccess.Get(window, "MainTabs");
                 var settingsView = (FrameworkElement)((TabItem)mainTabs.Items[4]).Content;
+                var localProfile = Path.Combine(game, "versions", "1.21.1");
+                Directory.CreateDirectory(localProfile);
+                File.WriteAllText(Path.Combine(localProfile, "1.21.1.json"), "{\"id\":\"1.21.1\",\"type\":\"release\",\"mainClass\":\"net.minecraft.client.main.Main\"}");
+                LauncherTestAccess.Invoke(window, "ApplyVersionRows", [new List<VersionRow> { new("1.21.1", "1.21.1", "release") }]);
                 var expectedSettings = new[] { "launch", "java", "network", "appearance", "servers", "saves", "downloads", "tasks", "logs", "diagnostics", "about" };
                 var settingsButtons = Descendants(settingsView).OfType<RadioButton>().Where(button => button.Tag is string)
                     .ToDictionary(button => (string)button.Tag);
@@ -324,6 +328,29 @@ public static class Program
                     .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                 if ((string)LauncherTestAccess.Get(window, "SelectedSettingsSection") != "launch")
                     throw new Exception("Embedded Java selection lost its close/return lifecycle");
+                // The new forms must work without creating an InlineDialog to strip apart.
+                LauncherTestAccess.Invoke(window, "SelectSettingsSection", ["appearance"]);
+                Descendants(settingsView).OfType<ComboBox>().Single(combo => combo.Items.Contains("紫罗兰")).SelectedItem = "紫罗兰";
+                Descendants(settingsView).OfType<Button>().Single(button => Equals(button.Content, "应用"))
+                    .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                if (new SettingsStore(settings).Load().Accent != "紫罗兰")
+                    throw new Exception("Independent appearance form lost apply/persistence");
+                LauncherTestAccess.Invoke(window, "SelectSettingsSection", ["servers"]);
+                var serverFields = Descendants(settingsView).OfType<TextBox>().ToList();
+                serverFields.Single(box => Equals(box.ToolTip, "服务器名称")).Text = "Settings fixture";
+                serverFields.Single(box => Equals(box.ToolTip, "域名:端口 或 [IPv6]:端口")).Text = "localhost:25565";
+                Descendants(settingsView).OfType<ComboBox>().Single().SelectedItem = "1.21.1";
+                Descendants(settingsView).OfType<Button>().Single(button => Equals(button.Content, "新增 / 保存"))
+                    .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                if (!new SettingsStore(settings).Load().Servers.Any(server => server.Name == "Settings fixture"))
+                    throw new Exception("Independent server form lost persistence");
+                LauncherTestAccess.Invoke(window, "SelectSettingsSection", ["saves"]);
+                Descendants(settingsView).OfType<TextBox>().Single().Text = "7";
+                Descendants(settingsView).OfType<Button>().Single(button => Equals(button.Content, "保存策略"))
+                    .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                if (new SettingsStore(settings).Load().SaveBackupCount != 7)
+                    throw new Exception("Independent save protection form lost persistence");
+                Console.WriteLine("PASS independent appearance/server/save forms persist through explicit operations");
                 LauncherTestAccess.Invoke(window, "OpenDownloadTasks");
                 if ((string)LauncherTestAccess.Get(window, "SelectedSettingsSection") != "downloads" ||
                     !Descendants(settingsView).OfType<Button>().Any(button => Equals(button.Content, "刷新任务")))
@@ -348,6 +375,31 @@ public static class Program
                 mainTabs.SelectedIndex = 6;
                 if (mainTabs.SelectedIndex != 4 || (string)LauncherTestAccess.Get(window, "SelectedSettingsSection") != "tasks")
                     throw new Exception("Legacy task navigation did not redirect to settings");
+                // Moving tabs must not break settings or legacy log/task/diagnostic routing.
+                var settingsTab = (TabItem)mainTabs.Items[4];
+                var logsTab = (TabItem)mainTabs.Items[5];
+                var tasksTab = (TabItem)mainTabs.Items[6];
+                var diagnosticTab = (TabItem)LauncherTestAccess.Get(window, "DiagnosticPage");
+                ((RadioButton)LauncherTestAccess.Get(window, "HomeNav")).IsChecked = true;
+                var originalSettingsPosition = mainTabs.Items.IndexOf(settingsTab);
+                mainTabs.Items.Remove(settingsTab);
+                mainTabs.Items.Add(settingsTab);
+                foreach (var route in new[] { (logsTab, "logs"), (tasksTab, "tasks"), (diagnosticTab, "diagnostics") })
+                {
+                    mainTabs.SelectedItem = route.Item1;
+                    if (!ReferenceEquals(mainTabs.SelectedItem, settingsTab) ||
+                        (string)LauncherTestAccess.Get(window, "SelectedSettingsSection") != route.Item2)
+                        throw new Exception("Settings routing depends on tab positions: " + route.Item2);
+                }
+                ((RadioButton)LauncherTestAccess.Get(window, "HomeNav")).IsChecked = true;
+                mainTabs.Items.Remove(settingsTab);
+                mainTabs.Items.Insert(originalSettingsPosition, settingsTab);
+                Console.WriteLine("PASS settings and legacy routes use stable page hosts after tab reordering");
+                DriveDialog("Java 管理", () => LauncherTestAccess.Invoke(window, "OpenJavaManager",
+                    [game, "", (Action<string>)(_ => { }), window]), page =>
+                    Descendants(page).OfType<Button>().Single(button => Equals(button.Content, "恢复自动选择"))
+                        .RaiseEvent(new RoutedEventArgs(Button.ClickEvent)));
+                Console.WriteLine("PASS legacy Java dialog reuses the independent page and completes");
                 LauncherTestAccess.Invoke(window, "SelectSettingsSection", ["appearance"]);
                 var settingsRoot = (Grid)window.Content;
                 var previousBackground = settingsRoot.Background;

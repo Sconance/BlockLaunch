@@ -214,7 +214,8 @@ internal sealed partial class LauncherWorkspace
         {
             LaunchCoordinator.prefs.Network = value;
             LaunchCoordinator.settings.Save(LaunchCoordinator.prefs);
-        }, (title, content) => InstanceWorkspaceController.FeatureDialog(title, content));
+        }, create => SettingsDialogPresenter.Show("下载与网络设置", window, create,
+            ExperienceThemeController.ConfigureUtilityWindow), message => InlineMessageBox.Show(window, message));
         ModpackController = new ModpackController(this);
         PackUpgradeController = new PackUpgradeController(this);
         ResourceFavoritesController = CreateResourceFavorites();

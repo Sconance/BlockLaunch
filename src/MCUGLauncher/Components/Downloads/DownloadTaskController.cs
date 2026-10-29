@@ -13,13 +13,13 @@ internal sealed class DownloadTaskController
 
     internal bool DownloadInProgress => workspace.LaunchCoordinator.operations?.Current?.Record.Download != null;
 
-    internal InlineDialog? downloadTasksPage;
+    internal SettingsPageContent? downloadTasksPage;
     internal StackPanel? downloadTaskRows;
     internal ScrollViewer? downloadTaskScroll;
     internal DateTime downloadTaskRefresh;
     internal void OpenDownloadTasks() => workspace.SettingsNavigationController.SelectSettingsSection("downloads");
 
-    internal InlineDialog CreateDownloadTasksPage()
+    internal SettingsPageContent CreateDownloadTasksPage()
     {
         if (downloadTasksPage != null)
             return downloadTasksPage;
@@ -36,19 +36,12 @@ internal sealed class DownloadTaskController
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto
         };
         body.Children.Add(downloadTaskScroll);
-        downloadTasksPage = new InlineDialog
-        {
-            Owner = workspace.Window,
-            Title = "下载任务",
-            Tag = "DownloadTasks",
-            Content = body
-        };
-        downloadTasksPage.Closed += (_, _) =>
+        downloadTasksPage = new(body, () =>
         {
             downloadTasksPage = null;
             downloadTaskRows = null;
             downloadTaskScroll = null;
-        };
+        });
         RefreshDownloadTasks(true);
         return downloadTasksPage;
     }

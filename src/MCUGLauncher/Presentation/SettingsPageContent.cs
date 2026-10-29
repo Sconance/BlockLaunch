@@ -15,18 +15,4 @@ internal sealed class SettingsPageContent(UIElement content, Action? cleanup = n
         cleanup?.Invoke();
     }
 
-    internal static SettingsPageContent FromDialog(InlineDialog dialog, Action closed)
-    {
-        dialog.PrepareContent?.Invoke();
-        dialog.PrepareContent = null;
-        var content = (UIElement)dialog.Content;
-        dialog.Content = null;
-        EventHandler onClosed = (_, _) => closed();
-        dialog.Closed += onClosed;
-        return new(content, () =>
-        {
-            dialog.Closed -= onClosed;
-            dialog.ForceClose();
-        });
-    }
 }

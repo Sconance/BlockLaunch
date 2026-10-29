@@ -23,7 +23,7 @@
           <RadioButton x:Name="DiscoverNav" Style="{StaticResource Nav}" Content="◇     内容中心" Tag="2" GroupName="Navigation" Checked="Navigate" />
           <RadioButton x:Name="ManageNav" Style="{StaticResource Nav}" Content="▦     内容管理" Tag="3" GroupName="Navigation" Checked="Navigate" />
           <Border Height="1" Background="#EDF0F7" Margin="28,20" />
-          <RadioButton Style="{StaticResource Nav}" Content="⚙     启动设置" Tag="4" GroupName="Navigation" Checked="Navigate" />
+          <RadioButton x:Name="SettingsNav" Style="{StaticResource Nav}" Content="⚙     启动设置" Tag="4" GroupName="Navigation" Checked="Navigate" />
           <RadioButton Style="{StaticResource Nav}" Content="≡     运行日志" Tag="5" GroupName="Navigation" Checked="Navigate" />
           <RadioButton Style="{StaticResource Nav}" Content="↻     任务与恢复" Tag="6" GroupName="Navigation" Checked="Navigate" />
         </StackPanel>

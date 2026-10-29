@@ -136,239 +136,41 @@ internal sealed class ExperienceController
         dialog.ShowDialog();
     }
 
-    internal void OpenSaveProtection() => CreateSaveProtectionPage().ShowDialog();
+    internal void OpenSaveProtection() => SettingsDialogPresenter.Show("存档保护", workspace.Window,
+        _ => CreateSaveProtectionPage(), workspace.ExperienceThemeController.ConfigureUtilityWindow);
 
-    internal InlineDialog CreateSaveProtectionPage()
+    internal SettingsPageContent CreateSaveProtectionPage()
     {
         try
         {
-            var key = workspace.LaunchCoordinator.Selected();
-            var directory = workspace.LaunchCoordinator.Instance();
-            var body = new StackPanel();
-            body.Children.Add(FeatureUiElements.Heading("存档保护与恢复"));
-            body.Children.Add(FeatureUiElements.Hint("修改加载器和确认整合包升级前备份。恢复创建新世界，不覆盖现有存档。备份按当前实例独立保留。"));
-            var enabled = new CheckBox
-            {
-                Content = "操作前自动备份存档",
-                IsChecked = workspace.LaunchCoordinator.prefs.ProtectSaves
-            };
-            var count = new TextBox
-            {
-                Text = workspace.LaunchCoordinator.prefs.SaveBackupCount.ToString()
-            };
-            body.Children.Add(enabled);
-            body.Children.Add(FeatureUiElements.Hint("保留最近几次备份（1–100）"));
-            body.Children.Add(count);
-            var choices = new ListBox
-            {
-                MinHeight = 70,
-                MaxHeight = 220,
-                DisplayMemberPath = "Label"
-            };
-            body.Children.Add(choices);
-            var preview = FeatureUiElements.Hint("选择备份查看内容。");
-            body.Children.Add(preview);
-            void RefreshList()
-            {
-                choices.ItemsSource = SaveProtection.List(SaveBackupRoot, directory).SelectMany(b => b.Worlds.Select(w => new SaveChoice(b, w, $"{b.Created.ToLocalTime():yyyy-MM-dd HH:mm} · {w.World} · {w.Version} · {b.Reason}"))).ToList();
-            }
-
-            RefreshList();
-            choices.SelectionChanged += (_, _) =>
-            {
-                if (choices.SelectedItem is SaveChoice item)
-                {
-                    var path = SaveProtection.ArchivePath(SaveBackupRoot, directory, item.Backup, item.World);
-                    using var zip = System.IO.Compression.ZipFile.OpenRead(path);
-                    preview.Text = $"将恢复为新世界：{item.World.World}\n保存版本：{item.World.Version} · {zip.Entries.Count} 个归档条目 · {new FileInfo(path).Length / 1048576d:0.0} MiB\n原世界保持不变。";
-                }
-            };
-            var dialog = workspace.InstanceWorkspaceController.FeatureDialog("存档保护", body);
-            body.Children.Add(FeatureUiElements.ActionButton("保存策略", (_, _) =>
-            {
-                if (!int.TryParse(count.Text, out var keep) || keep is < 1 or > 100)
-                {
-                    InlineMessageBox.Show(dialog, "保留数量应为 1–100。");
-                    return;
-                }
-
-                workspace.LaunchCoordinator.prefs.ProtectSaves = enabled.IsChecked == true;
-                workspace.LaunchCoordinator.prefs.SaveBackupCount = keep;
-                workspace.LaunchCoordinator.settings.Save(workspace.LaunchCoordinator.prefs);
-                preview.Text = "策略已保存。";
-            }));
-            body.Children.Add(FeatureUiElements.ActionButton("立即备份所有世界", async (_, _) =>
-            {
-                if (workspace.LaunchCoordinator.busy)
-                {
-                    preview.Text = "请等待当前任务完成。";
-                    return;
-                }
-
-                await workspace.LaunchCoordinator.Run(async () =>
-                {
-                    workspace.ResourceBrowserController.RequireStopped();
-                    await Task.Run(() => SaveProtection.Create(directory, SaveBackupRoot, "手动备份", workspace.LaunchCoordinator.prefs.SaveBackupCount, workspace.LaunchCoordinator.CurrentToken), workspace.LaunchCoordinator.CurrentToken);
-                }, "备份存档");
-                RefreshList();
-            }));
-            body.Children.Add(FeatureUiElements.ActionButton("确认预览，恢复为新世界", async (_, _) =>
-            {
-                if (choices.SelectedItem is not SaveChoice item || workspace.LaunchCoordinator.busy)
-                    return;
-                var path = SaveProtection.ArchivePath(SaveBackupRoot, directory, item.Backup, item.World);
-                await workspace.LaunchCoordinator.Run(async () =>
-                {
-                    workspace.ResourceBrowserController.RequireStopped();
-                    var restored = await Task.Run(() => WorldArchives.Import(directory, path, item.World.World + "-恢复", token: workspace.LaunchCoordinator.CurrentToken), workspace.LaunchCoordinator.CurrentToken);
-                    preview.Text = "已恢复为独立世界：" + restored;
-                }, "恢复存档副本");
-            }));
-            body.Children.Add(FeatureUiElements.ActionButton("打开备份目录", (_, _) => workspace.LaunchCoordinator.OpenFolder(SaveProtection.DirectoryFor(SaveBackupRoot, directory))));
-            return dialog;
+            return new SaveProtectionSettingsPage(workspace.LaunchCoordinator.Instance(), SaveBackupRoot, new(
+                () => workspace.LaunchCoordinator.prefs,
+                () => workspace.LaunchCoordinator.settings.Save(workspace.LaunchCoordinator.prefs),
+                () => workspace.LaunchCoordinator.busy,
+                (action, name) => workspace.LaunchCoordinator.Run(action, name),
+                workspace.ResourceBrowserController.RequireStopped,
+                () => workspace.LaunchCoordinator.CurrentToken, workspace.LaunchCoordinator.OpenFolder)).Build();
         }
-        catch (Exception ex)
-        {
-            return workspace.InstanceWorkspaceController.FeatureDialog("存档保护",
-                new StackPanel { Children = { FeatureUiElements.Hint(ex.Message) } });
-        }
+        catch (Exception ex) { return new(FeatureUiElements.Hint(ex.Message)); }
     }
 
-    internal record SaveChoice(SaveBackup Backup, SaveBackupItem World, string Label);
-    internal void OpenServers() => CreateServersPage().ShowDialog();
+    internal void OpenServers() => SettingsDialogPresenter.Show("服务器收藏", workspace.Window,
+        CreateServersPage, workspace.ExperienceThemeController.ConfigureUtilityWindow);
 
-    internal InlineDialog CreateServersPage()
+    internal SettingsPageContent CreateServersPage(Action close) => new ServerSettingsPage(new(
+        () => workspace.LaunchCoordinator.prefs,
+        () => workspace.LaunchCoordinator.settings.Save(workspace.LaunchCoordinator.prefs),
+        workspace.LaunchCoordinator.LocalVersions, () => workspace.LaunchCoordinator.busy,
+        ConnectFavoriteServer)).Build(workspace.Controls.Versions.SelectedValue as string, close);
+
+    async Task ConnectFavoriteServer(ServerFavorite item)
     {
-        var body = new StackPanel();
-        body.Children.Add(FeatureUiElements.Heading("服务器收藏"));
-        body.Children.Add(FeatureUiElements.Hint("收藏保存在启动器配置中。点击查询才连接服务器，显示 MOTD、版本、人数和 Ping；暂不解析 DNS SRV，必要时填写实际端口。"));
-        var list = new ListBox
+        workspace.Controls.Versions.SelectedValue = item.Profile;
+        nextServerAddress = item.Address;
+        try
         {
-            MinHeight = 70,
-            MaxHeight = 220,
-            DisplayMemberPath = "Name"
-        };
-        body.Children.Add(list);
-        var name = new TextBox
-        {
-            ToolTip = "服务器名称"
-        };
-        var address = new TextBox
-        {
-            ToolTip = "域名:端口 或 [IPv6]:端口"
-        };
-        var profiles = new ComboBox
-        {
-            ItemsSource = workspace.LaunchCoordinator.LocalVersions().Order().ToList(),
-            SelectedItem = workspace.Controls.Versions.SelectedValue as string
-        };
-        body.Children.Add(FeatureUiElements.Hint("名称 / 地址 / 启动实例"));
-        body.Children.Add(name);
-        body.Children.Add(address);
-        body.Children.Add(profiles);
-        var status = FeatureUiElements.Hint("选择或添加服务器。");
-        body.Children.Add(status);
-        void Reload()
-        {
-            var id = (list.SelectedItem as ServerFavorite)?.Id;
-            list.ItemsSource = workspace.LaunchCoordinator.prefs.Servers.ToList();
-            list.SelectedItem = workspace.LaunchCoordinator.prefs.Servers.FirstOrDefault(s => s.Id == id);
+            await workspace.LaunchCoordinator.Run(workspace.LaunchCoordinator.Launch, "连接收藏服务器");
         }
-
-        list.SelectionChanged += (_, _) =>
-        {
-            if (list.SelectedItem is ServerFavorite item)
-            {
-                name.Text = item.Name;
-                address.Text = item.Address;
-                profiles.SelectedItem = item.Profile;
-                status.Text = "尚未查询服务器状态。";
-            }
-        };
-        Reload();
-        var dialog = workspace.InstanceWorkspaceController.FeatureDialog("服务器收藏", body);
-        var cts = new CancellationTokenSource();
-        dialog.Closed += (_, _) => { cts.Cancel(); cts.Dispose(); };
-        body.Children.Add(FeatureUiElements.ActionButton("新增 / 保存", (_, _) =>
-        {
-            try
-            {
-                var endpoint = ServerEndpoint.Parse(address.Text);
-                if (string.IsNullOrWhiteSpace(name.Text) || name.Text.Length > 100)
-                    throw new IOException("名称应为 1–100 个字符。");
-                if (profiles.SelectedItem is not string profile)
-                    throw new IOException("请选择已安装实例。");
-                var old = list.SelectedItem as ServerFavorite;
-                var item = new ServerFavorite(old?.Id ?? Guid.NewGuid().ToString("N"), name.Text.Trim(), endpoint.ToString(), profile);
-                if (old != null)
-                    workspace.LaunchCoordinator.prefs.Servers.Remove(old);
-                workspace.LaunchCoordinator.prefs.Servers.Add(item);
-                workspace.LaunchCoordinator.settings.Save(workspace.LaunchCoordinator.prefs);
-                Reload();
-                list.SelectedItem = item;
-            }
-            catch (Exception ex)
-            {
-                status.Text = ex.Message;
-            }
-        }));
-        body.Children.Add(FeatureUiElements.ActionButton("清空选择，添加新收藏", (_, _) =>
-        {
-            list.SelectedItem = null;
-            name.Clear();
-            address.Clear();
-        }));
-        body.Children.Add(FeatureUiElements.ActionButton("查询在线状态", async (_, _) =>
-        {
-            var captured = address.Text;
-            status.Text = "正在查询…";
-            try
-            {
-                var result = await ServerFavorites.Ping(captured, cts.Token);
-                if (address.Text == captured && !cts.IsCancellationRequested)
-                    status.Text = $"{result.Description}\n{result.Version} · {result.Online}/{result.Maximum} 人 · {result.LatencyMs} ms";
-            }
-            catch (OperationCanceledException)
-            {
-                if (!cts.IsCancellationRequested)
-                    status.Text = "查询超时；不代表服务器一定离线。";
-            }
-            catch (Exception ex)
-            {
-                status.Text = "无法查询：" + ex.Message;
-            }
-        }));
-        body.Children.Add(FeatureUiElements.ActionButton("启动并连接所选服务器", async (_, _) =>
-        {
-            if (workspace.LaunchCoordinator.busy || list.SelectedItem is not ServerFavorite item)
-                return;
-            if (!workspace.LaunchCoordinator.LocalVersions().Contains(item.Profile))
-            {
-                status.Text = "对应实例已不存在，请重新选择并保存。";
-                return;
-            }
-
-            workspace.Controls.Versions.SelectedValue = item.Profile;
-            dialog.Close();
-            nextServerAddress = item.Address;
-            try
-            {
-                await workspace.LaunchCoordinator.Run(workspace.LaunchCoordinator.Launch, "连接收藏服务器");
-            }
-            finally
-            {
-                nextServerAddress = null;
-            }
-        }));
-        body.Children.Add(FeatureUiElements.ActionButton("移除收藏", (_, _) =>
-        {
-            if (list.SelectedItem is ServerFavorite item)
-            {
-                workspace.LaunchCoordinator.prefs.Servers.Remove(item);
-                workspace.LaunchCoordinator.settings.Save(workspace.LaunchCoordinator.prefs);
-                Reload();
-            }
-        }));
-        return dialog;
+        finally { nextServerAddress = null; }
     }
 }

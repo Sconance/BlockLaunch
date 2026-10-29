@@ -18,6 +18,7 @@ internal sealed class DiagnosticsController
     internal readonly StackPanel diagnosticResults = new();
     internal readonly TextBlock diagnosticState = FeatureUiElements.Hint("尚未分析。可以分析当前选择的实例，或最近一次启动的实例。");
     internal int diagnosticTabIndex;
+    internal TabItem DiagnosticPage { get; private set; } = null!;
     internal void BuildDiagnosticsUI()
     {
         diagnosticTabIndex = workspace.Window.MainTabs.Items.Count;
@@ -64,7 +65,8 @@ internal sealed class DiagnosticsController
         body.Children.Add(actions);
         body.Children.Add(diagnosticState);
         body.Children.Add(diagnosticResults);
-        workspace.Window.MainTabs.Items.Add(new TabItem { Header = "诊断与反馈", Content = new ScrollViewer { Content = body, VerticalScrollBarVisibility = ScrollBarVisibility.Auto } });
+        DiagnosticPage = new TabItem { Header = "诊断与反馈", Content = new ScrollViewer { Content = body, VerticalScrollBarVisibility = ScrollBarVisibility.Auto } };
+        workspace.Window.MainTabs.Items.Add(DiagnosticPage);
         var logActions = ((Grid)workspace.Controls.GameLogView.Parent).Children.OfType<WrapPanel>().Single();
         logActions.Children.Add(FeatureUiElements.ActionButton("诊断与反馈", (_, _) => nav.IsChecked = true));
     }

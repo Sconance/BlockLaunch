@@ -1,5 +1,5 @@
 # SettingsPageContent
 
-嵌入页面与清理操作的生命周期；复用既有工具页面时解除事件并取消后台操作。
+拥有独立页面内容及其幂等清理回调，不创建、不解包对话框。设置宿主或旧入口的对话框包装负责释放。
 
-- **源码：** [`SettingsPageContent.cs`](../../../src/MCUGLauncher/Presentation/SettingsPageContent.cs)。
+- **源码：** [SettingsPageContent.cs](../../../src/MCUGLauncher/Presentation/SettingsPageContent.cs)。

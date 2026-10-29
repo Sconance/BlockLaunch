@@ -9,40 +9,34 @@ internal sealed partial class LauncherWorkspace
 
     internal void BuildSettingsNavigation()
     {
-        var settingsTab = (TabItem)Window.MainTabs.Items[4];
-        var original = (ScrollViewer)settingsTab.Content;
-        var stack = (StackPanel)original.Content;
-        var about = stack.Children.OfType<Border>().Last();
-        stack.Children.Remove(about);
-        foreach (var panel in stack.Children.OfType<Border>().Select(card => card.Child).OfType<StackPanel>())
-            foreach (var button in panel.Children.OfType<Button>().Where(button => Equals(button.Content, "下载与网络设置")).ToArray())
-                panel.Children.Remove(button);
+        var settingsTab = Window.SettingsPageView.PageHost!;
+        var (original, aboutPage) = Window.SettingsPageView.TakeSections();
         settingsTab.Content = null;
         var view = new SettingsNavigationView((Style)Window.FindResource("Nav"));
         var host = new SettingsPageHost(view);
         string PageContext() => LaunchCoordinator.prefs.Root + "|" + Controls.Versions.SelectedValue;
-        var aboutPage = new ScrollViewer { Content = about, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
         settingsTab.Content = view;
-        var settingsNav = ((StackPanel)Controls.HomeNav.Parent).Children.OfType<RadioButton>().Single(button => button.Tag?.ToString() == "4");
+        var settingsNav = Window.NavigationPageView.SettingsNav;
         SettingsNavigationController = new(view, id =>
         {
             host.Show(id, PageContext());
             settingsNav.IsChecked = true;
-            Window.MainTabs.SelectedIndex = 4;
+            Window.MainTabs.SelectedItem = settingsTab;
         });
-        SettingsPageContent Tool(Func<InlineDialog> create) => SettingsPageContent.FromDialog(create(),
-            () => SettingsNavigationController.SelectSettingsSection("launch"));
-        UIElement Detach(int index)
+        void Complete() => SettingsNavigationController.SelectSettingsSection("launch");
+        UIElement Detach(ContentControl tab)
         {
-            var tab = (TabItem)Window.MainTabs.Items[index];
             var content = (UIElement)tab.Content;
             tab.Content = null;
             return content;
         }
-        // Original controls and their event handlers are reused; only their host changes.
-        var logPage = Detach(5);
-        var taskPage = Detach(6);
-        var diagnosticPage = Detach(DiagnosticsController.diagnosticTabIndex);
+        // Hosts are captured by their owning markup view, never rediscovered by tab position.
+        var logsTab = Window.LogsPageView.PageHost!;
+        var tasksTab = Window.TasksPageView.PageHost!;
+        var diagnosticTab = DiagnosticsController.DiagnosticPage;
+        var logPage = Detach(logsTab);
+        var taskPage = Detach(tasksTab);
+        var diagnosticPage = Detach(diagnosticTab);
         var sections = new List<SettingsSection>();
         void Add(string id, string title, string group, string glyph, Func<SettingsPageContent> factory)
         {
@@ -50,13 +44,13 @@ internal sealed partial class LauncherWorkspace
             host.Register(id, factory);
         }
         Add("launch", "启动设置", "启动与环境", "▷", () => new(original));
-        Add("java", "Java 管理", "启动与环境", "♧", () => Tool(() => JavaManagerController.CreateJavaManagerPage(
-            LaunchCoordinator.prefs.Root, Controls.Versions.SelectedValue as string ?? "", ApplySettingsJava)));
-        Add("network", "下载与网络", "启动与环境", "↓", () => Tool(NetworkController.CreateNetworkPage));
-        Add("appearance", "界面与背景", "个性化", "◈", () => Tool(AppearanceController.CreateAppearancePage));
-        Add("servers", "服务器收藏", "游戏工具", "◎", () => Tool(ExperienceController.CreateServersPage));
-        Add("saves", "存档保护", "游戏工具", "▣", () => Tool(ExperienceController.CreateSaveProtectionPage));
-        Add("downloads", "下载任务", "任务与诊断", "⇩", () => Tool(DownloadTaskController.CreateDownloadTasksPage));
+        Add("java", "Java 管理", "启动与环境", "♧", () => JavaManagerController.CreateJavaManagerPage(
+            LaunchCoordinator.prefs.Root, Controls.Versions.SelectedValue as string ?? "", ApplySettingsJava, Complete));
+        Add("network", "下载与网络", "启动与环境", "↓", () => NetworkController.CreateNetworkPage(Complete));
+        Add("appearance", "界面与背景", "个性化", "◈", AppearanceController.CreateAppearancePage);
+        Add("servers", "服务器收藏", "游戏工具", "◎", () => ExperienceController.CreateServersPage(Complete));
+        Add("saves", "存档保护", "游戏工具", "▣", ExperienceController.CreateSaveProtectionPage);
+        Add("downloads", "下载任务", "任务与诊断", "⇩", DownloadTaskController.CreateDownloadTasksPage);
         Add("tasks", "任务与恢复", "任务与诊断", "↻", () =>
         {
             TaskRecoveryController.RefreshOperations();
@@ -88,16 +82,13 @@ internal sealed partial class LauncherWorkspace
         {
             if (!ReferenceEquals(args.Source, Window.MainTabs))
                 return;
-            var id = Window.MainTabs.SelectedIndex switch
-            {
-                5 => "logs",
-                6 => "tasks",
-                _ when Window.MainTabs.SelectedIndex == DiagnosticsController.diagnosticTabIndex => "diagnostics",
-                _ => null
-            };
+            var selected = Window.MainTabs.SelectedItem;
+            var id = ReferenceEquals(selected, logsTab) ? "logs"
+                : ReferenceEquals(selected, tasksTab) ? "tasks"
+                : ReferenceEquals(selected, diagnosticTab) ? "diagnostics" : null;
             if (id != null)
                 SettingsNavigationController.SelectSettingsSection(id);
-            else if (Window.MainTabs.SelectedIndex == 4)
+            else if (ReferenceEquals(selected, settingsTab))
                 host.Show(SettingsNavigationController.SelectedSettingsSection, PageContext());
             else
                 host.Dispose();

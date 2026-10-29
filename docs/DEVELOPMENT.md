@@ -153,3 +153,10 @@ dotnet run --project tools/SourceFormatter
 - `Composition/SettingsComposition.cs` 集中登记内置分类、连接原有工具页面工厂、兼容日志/任务旧路由。不把服务或工作区塞进新控制器。
 - 原 `LauncherMenuArea.Settings` 与 `More` 的注册接口不变，两者分别进入设置侧栏的扩展设置/工具扩展组；原 More 头部菜单已删除。扩展刷新只更新栏目，不强制跳转或重建用户当前页面。
 - 原有设置控件、保存回调和实例数据格式保持；工具方法拆出 Create...Page 工厂，其他入口仍可使用原来的内嵌对话框包装。没有复制业务流程或引入新的 UI 框架。
+
+### 设置页面独立化补充
+
+- `SettingsPageView.TakeSections()` 使用 XAML 命名引用交付启动设置和关于内容；`LauncherPage.PageHost` 在页面物化时记录真实宿主。设置组合层使用这些宿主及诊断页面引用进行路由，不依赖主标签顺序或按钮文案。
+- `Views/Settings` 的外观、Java、服务器、存档页面仿照 `main` 的 `VersionSettings` 页面，接收明确的状态/操作回调；不依赖 `LauncherWorkspace`、`MainWindow` 或 `InlineDialog`。网络复用原独立 `NetworkSettingsForm`。
+- 各工厂直接返回 `SettingsPageContent`。设置页面不再通过 `FromDialog`、`PrepareContent` 或 `ForceClose` 拆卸对话框。仅旧工具入口使用 `SettingsDialogPresenter` 包装同一页面，并在关闭时释放。
+- 代码边界检查限制上述依赖方向；交互检查覆盖独立表单持久化、工具释放、旧 Java 入口和调整标签顺序后的导航。
