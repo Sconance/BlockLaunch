@@ -216,3 +216,8 @@
 - [VersionOverviewActions](Views/VersionSettings/VersionOverviewActions.md) — 版本概览页面所需的操作。
 - [VersionOverviewPage](Views/VersionSettings/VersionOverviewPage.md) — 版本概览与身份编辑页面。
 - [VersionSettingsView](Views/VersionSettings/VersionSettingsView.md) — 版本设置窗口布局与卡片、字段构造。
+
+## 0.22.1 运行与启动加载组件
+
+- [RunningGamesController](Components/Launch/RunningGamesController.md) — 多实例运行会话的展示和观察。
+- [VersionCatalogController](Components/Downloads/VersionCatalogController.md) — 在线版本按需读取与超时隔离。

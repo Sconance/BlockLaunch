@@ -14,7 +14,7 @@ public static class Program
     [STAThread]
     public static void Main()
     {
-        var root = Path.GetFullPath("work/v015-component-ui");
+        var root = Path.GetFullPath("work/v015-component-ui-" + Guid.NewGuid().ToString("N"));
         var settings = Path.Combine(root, "settings");
         var game = Path.Combine(root, "minecraft");
         new SettingsStore(settings).Save(new()
@@ -33,6 +33,11 @@ public static class Program
         {
             Title = "0.15 component tests"
         };
+        using var startupHandler = new Handler();
+        using var startupHttp = new HttpClient(startupHandler);
+        LauncherTestAccess.Set(window, "http", startupHttp);
+        LauncherTestAccess.Invoke(window, "SetupLauncher");
+        var startupClock = System.Diagnostics.Stopwatch.StartNew();
         window.Show();
 
         var timer = new DispatcherTimer
@@ -60,6 +65,9 @@ public static class Program
             timer.Stop();
             try
             {
+                if (startupHandler.Calls != 0)
+                    throw new Exception("Local startup unexpectedly requested online metadata");
+                Console.WriteLine($"PASS local startup made zero network requests ({startupClock.ElapsedMilliseconds} ms in isolated fixture)");
                 LauncherTestAccess.Set(window, "queueReady", false);
                 ((DispatcherTimer?)LauncherTestAccess.Get(window, "downloadTimer"))?.Stop();
                 using var http = new HttpClient(new Handler());
@@ -274,6 +282,7 @@ public static class Program
 
 sealed class Handler : HttpMessageHandler
 {
+    public int Calls;
     public static ContentVersion V(string id) => new()
     {
         Id = id,
@@ -299,6 +308,7 @@ sealed class Handler : HttpMessageHandler
 
     protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken token)
     {
+        Interlocked.Increment(ref Calls);
         var text = request.RequestUri!.Host == "cdn.modrinth.com" ? request.RequestUri.AbsolutePath.Trim('/') : request.RequestUri.AbsolutePath.EndsWith("/version") ? JsonSerializer.Serialize(new[] { V("new") }, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower }) : "{\"project_type\":\"mod\",\"client_side\":\"required\"}";
         return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(text, System.Text.Encoding.UTF8, "application/json") });
     }

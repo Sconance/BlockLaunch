@@ -192,7 +192,6 @@ internal sealed class InstanceWorkspaceController
 
     internal async Task SwitchRoot(string root) => await workspace.LaunchCoordinator.Run(async () =>
     {
-        workspace.ResourceBrowserController.RequireStopped();
         workspace.LaunchCoordinator.prefs.Root = GameDefaults.ResolveRoot(root, true);
         workspace.Controls.GameRoot.Text = workspace.LaunchCoordinator.prefs.Root;
         if (!workspace.LaunchCoordinator.prefs.GameRoots.Contains(workspace.LaunchCoordinator.prefs.Root))

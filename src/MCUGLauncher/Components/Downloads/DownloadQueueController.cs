@@ -60,7 +60,7 @@ internal sealed class DownloadQueueController
 
     internal async Task PumpDownloads()
     {
-        if (!queueReady || workspace.LaunchCoordinator.prefs.DownloadsPaused || workspace.LaunchCoordinator.busy || workspace.LaunchCoordinator.closeAfterTask || workspace.UninstallController.uninstallPreviewOpen || workspace.LaunchCoordinator.game is { HasExited: false })
+        if (!queueReady || workspace.LaunchCoordinator.prefs.DownloadsPaused || workspace.LaunchCoordinator.busy || workspace.LaunchCoordinator.closeAfterTask || workspace.UninstallController.uninstallPreviewOpen || workspace.RunningGamesController.HasRunningGames)
             return;
         var record = workspace.LaunchCoordinator.operations.History().Where(r => r.State == OperationState.Queued && r.Download != null).OrderBy(r => r.QueueOrder == 0 ? r.Started.UtcTicks : r.QueueOrder).ThenBy(r => r.Started).FirstOrDefault();
         if (record == null)

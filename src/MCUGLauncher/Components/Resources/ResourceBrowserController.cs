@@ -90,6 +90,8 @@ internal sealed class ResourceBrowserController
         else if (workspace.DownloadPageController.downloadCategory is not ("原版游戏" or "本地整合包" or "模组加载器"))
             workspace.DownloadPageController.SelectDownloadCategory(workspace.DownloadPageController.downloadCategory);
         workspace.Window.MainTabs.SelectedIndex = index;
+        if (index == 1 && workspace.Window.IsLoaded && workspace.DownloadPageController.downloadCategory is "原版游戏" or "模组加载器")
+            _ = workspace.VersionCatalogController.EnsureVersionCatalog();
         workspace.Controls.PageTitle.Text = new[]
         {
             "启动",
@@ -273,7 +275,7 @@ internal sealed class ResourceBrowserController
 
     internal void RequireStopped()
     {
-        if (workspace.LaunchCoordinator.game is { HasExited: false })
+        if (workspace.RunningGamesController.HasRunningGames)
             throw new IOException("请先关闭游戏，再修改实例内容。");
     }
 

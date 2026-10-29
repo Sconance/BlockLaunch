@@ -127,3 +127,11 @@ dotnet run --project tools/SourceFormatter
 - 0.22.0 在 `test` 分支准备合并到 `main`，步骤、验证与检查清单见 [合并到主分支前的说明](MERGE_TO_MAIN.md)。
 - `refactor` 分支已废弃并归档，历史材料见 [历史归档](archive/branch_refactor/README.md)；不要重新引入 `partial MainWindow` 或把窗口字段汇总回组合根。
 - 合并其他分支时遵循 [重构路线图](../TODO.md) 中的整合检查要点：按组件迁移、保留数据兼容、先查对应服务与 `test/*Checks`，并同步文档与版本号。
+
+## 0.22.1：运行会话与本地优先启动
+
+- `Core/Application/RunningGameRegistry` 管理真实子进程会话，按目录阻止重复启动，日志按会话 GUID 分开；不会依赖窗口、账号选择或全局单进程字段。
+- `Components/Launch/RunningGamesController` 通过显式 UI 回调展示会话与退出诊断，关闭操作仅针对选中的会话；不调用 Process.Kill。
+- `Components/Downloads/VersionCatalogController` 独立负责在线列表的按需请求、同目录请求合并、12 秒超时和旧目录响应抑制。组合层连接现有 CmlLib 版本服务。
+- `StartupRecovery` 只完成本地事务恢复和实例列表刷新。首页刷新也只读取本地，进入原版/加载器下载页才请求在线元数据。在线等待不占用 OperationCoordinator 或禁用首页控件。
+- 为保护共享 libraries/assets 和实例内容，安装队列及破坏性内容变更仍在有游戏运行时暂停；不同独立实例可继续启动，同一个共享游戏目录不能多开。切换到已有运行会话的根目录时不对其执行恢复/迁移。

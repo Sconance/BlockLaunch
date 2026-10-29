@@ -49,6 +49,8 @@ internal sealed class TaskRecoveryController
     {
         var messages = await Task.Run(() =>
         {
+            if (workspace.RunningGamesController.Registry.UsesRoot(workspace.LaunchCoordinator.prefs.Root))
+                return new List<string>();
             var result = InstallationRecovery.Recover(workspace.LaunchCoordinator.prefs.Root);
             result.AddRange(new InstanceCatalog(workspace.LaunchCoordinator.prefs.Root).MigrateLegacy());
             return result;
@@ -59,7 +61,7 @@ internal sealed class TaskRecoveryController
         if (interrupted > 0)
             workspace.LaunchCoordinator.Log($"识别到 {interrupted} 个上次中断的任务，可在「任务与恢复」中查看。");
         workspace.LaunchCoordinator.CurrentToken.ThrowIfCancellationRequested();
-        await workspace.LaunchCoordinator.Refresh();
+        await workspace.LaunchCoordinator.RefreshLocalVersions();
         RefreshOperations();
     }
 
@@ -148,41 +150,11 @@ internal sealed class TaskRecoveryController
             workspace.LaunchCoordinator.Log(string.Join(Environment.NewLine, lines));
     }
 
-    internal async Task ObserveGame(GameSession session, DiagnosticContext context)
-    {
-        try
-        {
-            var result = await session.Completion;
-            if (workspace.LaunchCoordinator.gameSession == session)
-                workspace.Controls.StopGameButton.Visibility = Visibility.Collapsed;
-            var completedContext = context with
-            {
-                Exit = result
-            };
-            if (workspace.LaunchCoordinator.gameSession == session)
-                workspace.DiagnosticsController.recentDiagnosticContext = completedContext;
-            workspace.LaunchCoordinator.Log(result.Requested ? $"游戏已按关闭请求退出（代码 {result.Code}）。" : result.Code == 0 ? "游戏正常退出（代码 0）。" : $"游戏异常退出（代码 {result.Code}），正在生成本地诊断。");
-            if (!result.Requested && result.Code != 0)
-            {
-                var snapshot = await Task.Run(() => Diagnostics.Capture(completedContext));
-                if (workspace.LaunchCoordinator.gameSession != session)
-                    return;
-                workspace.DiagnosticsController.ShowDiagnosticSnapshot(snapshot);
-                workspace.Window.Status.Text = "游戏异常退出，可在「诊断与反馈」查看日志证据和建议。";
-                workspace.LaunchCoordinator.Log($"诊断已完成：命中 {snapshot.Findings.Count} 条可能原因，请在「诊断与反馈」查看证据。未上传任何日志。");
-            }
-        }
-        catch (Exception ex)
-        {
-            workspace.LaunchCoordinator.Log("游戏输出观察失败：" + ex.Message);
-        }
-    }
-
     internal async void ReadGameLogClick(object s, RoutedEventArgs e)
     {
         try
         {
-            var directory = workspace.LaunchCoordinator.lastGameDirectory ?? workspace.LaunchCoordinator.Instance();
+            var directory = workspace.RunningGamesController.LastGameDirectory ?? workspace.LaunchCoordinator.Instance();
             workspace.Controls.GameLogView.Text = await Task.Run(() => SharedLogs.ReadTail(Path.Combine(directory, "logs", "latest.log")));
         }
         catch (IOException ex)
@@ -195,7 +167,7 @@ internal sealed class TaskRecoveryController
     {
         try
         {
-            workspace.LaunchCoordinator.OpenFolder(Path.Combine(workspace.LaunchCoordinator.lastGameDirectory ?? workspace.LaunchCoordinator.Instance(), "logs"));
+            workspace.LaunchCoordinator.OpenFolder(Path.Combine(workspace.RunningGamesController.LastGameDirectory ?? workspace.LaunchCoordinator.Instance(), "logs"));
         }
         catch (Exception ex)
         {

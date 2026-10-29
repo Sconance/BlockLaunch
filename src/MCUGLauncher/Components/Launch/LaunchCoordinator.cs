@@ -31,13 +31,10 @@ internal sealed class LaunchCoordinator
     internal List<VersionRow> rows = new();
     internal string? downloadVersion;
     internal MSession? online;
-    internal Process? game;
     internal bool busy;
     internal bool closeAfterTask;
     internal SettingsStore settings = null!;
     internal OperationCoordinator operations = null!;
-    internal GameSession? gameSession;
-    internal string? lastGameDirectory;
     internal CancellationToken CurrentToken => operations?.Current?.Token ?? CancellationToken.None;
 
     internal DateTime lastProgress;
@@ -61,7 +58,7 @@ internal sealed class LaunchCoordinator
         };
     }
 
-    internal async Task Run(Func<Task> action, string? name = null)
+    internal async Task Run(Func<Task> action, string? name = null, bool compactProgress = false)
     {
         if (busy)
         {
@@ -69,6 +66,7 @@ internal sealed class LaunchCoordinator
             return;
         }
 
+        workspace.Window.TaskStatusBar.Height = compactProgress ? 32 : 57;
         workspace.Window.TaskStatusBar.Visibility = Visibility.Visible;
         busy = true;
         workspace.Window.Progress.IsIndeterminate = true;
@@ -105,7 +103,7 @@ internal sealed class LaunchCoordinator
     internal void SetInputs(bool enabled)
     {
         workspace.Controls.LaunchGameButton.IsEnabled = enabled && workspace.Controls.Versions.SelectedItem != null;
-        workspace.Controls.StopGameButton.Visibility = game is { HasExited: false } ? Visibility.Visible : Visibility.Collapsed;
+        workspace.RunningGamesController.RefreshRunningGames();
         workspace.Controls.LaunchGameButton.ToolTip = workspace.DownloadTaskController.DownloadInProgress ? "请先暂停下载，再启动游戏，避免安装文件与游戏进程同时使用。" : "启动当前选择的已安装版本";
         System.Windows.Controls.ToolTipService.SetShowOnDisabled(workspace.Controls.LaunchGameButton, true);
         workspace.Controls.Versions.IsEnabled = enabled || workspace.DownloadTaskController.DownloadInProgress;
@@ -144,28 +142,34 @@ internal sealed class LaunchCoordinator
             workspace.Window.Dispatcher.BeginInvoke(Append);
     }
 
-    internal async Task Refresh()
-    {
-        workspace.Window.Status.Text = "读取版本列表…";
-        var local = LocalVersions();
-        var known = ProfileKeys();
-        try
-        {
-            var all = await launcher.GetAllVersionsAsync(CurrentToken);
-            rows = all.Select(v => new VersionRow(v.Name, workspace.ModpackController.VersionLabel(v.Name, local), v.Type?.ToString() ?? "local", v.ReleaseTime == default ? null : v.ReleaseTime)).ToList();
-            foreach (var id in known.Where(id => !rows.Any(r => r.Id == id)))
-                rows.Insert(0, new(id, workspace.ModpackController.VersionLabel(id, local), "local"));
-            Log($"读取到 {rows.Count} 个版本，{local.Count} 个本地版本。");
-        }
-        catch (Exception ex) when (ex is not OperationCanceledException)
-        {
-            rows = known.Select(id => new VersionRow(id, workspace.ModpackController.VersionLabel(id, local), "local")).ToList();
-            Log("在线列表不可用，已加载本地版本：" + ex.Message);
-        }
+    internal Task Refresh() => RefreshLocalVersions();
 
+    internal Task RefreshLocalVersions()
+    {
+        ApplyVersionRows(rows.Where(r => r.Type != "local").ToList());
+        return Task.CompletedTask;
+    }
+
+    internal async Task<List<VersionRow>> FetchOnlineVersions(CancellationToken token)
+    {
+        // Capture the launcher before awaiting: a directory switch may replace it.
+        var source = launcher;
+        var all = await source.GetAllVersionsAsync(token);
+        return all.Select(v => new VersionRow(v.Name, "", v.Type?.ToString() ?? "local",
+            v.ReleaseTime == default ? null : v.ReleaseTime)).ToList();
+    }
+
+    internal void ApplyVersionRows(List<VersionRow> source)
+    {
+        var local = LocalVersions();
+        rows = source.Select(r => r with { Label = workspace.ModpackController.VersionLabel(r.Id, local) }).ToList();
+        foreach (var id in ProfileKeys().Where(id => !rows.Any(r => r.Id == id)))
+            rows.Insert(0, new(id, workspace.ModpackController.VersionLabel(id, local), "local"));
         Filter();
         workspace.DownloadPageController.RenderVanillaDownloads();
         workspace.ResourceBrowserController.UpdateTargets();
+        if (workspace.DownloadPageController.downloadCategory == "模组加载器")
+            workspace.LoaderOverviewController.PrepareLoaderConfiguration();
         if (workspace.InstanceContentController.sketchHome != null)
             workspace.InstanceWorkspaceController.RefreshInstanceViews();
     }
@@ -253,8 +257,6 @@ internal sealed class LaunchCoordinator
 
     internal async Task Launch()
     {
-        if (game is { HasExited: false })
-            throw new Exception("游戏正在运行，请先关闭当前游戏。");
         var rootBefore = prefs.Root;
         SavePreferences();
         if (!string.Equals(rootBefore, prefs.Root, StringComparison.OrdinalIgnoreCase))
@@ -287,6 +289,7 @@ internal sealed class LaunchCoordinator
             throw new IOException("所选版本尚未安装完成，请到「游戏安装」下载 / 修复后再启动。");
         workspace.Window.Status.Text = "构建启动命令…";
         var directory = Instance();
+        workspace.RunningGamesController.Registry.RequireAvailable(directory);
         var descriptor = new InstanceCatalog(prefs.Root).GetOrCreate(id);
         GameDefaults.EnsureChinese(directory, workspace.ResourceBrowserController.Target().GameVersion);
         OfflineSkinPackBuilder.Prepare(prefs.Root, directory, prefs.OfflineSkin, workspace.ResourceBrowserController.Target().GameVersion, workspace.Controls.AccountMode.SelectedIndex == 0);
@@ -315,15 +318,14 @@ internal sealed class LaunchCoordinator
         var access = typeof(MSession).GetProperty("AccessToken")?.GetValue(session)?.ToString() ?? "";
         using (OperationExecution.BeginCommit())
         {
-            var currentSession = new GameSession(process, Path.Combine(settingsDir, "process-logs", descriptor.InstanceId + ".log"), workspace.TaskRecoveryController.QueueGameLine, new[] { access, workspace.Controls.AccountMode.SelectedIndex == 2 ? workspace.MuaAccountController.muaAccount?.ClientToken ?? "" : "" });
-            var diagnosisContext = new DiagnosticContext(directory, descriptor.LaunchProfileId, Path.Combine(settingsDir, "process-logs", descriptor.InstanceId + ".log"), DateTime.UtcNow, Secrets: new[] { access, workspace.Controls.AccountMode.SelectedIndex == 2 ? workspace.MuaAccountController.muaAccount?.ClientToken ?? "" : "" });
-            currentSession.Start();
-            game = process;
-            gameSession = currentSession;
-            lastGameDirectory = directory;
-            workspace.DiagnosticsController.recentDiagnosticContext = diagnosisContext;
-            _ = workspace.TaskRecoveryController.ObserveGame(currentSession, diagnosisContext);
-            _ = new GameWindowBehaviorController(workspace.Window, Log).Apply(process, launchSettings, currentSession);
+            var secrets = new[] { access, workspace.Controls.AccountMode.SelectedIndex == 2 ? workspace.MuaAccountController.muaAccount?.ClientToken ?? "" : "" };
+            var running = workspace.RunningGamesController.Registry.Start(prefs.Root, directory, id,
+                Path.Combine(settingsDir, "process-logs"), process,
+                line => workspace.TaskRecoveryController.QueueGameLine("[" + id + "] " + line), secrets);
+            var diagnosisContext = new DiagnosticContext(directory, descriptor.LaunchProfileId, running.LogFile,
+                running.StartedUtc, Secrets: secrets);
+            _ = workspace.RunningGamesController.ObserveGame(running, diagnosisContext);
+            _ = new GameWindowBehaviorController(workspace.Window, Log).Apply(process, launchSettings, running.Session);
         }
 
         Log("已启动 " + id + "，实例：" + directory);
@@ -378,7 +380,7 @@ internal sealed class LaunchCoordinator
         }, "导入本地内容");
     }
 
-    internal async void RefreshClick(object s, RoutedEventArgs e) => await Run(Refresh);
+    internal async void RefreshClick(object s, RoutedEventArgs e) => await Run(RefreshLocalVersions, "刷新本地版本");
     internal async void LoginClick(object s, RoutedEventArgs e) => await Run(Login);
     internal void InstallClick(object s, RoutedEventArgs e)
     {
@@ -400,8 +402,6 @@ internal sealed class LaunchCoordinator
     internal async void FabricClick(object s, RoutedEventArgs e) => await Run(InstallFabric);
     internal async void SaveClick(object s, RoutedEventArgs e) => await Run(async () =>
     {
-        if (game is { HasExited: false })
-            throw new Exception("请先关闭游戏再更改设置。");
         SavePreferences();
         SetupLauncher();
         await workspace.TaskRecoveryController.StartupRecovery();
@@ -439,18 +439,7 @@ internal sealed class LaunchCoordinator
         }
     }
 
-    internal void StopClick(object s, RoutedEventArgs e)
-    {
-        try
-        {
-            if (gameSession != null && !gameSession.RequestStop())
-                Log("未能发送关闭请求，请在游戏内正常退出。");
-        }
-        catch (Exception ex)
-        {
-            Log(ex.Message);
-        }
-    }
+    internal void StopClick(object s, RoutedEventArgs e) => workspace.RunningGamesController.ShowRunningGames();
 
     internal void Initialize()
     {
@@ -520,7 +509,9 @@ internal sealed class LaunchCoordinator
                 await Run(Login, "微软正版登录");
             if (closeAfterTask)
                 return;
-            await Run(workspace.TaskRecoveryController.StartupRecovery, "启动恢复");
+            var startup = System.Diagnostics.Stopwatch.StartNew();
+            await Run(workspace.TaskRecoveryController.StartupRecovery, "读取本地游戏", compactProgress: true);
+            Log($"本地启动准备完成：{startup.ElapsedMilliseconds} ms；在线版本按需加载。");
             if (!loginRequested)
                 await workspace.InstanceWorkspaceController.HandleScriptLaunch();
             workspace.DownloadQueueController.StartDownloadQueue();

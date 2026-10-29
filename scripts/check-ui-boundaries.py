@@ -26,7 +26,8 @@ def main():
     isolated = ('AvatarController', 'HomeAccountController', 'KeyboardNavigationController',
                 'LoaderOverviewController', 'NetworkController', 'WindowChromeController',
                 'GameWindowBehaviorController', 'InstanceSearchController', 'VersionIdentityEditor', 'ContentUpdatesController',
-                'ResourceFavoritesController', 'ResourceSearchLayoutController')
+                'ResourceFavoritesController', 'ResourceSearchLayoutController',
+                'RunningGamesController', 'VersionCatalogController')
     components = {path.stem: path for path in (app / 'Components').rglob('*.cs')}
     for name in isolated:
         source = components.get(name)

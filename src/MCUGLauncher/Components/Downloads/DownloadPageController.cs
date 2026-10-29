@@ -185,6 +185,8 @@ internal sealed class DownloadPageController
             downloadCategories[category].IsChecked = true;
         if (category == "原版游戏")
             RenderVanillaDownloads();
+        if (workspace.Window.IsLoaded && category is "原版游戏" or "模组加载器")
+            _ = workspace.VersionCatalogController.EnsureVersionCatalog();
         if (category == "模组加载器")
             workspace.LoaderOverviewController.PrepareLoaderConfiguration();
     }
@@ -200,10 +202,10 @@ internal sealed class DownloadPageController
         var matching = remote.Where(r => r.Id.Contains(vanillaQuery.Text.Trim(), StringComparison.OrdinalIgnoreCase)).ToList();
         if (matching.Count == 0)
         {
-            vanillaGroups.Children.Add(FeatureUiElements.Hint(remote.Count == 0 ? "版本列表尚未加载。可刷新列表，或检查下载与网络设置。" : "没有匹配的游戏版本。"));
+            vanillaGroups.Children.Add(FeatureUiElements.Hint(remote.Count == 0 ? workspace.VersionCatalogController.CatalogLoading ? "正在读取在线版本… 本地游戏可正常启动。" : workspace.VersionCatalogController.CatalogError ?? "进入下载页后读取在线版本，或点击刷新。" : "没有匹配的游戏版本。"));
         }
 
-        var refresh = FeatureUiElements.ActionButton("刷新版本列表", async (_, _) => await workspace.LaunchCoordinator.Run(workspace.LaunchCoordinator.Refresh, "刷新游戏版本"));
+        var refresh = FeatureUiElements.ActionButton("刷新版本列表", async (_, _) => await workspace.VersionCatalogController.EnsureVersionCatalog(true));
         if (remote.Count == 0)
             vanillaGroups.Children.Add(refresh);
         var local = workspace.LaunchCoordinator.LocalVersions();

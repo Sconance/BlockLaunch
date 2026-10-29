@@ -1,5 +1,11 @@
 # 更新记录
 
+## [0.22.1]
+
+- 支持不同独立实例同时运行，各自保留进程、关闭操作和本次日志；同一游戏目录不重复启动。
+- 启动恢复只读取本地数据；在线游戏版本改为进入下载分类后按需读取，失败可重试，不阻塞本地启动。
+- 基于 0.22.0 的功能域和组合层扩展，不修改账号协议或用户配置格式；仅开发分支与本地构建，不发布 Release。
+
 ## [0.22.0](https://github.com/Sconance/MCUGLauncher/releases/tag/v0.22.0)
 
 准备合并到 `main` 的结构与文档版本。`refactor` 分支已废弃，相关记录归档到 [docs/archive/branch_refactor/](docs/archive/branch_refactor/README.md)。

@@ -174,6 +174,15 @@ internal sealed partial class LauncherWorkspace
     {
         get;
     }
+    internal RunningGamesController RunningGamesController
+    {
+        get;
+    }
+    internal VersionCatalogController VersionCatalogController
+    {
+        get;
+    }
+
     internal LauncherWorkspace(MainWindow window, string configurationDirectory)
     {
         Window = window;
@@ -221,6 +230,19 @@ internal sealed partial class LauncherWorkspace
             (action, name) => LaunchCoordinator.Run(action, name), ResourceBrowserController.RequireStopped,
             InstanceWorkspaceController.FeatureDialog, DownloadQueueController.EnqueueDownload,
             ResourceBrowserController.Target, ResourceBrowserController.ManagedDirectory, ResourceBrowserController.RefreshLocalContent, LaunchCoordinator.Log));
+        RunningGamesController = new RunningGamesController(Controls.StopGameButton, () => window.Dispatcher.HasShutdownStarted || !window.IsLoaded, LaunchCoordinator.Log,
+            (title, content) =>
+            {
+                var body = new System.Windows.Controls.StackPanel();
+                body.Children.Add(content);
+                InstanceWorkspaceController.FeatureDialog(title, body);
+            },
+            context => DiagnosticsController.recentDiagnosticContext = context,
+            DiagnosticsController.ShowDiagnosticSnapshot);
+        VersionCatalogController = new VersionCatalogController(() => LaunchCoordinator.prefs.Root,
+            LaunchCoordinator.FetchOnlineVersions, LaunchCoordinator.ApplyVersionRows,
+            DownloadPageController.RenderVanillaDownloads, LaunchCoordinator.Log);
+        window.Closed += (_, _) => VersionCatalogController.Dispose();
         VersionSettingsController = new VersionSettingsController(this);
         WindowChromeController = new WindowChromeController(window);
         AvatarController = new AvatarController(Controls.SkinAvatar, Controls.AvatarCaption, Controls.AvatarPlayerName,

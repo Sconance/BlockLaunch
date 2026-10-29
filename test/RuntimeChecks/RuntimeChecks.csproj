@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/MCUGLauncher.Core/MCUGLauncher.Core.csproj" />
+    <Compile Include="../../src/MCUGLauncher/Components/Downloads/VersionCatalogController.cs" Link="Catalog/VersionCatalogController.cs" />
+    <Compile Include="../../src/MCUGLauncher/Presentation/VersionRow.cs" Link="Catalog/VersionRow.cs" />
+    <Compile Include="../../src/MCUGLauncher/Components/Launch/RunningGamesController.cs" Link="Sessions/RunningGamesController.cs" />
+    <Compile Include="../../src/MCUGLauncher/Views/Shared/FeatureUiElements.cs" Link="Sessions/FeatureUiElements.cs" />
+  </ItemGroup>
+</Project>

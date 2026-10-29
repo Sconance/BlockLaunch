@@ -51,7 +51,7 @@ MCUG Launcher 提供游戏启动、分类下载、账号登录和实例内容管
 
 ## 源码与构建
 
-当前版本为 **0.22.0**，最终产品名确定为 **MCUG Launcher**。使用 Windows x64 与 .NET 8 SDK：
+当前版本为 **0.22.1**，最终产品名确定为 **MCUG Launcher**。使用 Windows x64 与 .NET 8 SDK：
 
 ```powershell
 git clone https://github.com/Sconance/MCUGLauncher.git
@@ -62,11 +62,11 @@ dotnet publish src/MCUGLauncher/MCUGLauncher.csproj -c Release -o artifacts/publ
 
 详见 [构建与目录说明](docs/BUILD.md)。历史版本源码仍保留在各 Release 的手动 Source.zip 附件中；旧标签未移动，旧版自动生成的 Source code 归档可能仅含原仓库文件。
 
-版本号只有一个来源（`Directory.Build.props` 的 `McugVersion`），发版、标签与检查规则见 [版本号控制](docs/VERSIONING.md)。0.22.0 在 `test` 分支准备合并到 `main`：`Components/` 已按九个功能域重组，`MainWindow` 拆成窗口 shell、九个独立 XAML 页面与功能模块；合并步骤、验证结果与风险见 [合并到主分支前的说明](docs/MERGE_TO_MAIN.md)，发布说明与文件哈希见 [发布说明](docs/releases/README.md)，后续计划见 [重构路线图](TODO.md)，历史材料在 [历史归档](docs/archive/branch_refactor/README.md)，类型说明在 [类文档目录](docs/classes/README.md)。
+版本号只有一个来源（`Directory.Build.props` 的 `McugVersion`），发版、标签与检查规则见 [版本号控制](docs/VERSIONING.md)。0.22.0 已合并到 `main`；0.22.1 在同名分支验证多实例运行与本地优先启动：`Components/` 已按九个功能域重组，`MainWindow` 拆成窗口 shell、九个独立 XAML 页面与功能模块；合并步骤、验证结果与风险见 [合并到主分支前的说明](docs/MERGE_TO_MAIN.md)，发布说明与文件哈希见 [发布说明](docs/releases/README.md)，后续计划见 [重构路线图](TODO.md)，历史材料在 [历史归档](docs/archive/branch_refactor/README.md)，类型说明在 [类文档目录](docs/classes/README.md)。
 
 ```text
 src/       主程序与核心逻辑（2 个项目）
-test/      功能、界面与集成检查（22 个项目）
+test/      功能、界面与集成检查（23 个项目）
 tools/     隔离界面预览（4 个）和源码格式工具
 scripts/   构建与检查脚本
 docs/      使用、构建、类文档（classes/）、历史归档（archive/）与截图
@@ -77,6 +77,13 @@ docs/      使用、构建、类文档（classes/）、历史归档（archive/�
 请在 [Issues](https://github.com/Sconance/MCUGLauncher/issues) 提供软件版本、系统版本、复现步骤和脱敏日志。不要上传密码、Token、账号缓存或私人存档。参阅 [贡献说明](CONTRIBUTING.md)。
 
 ## 近期更新
+
+### 0.22.1（开发分支，不发布 Release）
+
+- 不同独立实例可同时运行，分别查看本次日志和请求关闭；同一游戏目录保留防重复启动保护。
+- 启动只等待本地恢复，在线版本在进入下载页后按需加载；新增请求合并、超时和重试状态。
+- 继续沿用功能域、组合层和类型文档规范，账号协议与配置格式不变。
+
 
 ### [0.22.0](https://github.com/Sconance/MCUGLauncher/releases/tag/v0.22.0)
 
