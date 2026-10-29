@@ -141,7 +141,10 @@ static class Program
             ((ComboBox)Field("AccountMode")).SelectedIndex = 0;
 
             Check(window.WindowStyle == WindowStyle.None && WindowChrome.GetWindowChrome(window)?.ResizeBorderThickness.Left == 6, "custom integrated caption retains resize border");
-            Check(typeof(MainWindow).Assembly.GetName().Name == "MCUGLauncher" && typeof(MainWindow).Assembly.GetName().Version!.ToString() == "0.20.2.0", "final assembly name and version");
+            var launcherAssembly = typeof(MainWindow).Assembly;
+            var assemblyVersion = launcherAssembly.GetName().Version!.ToString();
+            var informationalVersion = launcherAssembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion?.Split('+')[0];
+            Check(launcherAssembly.GetName().Name == "MCUGLauncher" && assemblyVersion == informationalVersion + ".0", "final assembly name and version metadata agree");
             Check(window.Title.StartsWith("MCUG Launcher") && ((SolidColorBrush)app.Resources["AccentBrush"]).Color == Color.FromRgb(0, 109, 184), "new brand uses Wuhan CUG blue");
             Call("RefreshInstanceViews");
             var search = (TextBox)Field("instanceQuery");

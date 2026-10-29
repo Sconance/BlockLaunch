@@ -30,7 +30,7 @@
       </ScrollViewer>
       <Border Grid.Row="2" Background="#F7F9FE" CornerRadius="12" Margin="18,12,18,20" Padding="14">
         <StackPanel>
-          <TextBlock Text="BLOCKLAUNCH  /  0.15.2" FontSize="10" FontWeight="Bold" Foreground="#7E8BB0" />
+          <TextBlock x:Name="VersionLabel" Text="BLOCKLAUNCH" FontSize="10" FontWeight="Bold" Foreground="#7E8BB0" />
           <TextBlock Text="独立制作 · Java Edition" Style="{StaticResource Caption}" Margin="0,8,0,0" />
         </StackPanel>
       </Border>

@@ -16,6 +16,8 @@ jobs:
           global-json-file: global.json
       - name: Validate repository layout
         run: python scripts/check-layout.py
+      - name: Check version metadata
+        run: python scripts/check-version.py
       - name: Check UI boundaries
         run: python scripts/check-ui-boundaries.py
       - name: Check reference component reuse

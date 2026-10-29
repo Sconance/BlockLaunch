@@ -494,7 +494,7 @@ internal sealed class LaunchCoordinator
         runtimeNetwork = JsonSerializer.Deserialize<NetworkSettings>(JsonSerializer.Serialize(prefs.Network))!;
         http.Dispose();
         http = NetworkPolicyHandler.Create(runtimeNetwork);
-        http.DefaultRequestHeaders.UserAgent.ParseAdd("MCUGLauncher/0.20.2 (Windows-desktop-launcher)");
+        http.DefaultRequestHeaders.UserAgent.ParseAdd($"MCUGLauncher/{ProductInfo.Version} (Windows-desktop-launcher)");
         SetupLauncher();
         workspace.InstancePagesController.BuildFeaturePages();
         workspace.InstancePagesController.ApplyPersonalization();

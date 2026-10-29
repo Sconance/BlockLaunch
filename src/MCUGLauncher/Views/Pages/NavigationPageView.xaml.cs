@@ -6,6 +6,10 @@ namespace BlockLaunch;
 
 public partial class NavigationPageView : LauncherPage
 {
-    public NavigationPageView() => InitializeComponent();
+    public NavigationPageView()
+    {
+        InitializeComponent();
+        VersionLabel.Text = $"BLOCKLAUNCH  /  {ProductInfo.Version}";
+    }
     void Navigate(object sender, RoutedEventArgs args) => RaisePageAction(nameof(Navigate), sender, args);
 }

@@ -1,0 +1,18 @@
+<Project>
+
+  <!--
+    版本号的唯一来源。发版时只改这里：
+
+    - 程序集版本、文件版本、InformationalVersion 都由 McugVersion 派生；
+    - 运行期通过 BlockLaunch.ProductInfo.Version 读取，User-Agent、诊断信息和关于页不再写死；
+    - CHANGELOG.md、README.md 必须同步，由 python scripts/check-version.py 校验；
+    - Release 标签使用 v<McugVersion>，附件必须从同一提交构建。
+
+    规则见 docs/VERSIONING.md。
+  -->
+  <PropertyGroup>
+    <McugVersion>0.21.0</McugVersion>
+    <Version>$(McugVersion)</Version>
+  </PropertyGroup>
+
+</Project>
