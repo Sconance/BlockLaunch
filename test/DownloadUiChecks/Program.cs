@@ -11,7 +11,7 @@ public static class Program
     [STAThread]
     public static void Main()
     {
-        const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+
         var root = Path.GetFullPath("work/v0151-ui-" + Guid.NewGuid().ToString("N"));
         new SettingsStore(root).Save(new()
         {
@@ -26,8 +26,8 @@ public static class Program
             Resources = (ResourceDictionary)System.Windows.Markup.XamlReader.Parse(dictionary.ToString())
         };
         var window = new MainWindow(root);
-        object Field(string name) => typeof(MainWindow).GetField(name, flags)!.GetValue(window)!;
-        object? Call(string name, params object[] args) => typeof(MainWindow).GetMethod(name, flags)!.Invoke(window, args);
+        object Field(string name) => LauncherTestAccess.Get(window, name);
+        object? Call(string name, params object[] args) => LauncherTestAccess.Invoke(window, name, args);
         void Assert(bool condition, string label)
         {
             if (!condition)
@@ -37,7 +37,7 @@ public static class Program
 
         try
         {
-            typeof(MainWindow).GetField("rows", flags)!.SetValue(window, new List<VersionRow> { new("26.4-snapshot-5", "snapshot", "snapshot"), new("26.4-snapshot-4", "snapshot", "snapshot"), new("26.3", "release", "release"), new("1.21.1", "release", "release"), new("24w14potato", "april", "snapshot"), new("a1.2.6", "alpha", "old_alpha"), new("custom", "local", "local") });
+            LauncherTestAccess.Set(window, "rows", new List<VersionRow> { new("26.4-snapshot-5", "snapshot", "snapshot"), new("26.4-snapshot-4", "snapshot", "snapshot"), new("26.3", "release", "release"), new("1.21.1", "release", "release"), new("24w14potato", "april", "snapshot"), new("a1.2.6", "alpha", "old_alpha"), new("custom", "local", "local") });
             Call("SelectDownloadCategory", "原版游戏");
             var tabs = (TabControl)Field("MainTabs");
             ((StackPanel)((RadioButton)Field("HomeNav")).Parent).Children.OfType<RadioButton>().Single(r => r.Tag?.ToString() == "1").IsChecked = true;
@@ -138,7 +138,7 @@ public static class Program
             Call("ToggleResourceFavorite", example);
             var store = (ResourceBookmarkStore)Field("bookmarks");
             Assert(store.Read().Any(b => b.Project.Id == example.Id), "heart favorite saves to existing bookmark document");
-            typeof(MainWindow).GetField("resourceFavoritesOnly", flags)!.SetValue(window, true);
+            LauncherTestAccess.Set(window, "resourceFavoritesOnly", true);
             var favorites = ((Task<SearchPage>)Call("SearchFavoriteResources", CancellationToken.None)!).GetAwaiter().GetResult();
             Assert(favorites.Items.Count == 1 && favorites.Items[0].Id == example.Id, "favorites filter searches full saved collection");
             Call("ToggleResourceFavorite", example);

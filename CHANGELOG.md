@@ -1,5 +1,25 @@
 # 更新记录
 
+## [0.22.0](https://github.com/Sconance/MCUGLauncher/releases/tag/v0.22.0)
+
+准备合并到 `main` 的结构与文档版本。`refactor` 分支已废弃，相关记录归档到 [docs/archive/](docs/archive/README.md)。
+
+- `Components/` 按 Accounts、Shell、Downloads、Resources、Instances、Launch、Experience、Bookmarks、Support 九个功能域重组；10 个控制器按职责改名（`Sketch`→`InstanceContent`、`Content`→`ResourceBrowser`、`Pack`→`Modpack`、`Stability`→`TaskRecovery` 等）。
+- 补齐 `src/MCUGLauncher` 全部 142 个顶层类型的类文档，归档到 [docs/classes/](docs/classes/README.md)，新增 `scripts/check-class-docs.py` 与 CI 检查。
+- 文档体系整理：refactor 时代的对照、迁移与合并记录移入 [历史归档](docs/archive/README.md)；新增 [合并到主分支前的说明](docs/MERGE_TO_MAIN.md)。
+- 记录前后端分界评估结论与后续项，写入 [重构路线图](TODO.md)。
+
+## [0.21.0](https://github.com/Sconance/MCUGLauncher/releases/tag/v0.21.0)
+
+`test` 主干与 `refactor` 全量整合后的版本。结构以 `test` 的原生窗口 shell、九个独立 XAML 页面与组合根为准；`refactor` 的文档规则、版本控制与 0.20.1 / 0.20.2 功能内容全部并入，`refactor` 不再单独递增版本号。
+
+- 合并 `refactor`（`db0ab6a`）：86 个 `MainWindow` partial 与 51 篇逐类文档按结构退役，历史内容保留在 `refactor` 分支，迁移去向见 [refactor 分支整合记录](docs/archive/REFACTOR_INTEGRATION.md)。
+- 版本号改为单一来源 `Directory.Build.props` 的 `McugVersion`，运行期统一读取 `ProductInfo.Version`。
+- 修复诊断信息 `0.20.0`、导航区 `0.15.2`、关于区 `0.20.2` 与两处 User-Agent 的写死版本。
+- 新增 `scripts/check-version.py` 与 CI 版本校验，发版标签、CHANGELOG、README 与程序集元数据必须一致。
+- 新增 [版本号控制](docs/VERSIONING.md)、[refactor 分支整合记录](docs/archive/REFACTOR_INTEGRATION.md)、[重构路线图](TODO.md) 与 [develop 与 refactor 功能对照](docs/archive/COMPARE_DEVELOP_REFACTOR.md)，把整合与拆分检查要点沉淀为长期规则。
+- 保留 `test` 的 Esc 关闭页内选择器、嵌套改名后实例列表与首页名称同步修复。
+
 ## [0.20.2](https://github.com/Sconance/MCUGLauncher/releases/tag/v0.20.2)
 
 - 完善资源卡片和详情页的心形收藏，继续使用原有收藏数据。

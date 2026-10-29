@@ -38,8 +38,7 @@ public static class Program
             Console.WriteLine("PASS grouped launch options preserve all settings: " + original.Isolation);
         }
 
-        var method = typeof(MainWindow).GetMethod("VersionMenuStyle", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic)!;
-        var style = (Style)method.Invoke(null, null)!;
+        var style = (Style)LauncherTestAccess.InvokeStatic("VersionMenuStyle")!;
         var menu = new RadioButton
         {
             Style = style,

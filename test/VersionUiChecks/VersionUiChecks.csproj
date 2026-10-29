@@ -11,4 +11,7 @@
   <ItemGroup>
     <ProjectReference Include="../../src/MCUGLauncher/MCUGLauncher.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="../../test/Support/LauncherTestAccess.cs" Link="TestSupport/LauncherTestAccess.cs" />
+  </ItemGroup>
 </Project>

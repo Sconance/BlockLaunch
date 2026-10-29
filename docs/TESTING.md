@@ -1,3 +1,11 @@
+# 主窗口完整拆分回归（本地重构分支）
+
+- 原先 42 个 MainWindow 功能源文件已迁入 41 个独立模块，九个页面/框架区域 XAML 已独立。
+- 21 个检查程序全部通过（除需要额外真实游戏环境的 IntegrationChecks）：包括原有账号、MUA、下载、取消恢复、内容安全、实例卸载、版本设置、主题、诊断、整合包升级和页内工作流断言。
+- CompactUiChecks 继续执行真实 Modrinth 搜索、资源下载、收藏筛选及官方加载器版本获取/入队。
+- 源码格式、项目引用、界面职责边界检查和 Release 构建通过。
+- 真实微软/MUA 人工授权、完整真实游戏启动矩阵及原生鼠标/多 DPI 验收未重跑。本次没有覆盖正式 EXE 或发布 Release。
+
 # 0.20.2 验证
 
 - 下载界面检查覆盖心形收藏写入/取消、整个收藏集合筛选、视图切换、菜单注册/重复 ID 拒绝、页内导航及详情标签延迟创建。
@@ -68,3 +76,59 @@
 离线账号运行时，游戏日志出现在线账号属性请求 401，游戏进程仍持续运行；这不表示离线账号可以使用正版在线服务。测试验证了本地启动链路，没有测试创建存档、游玩和所有硬件驱动组合。
 
 现有版本是开发预览版，不等同于 PCL / HMCL 的完整功能集；缺失项目见 README。
+
+## test 分支依赖细化验证
+
+在原有窗口拆分基础上继续提取组件后，Release 构建通过，21 个无需真实游戏环境的 `*Checks` 检查全部通过。头像显式依赖调整完成后，又执行了 Experience、InlineUi、WorkflowUi、CompactUi 四个相关检查，均通过。
+
+新增的构建器断言覆盖 CMD 百分号与空格转义、PowerShell 单引号转义、账号类型路由、在线实例不生成离线皮肤包，以及现代资源包格式和传统皮肤路径兼容。没有使用真实用户实例作为测试数据。
+
+格式、项目布局与 UI 边界检查通过。生产 Core 无改动；未执行真实微软/MUA 人工授权、全游戏版本启动矩阵及本轮原生桌面点击验收。GitHub CI 结果应以远程任务为准。
+
+## test 分支版本设置细分验证
+
+五个版本页面与身份编辑器独立后，重新执行全部 21 个无需真实游戏环境的检查，均通过。InlineUiChecks 新增逐页切换断言，确认概览、启动设置、加载器修改、Mod 管理、整合包导出仍展示原有操作入口。启动参数读写、页内窗口、内容更新与网络设置持久化的现有断言继续执行。
+
+另外逐页比对原页面与提取后 Build 方法的字符串常量，未发现标签、路径或 API 地址变化。此项只作为迁移核对，不代替交互和业务测试。本轮不覆盖正式 EXE、不创建 Release；真实账号授权与完整游戏启动矩阵仍未重跑。
+
+## 本地 Lite 原生交互验收
+
+在独立测试配置下运行打包后的 framework-dependent 单文件 Lite，实际点击核验了版本内容管理、五个版本设置页面、名称修改、启动设置保存、滚动、加载器远程版本查询和 Modrinth 搜索。未使用真实账号或生产实例。测试版入口及样例仅位于忽略的 work 构建目录，正式入口不变。
+
+发现并修复两处问题：
+
+- 展开的下拉框按 Escape 时，窗口的预览键盘事件抢先关闭编辑页。现在先关闭当前页中的展开选择器，再把下一次 Escape 作为返回操作。
+- 嵌套版本设置保存名称后，内容管理仍引用旧的不可变列表行。实例列表刷新事件会重新绑定管理页的列表，并保留选中实例；关闭管理页时取消订阅。首页启动标签也重新读取当前名称，避免沿用旧 VersionRow 的显示文本。
+
+修订后的打包 EXE 已再次实际操作验证这两条路径。新增回归断言覆盖选择器的 Escape 路由，以及打开的管理页同步名称、保留选择。界面回归检查中的键盘路由测试使用已加载的独立测试窗口，放在其他布局断言之后，避免可见性变化影响虚拟化测量。
+
+真实微软/MUA 授权、完整游戏启动矩阵、多显示器和不同 DPI 尚未在本轮重新验证。测试 EXE 使用独立配置，不自动加载正式账号或游戏目录；默认运行不带界面样例。
+
+## refactor 延续拆分回归
+
+按参考分支提取内容管理、启动设置、导出、更新选择/预览与公共组件后，全部 21 项无需真实游戏环境的回归检查通过。WorkflowUiChecks 新增全局启动设置保存、主界面关联字段同步，以及整合包导出保留五项选择、默认不包含存档的断言。已有目录切换、名称同步、Esc、菜单扩展、下载队列和更新确认断言继续执行。
+
+格式、Release 构建、目录布局和 UI 边界检查通过。11 个完整组件文件经哈希核对与固定参考提交一致；检查脚本可对推送后的 Git 修订再次核对。CI 已配置在 test 推送时自动运行，远程结果需以对应提交的 Actions 记录为准。本轮不改变 Core、正式版本号或 Release；原生点击、真实授权与完整游戏启动矩阵未在这轮重复运行。
+
+## 资源收藏解耦回归
+
+资源收藏界面与搜索布局移除完整工作区依赖后，重新运行全部 21 项检查通过。新增的收藏查询检查使用临时收藏目录和 HTTP 替身，覆盖类型过滤、下载量排序、15 项分页、兼容发布类型、四路请求上限和取消传播；CompactUiChecks 继续验证真实 Modrinth 搜索、独立资源下载及仅收藏筛选。检查未使用正式账号或游戏存档；本轮未重新执行原生点击和完整游戏启动矩阵，也未打包或替换正式 EXE。
+
+## CI 干净检出检查
+
+WorkflowUiChecks 的截图保存方法自行创建输出目录，不依赖其他检查或本地历史产物预先创建 work/verify。修复后，在全新的本地 Git 克隆中确认该目录不存在，再按 CI 顺序执行 AuthChecks、MuaChecks、DownloadChecks、QueueChecks、CompatibilityChecks、VersionUiChecks、WorkflowUiChecks、CollectionChecks，全部通过，截图正常生成。该修复仅涉及测试，不改变启动器业务实现。
+
+## refactor 合并与版本号整合（0.21.0）
+
+`refactor`（`db0ab6a`）以第二父提交并入 `test`（合并提交 `145bf37`），结构保持 test 的窗口 shell、九个 XAML 页面与组合根；逐项迁移与退役理由见 [整合记录](archive/REFACTOR_INTEGRATION.md)。
+
+本地实跑结果：
+
+- `dotnet build src/MCUGLauncher/MCUGLauncher.csproj -c Release`：0 警告、0 错误；程序集版本与文件版本为 `0.21.0`，`InformationalVersion` 形如 `0.21.0+<提交>`。
+- `tools/SourceFormatter`：0 个文件需要格式化。
+- `scripts/check-layout.py`、`check-ui-boundaries.py`、`check-refactor-reuse.py`、`check-version.py`：全部通过；复用基线仍为 `refactor` `db0ab6a` 的 11 个整文件。
+- 检查程序通过：`InlineUiChecks`（含程序集名称与版本元数据一致性断言）、`VersionUiChecks`、`WorkflowUiChecks`、`CollectionChecks`、`AuthChecks`、`MuaChecks`、`DownloadChecks`、`QueueChecks`、`CompatibilityChecks`、`MiniDownloadChecks`、`StabilityChecks`、`UninstallChecks`、`UpgradeChecks`、`ExperienceChecks`、`ContentSafetyChecks`、`DependencyChecks`、`LibraryChecks`、`ResourceDownloadChecks`、`CompactUiChecks`、`DownloadUiChecks`（后两项使用实时 Modrinth 搜索与下载队列）。
+- `DiagnosticChecks` 在 `Program.cs` 第 111 行创建符号链接时被本机权限拒绝（缺少符号链接特权，开发者模式未开启），该断言之前的输出检查均已通过；这是本地会话限制，与本次版本号改动无关，CI 仍会执行该检查。
+- 未执行：`IntegrationChecks`、真实微软/MUA 授权、完整游戏启动矩阵，以及正式 EXE 打包。这些仍以远程 CI 与人工验收为准。
+
+版本号改动后，导航区与关于区不再写死版本，诊断信息与两处 User-Agent 读取 `ProductInfo.Version`；`scripts/check-version.py` 会阻止版本字面量重新进入源码、界面、CHANGELOG 与 README 的不一致状态。

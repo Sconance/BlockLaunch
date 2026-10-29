@@ -1,6 +1,6 @@
 # 增加菜单栏目
 
-在 `src/MCUGLauncher/MenuExtensions.cs` 的 `ConfigureMenuExtensions` 中注册已实现的页面，无需修改主窗口的导航索引、下载分类判断或账号逻辑。
+在 `src/MCUGLauncher/MenuExtensions.cs` 的 `MenuExtensionsController.ConfigureMenuExtensions` 中注册已实现的页面，无需修改主窗口的导航索引、下载分类判断或账号逻辑。
 
 ```csharp
 partial void ConfigureMenuExtensions(LauncherMenuRegistry menus)

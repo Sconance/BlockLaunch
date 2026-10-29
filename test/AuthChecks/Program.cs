@@ -21,7 +21,7 @@ if (args.Contains("--avatar") || args.Contains("--avatar-live"))
 if (args.Contains("--status") || args.Contains("--live"))
 {
     using var liveHttp = new HttpClient();
-    liveHttp.DefaultRequestHeaders.UserAgent.ParseAdd("MCUGLauncher/0.5.1 (account-verification)");
+    liveHttp.DefaultRequestHeaders.UserAgent.ParseAdd("MCUGLauncher (account-verification)");
     var liveService = new MicrosoftAccountService(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "BlockLaunch", "accounts"), liveHttp);
     Console.WriteLine("SAVED_MICROSOFT_ACCOUNT=" + (liveService.ReadSavedAccount() != null));
     if (args.Contains("--live"))

@@ -34,7 +34,7 @@ public static class Program
             Title = "0.15 component tests"
         };
         window.Show();
-        const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+
         var timer = new DispatcherTimer
         {
             Interval = TimeSpan.FromMilliseconds(100)
@@ -45,7 +45,7 @@ public static class Program
         {
             if (started)
                 return;
-            if ((bool)typeof(MainWindow).GetField("busy", flags)!.GetValue(window)!)
+            if ((bool)LauncherTestAccess.Get(window, "busy"))
             {
                 if (DateTime.UtcNow > deadline)
                 {
@@ -60,10 +60,10 @@ public static class Program
             timer.Stop();
             try
             {
-                typeof(MainWindow).GetField("queueReady", flags)!.SetValue(window, false);
-                ((DispatcherTimer?)typeof(MainWindow).GetField("downloadTimer", flags)!.GetValue(window))?.Stop();
+                LauncherTestAccess.Set(window, "queueReady", false);
+                ((DispatcherTimer?)LauncherTestAccess.Get(window, "downloadTimer"))?.Stop();
                 using var http = new HttpClient(new Handler());
-                typeof(MainWindow).GetField("http", flags)!.SetValue(window, http);
+                LauncherTestAccess.Set(window, "http", http);
                 var instance = Path.Combine(game, "test-instance");
                 if (ContentService.ReadManaged(instance).Count == 0)
                     await new ContentService(http).Install(new([Handler.V("old")], new()
@@ -80,7 +80,7 @@ public static class Program
                 {
                     try
                     {
-                        var dialogs = ((IEnumerable<InlineDialog>)typeof(MainWindow).GetField("inlinePages", flags)!.GetValue(window)!).ToList();
+                        var dialogs = ((IEnumerable<InlineDialog>)LauncherTestAccess.Get(window, "inlinePages")).ToList();
                         if (stage == 0 && dialogs.FirstOrDefault(w => w.Title == "内容更新") is
                             {
                             } updates)
@@ -106,18 +106,18 @@ public static class Program
                     catch (Exception ex)
                     {
                         errors.Add(ex);
-                        foreach (var dialog in ((IEnumerable<InlineDialog>)typeof(MainWindow).GetField("inlinePages", flags)!.GetValue(window)!).Reverse().ToList())
+                        foreach (var dialog in ((IEnumerable<InlineDialog>)LauncherTestAccess.Get(window, "inlinePages")).Reverse().ToList())
                             dialog.Close();
                     }
                 };
                 driver.Start();
-                await (Task)typeof(MainWindow).GetMethod("OpenContentUpdates", flags)!.Invoke(window, [instance, "fixture", "1.21.1", "fabric", null, null])!;
+                await (Task)LauncherTestAccess.Invoke(window, "OpenContentUpdates", [instance, "fixture", "1.21.1", "fabric", null, null])!;
                 driver.Stop();
                 if (errors.Count > 0)
                     throw errors[0];
                 if (stage != 2)
                     throw new Exception("Workflow incomplete");
-                var queue = (OperationCoordinator)typeof(MainWindow).GetField("operations", flags)!.GetValue(window)!;
+                var queue = (OperationCoordinator)LauncherTestAccess.Get(window, "operations");
                 var job = queue.History().First(r => r.Download?.PreparedPlan != null);
                 if (job.Download!.PreparedPlan!.Versions.Single().Id != "new" || string.IsNullOrEmpty(job.Download.ContentFingerprint))
                     throw new Exception("Queue lost approved plan");
@@ -128,7 +128,7 @@ public static class Program
                 };
                 networkDriver.Tick += (_, _) =>
                 {
-                    var dialog = ((IEnumerable<InlineDialog>)typeof(MainWindow).GetField("inlinePages", flags)!.GetValue(window)!).FirstOrDefault(w => w.Title == "下载与网络设置");
+                    var dialog = ((IEnumerable<InlineDialog>)LauncherTestAccess.Get(window, "inlinePages")).FirstOrDefault(w => w.Title == "下载与网络设置");
                     if (dialog == null)
                         return;
                     networkDriver.Stop();
@@ -138,11 +138,75 @@ public static class Program
                     controls.OfType<Button>().Single(b => Equals(b.Content, "保存，下次启动生效")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                 };
                 networkDriver.Start();
-                typeof(MainWindow).GetMethod("NetworkClick", flags)!.Invoke(window, [window, new RoutedEventArgs()]);
+                LauncherTestAccess.Invoke(window, "NetworkClick", [window, new RoutedEventArgs()]);
                 networkDriver.Stop();
                 if (new SettingsStore(settings).Load().Network.DownloadSource != "仅官方")
                     throw new Exception("Network save failed");
                 Console.WriteLine("PASS in-process WPF network source selection and persistence");
+                void DriveDialog(string title, Action open, Action<InlineDialog> check)
+                {
+                    Exception? failure = null;
+                    var until = DateTime.UtcNow.AddSeconds(20);
+                    var probe = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
+                    probe.Tick += (_, _) =>
+                    {
+                        try
+                        {
+                            var pages = ((IEnumerable<InlineDialog>)LauncherTestAccess.Get(window, "inlinePages")).ToList();
+                            if (DateTime.UtcNow > until)
+                                throw new Exception("Dialog workflow timed out: " + title);
+                            if (pages.LastOrDefault() is not { } page || page.Title != title)
+                                return;
+                            probe.Stop();
+                            check(page);
+                        }
+                        catch (Exception ex)
+                        {
+                            failure = ex;
+                            probe.Stop();
+                            foreach (var page in ((IEnumerable<InlineDialog>)LauncherTestAccess.Get(window, "inlinePages")).Reverse().ToList())
+                                page.Close();
+                        }
+                    };
+                    probe.Start();
+                    try
+                    {
+                        open();
+                    }
+                    finally { probe.Stop(); }
+                    if (failure != null)
+                        throw failure;
+                }
+                DriveDialog("启动设置", () => LauncherTestAccess.Invoke(window, "EditLaunchOptions", [null]), page =>
+                {
+                    TextBox FieldAfter(string label)
+                    {
+                        var caption = Descendants(page).OfType<TextBlock>().Single(t => t.Text == label);
+                        var stack = (StackPanel)caption.Parent;
+                        return (TextBox)stack.Children[stack.Children.IndexOf(caption) + 1];
+                    }
+                    FieldAfter("游戏窗口标题（留空使用默认）").Text = "Global options fixture";
+                    FieldAfter("自定义内存 MB（关闭自动分配后生效）").Text = "5120";
+                    FieldAfter("窗口宽度").Text = "1512";
+                    Descendants(page).OfType<Button>().Single(b => Equals(b.Content, "保存设置"))
+                        .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                });
+                var saved = new SettingsStore(settings).Load();
+                if (saved.Launch.WindowTitle != "Global options fixture" || saved.Ram != 5120 || saved.Width != 1512
+                    || ((TextBox)LauncherTestAccess.Get(window, "Memory")).Text != "5120"
+                    || ((TextBox)LauncherTestAccess.Get(window, "GameWidth")).Text != "1512")
+                    throw new Exception("Global launch options lost persistence or linked field updates");
+                Console.WriteLine("PASS reference launch-options dialog persists global settings and linked controls");
+                DriveDialog("导出整合包", () => LauncherTestAccess.Invoke(window, "ExportPackDialog", ["1.21.1"]), page =>
+                {
+                    var options = Descendants(page).OfType<CheckBox>().ToList();
+                    if (options.Count != 5 || options.Count(c => c.IsChecked == true) != 3
+                        || !options.Any(c => Equals(c.Content, "包含存档") && c.IsChecked == false)
+                        || !Descendants(page).OfType<Button>().Any(b => Equals(b.Content, "选择保存位置并导出")))
+                        throw new Exception("Pack export options or conservative save defaults changed");
+                    page.Close();
+                });
+                Console.WriteLine("PASS reference pack-export dialog preserves options and excludes worlds by default");
                 var packPreview = new PackUpgradePreview
                 {
                     Pack = new("UI fixture", "1.21.1", "fabric", "0.19.5", "base", "pack-123456abcdef"),
@@ -155,7 +219,7 @@ public static class Program
                     approved = files;
                     return Task.FromResult(true);
                 };
-                var packDialog = (InlineDialog)typeof(MainWindow).GetMethod("BuildPackUpgradeDialog", flags)!.Invoke(window, [packPreview, window, approve])!;
+                var packDialog = (InlineDialog)LauncherTestAccess.Invoke(window, "BuildPackUpgradeDialog", [packPreview, window, approve])!;
                 packDialog.Loaded += (_, _) =>
                 {
                     var controls = Descendants(packDialog).ToList();
@@ -200,7 +264,10 @@ public static class Program
         bitmap.Render(window);
         var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
         encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
-        using var output = File.Create(Path.GetFullPath(Path.Combine("work", "verify", name)));
+        // CI starts from a clean checkout; screenshot output is not a tracked directory.
+        var path = Path.GetFullPath(Path.Combine("work", "verify", name));
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        using var output = File.Create(path);
         encoder.Save(output);
     }
 }

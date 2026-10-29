@@ -31,6 +31,7 @@ static class Program
         Directory.CreateDirectory(root);
         try
         {
+            ExtractedBuilders(root);
             Core(root).GetAwaiter().GetResult();
             Ui(root);
             Console.WriteLine("ALL_EXPERIENCE_CHECKS_PASSED");
@@ -40,6 +41,37 @@ static class Program
             Console.WriteLine(ex);
             Environment.ExitCode = 1;
         }
+    }
+
+    static void ExtractedBuilders(string root)
+    {
+        var executable = @"C:\中文 空格\player's 100%\MCUGLauncher.exe";
+        var command = LaunchScriptBuilder.Build(executable, root, "实例 空格", "mua", false);
+        Check(command.Contains("player's 100%%") && command.Contains("--instance \"实例 空格\"")
+            && command.Contains("--account mua") && command.Contains("DisableDelayedExpansion"),
+            "extracted CMD builder preserves spaces, percent escaping and account routing");
+        var powershell = LaunchScriptBuilder.Build(executable, root, "玩家'实例", "microsoft", true);
+        Check(powershell.Contains("player''s 100%") && powershell.Contains("'玩家''实例'")
+            && powershell.Contains("--account microsoft"),
+            "extracted PowerShell builder quotes apostrophes without embedding credentials");
+
+        var directory = Path.Combine(root, "offline-builder-fixture");
+        var skin = Path.Combine(root, "fixture-skin.png");
+        File.WriteAllBytes(skin, [1, 2, 3, 4]);
+        OfflineSkinPackBuilder.Prepare(root, directory, skin, "fixture", false);
+        Check(!Directory.Exists(directory), "offline skin builder leaves online instances untouched");
+        var version = Path.Combine(root, "versions", "fixture");
+        Directory.CreateDirectory(version);
+        using (var jar = ZipFile.Open(Path.Combine(version, "fixture.jar"), ZipArchiveMode.Create))
+        using (var writer = new StreamWriter(jar.CreateEntry("version.json").Open()))
+            writer.Write("{\"pack_version\":{\"resource\":{\"major\":42}}}");
+        OfflineSkinPackBuilder.Prepare(root, directory, skin, "fixture", true);
+        using var pack = ZipFile.OpenRead(Path.Combine(directory, "resourcepacks", "BlockLaunch Offline Skin.zip"));
+        using var metadata = JsonDocument.Parse(pack.GetEntry("pack.mcmeta")!.Open());
+        Check(metadata.RootElement.GetProperty("pack").GetProperty("pack_format").GetInt32() == 42
+            && pack.GetEntry("assets/minecraft/textures/entity/player/slim/zuri.png") != null
+            && pack.GetEntry("assets/minecraft/textures/entity/steve.png")!.Length == 4,
+            "offline skin builder preserves modern pack format and legacy/player texture entries");
     }
 
     static async Task Core(string root)
@@ -294,9 +326,9 @@ static class Program
         };
         var window = new MainWindow(root);
         SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext());
-        const BindingFlags flags = BindingFlags.NonPublic | BindingFlags.Instance;
-        object Field(string name) => typeof(MainWindow).GetField(name, flags)!.GetValue(window)!;
-        object? Call(string name, params object[] args) => typeof(MainWindow).GetMethod(name, flags)!.Invoke(window, args);
+
+        object Field(string name) => LauncherTestAccess.Get(window, name);
+        object? Call(string name, params object[] args) => LauncherTestAccess.Invoke(window, name, args);
         void Wait(Task task)
         {
             var frame = new DispatcherFrame();
@@ -318,12 +350,12 @@ static class Program
                 c.Report("fixture", 30);
                 await completion.Task;
             }, record);
-            typeof(MainWindow).GetField("busy", flags)!.SetValue(window, true);
+            LauncherTestAccess.Set(window, "busy", true);
             Call("SetInputs", false);
             Check(((TextBox)Field("SearchQuery")).IsEnabled && ((ListBox)Field("SearchResults")).IsEnabled && !((TextBox)Field("GameRoot")).IsEnabled, "background download allows browsing but locks mutable root");
             var previous = (HttpClient)Field("http");
             using var http = new HttpClient(new SearchHandler());
-            typeof(MainWindow).GetField("http", flags)!.SetValue(window, http);
+            LauncherTestAccess.Set(window, "http", http);
             Call("NavigateDownloads", "Mod");
             Wait((Task)Call("RunBrowse", (Func<Task>)(() => (Task)Call("SearchContent")!))!);
             Check(((ListBox)Field("SearchResults")).Items.Count == 1 && coordinator.Current?.Record.Id == record.Id, "resource search completes concurrently without replacing download context");
@@ -367,8 +399,8 @@ static class Program
             Check(menu.Items.OfType<MenuItem>().Any(i => Equals(i.Header, "Java 管理")) && menu.Items.OfType<MenuItem>().Any(i => Equals(i.Header, "服务器收藏")), "utility features reachable through More menu");
             completion.SetResult();
             Wait(download);
-            typeof(MainWindow).GetField("busy", flags)!.SetValue(window, false);
-            typeof(MainWindow).GetField("http", flags)!.SetValue(window, previous);
+            LauncherTestAccess.Set(window, "busy", false);
+            LauncherTestAccess.Set(window, "http", previous);
             Wait(coordinator.Run("UI contextual backup", root, "", async context =>
             {
                 await Task.Run(() => SaveProtection.Create(Path.Combine(root, "instance"), Path.Combine(root, "ui-backups"), "UI context", 2, context.Token));
@@ -377,17 +409,17 @@ static class Program
             foreach (var item in coordinator.History().Where(r => r.State == OperationState.Queued))
                 coordinator.ChangePending(item.Id, OperationState.Cancelled);
             prefs.ResourceDownloadDirectory = Path.Combine(root, "downloaded-resources");
-            typeof(MainWindow).GetField("http", flags)!.SetValue(window, http);
+            LauncherTestAccess.Set(window, "http", http);
             var data = new byte[65536];
             Call("QueueContent", new ContentVersion { Id = "pump", ProjectId = "p", Files = [new() { Filename = "pump.jar", Url = "https://cdn.modrinth.com/pump.jar", Size = data.Length, Hashes = new() { ["sha512"] = Convert.ToHexString(System.Security.Cryptography.SHA512.HashData(data)) } }] });
-            typeof(MainWindow).GetField("queueReady", flags)!.SetValue(window, true);
+            LauncherTestAccess.Set(window, "queueReady", true);
             var pump = (Task)Call("PumpDownloads")!;
             Check(((TextBox)Field("SearchQuery")).IsEnabled && coordinator.Current?.Record.Download?.Kind == "resource", "real queue pump leaves search enabled after acquiring operation");
             Wait((Task)Call("RunBrowse", (Func<Task>)(() => (Task)Call("SearchContent")!))!);
             Wait(pump);
             Check(coordinator.History().Any(r => r.Download?.Content?.Id == "pump" && r.State == OperationState.Completed), "real pump completes verified resource while search runs");
-            typeof(MainWindow).GetField("queueReady", flags)!.SetValue(window, false);
-            typeof(MainWindow).GetField("http", flags)!.SetValue(window, previous);
+            LauncherTestAccess.Set(window, "queueReady", false);
+            LauncherTestAccess.Set(window, "http", previous);
         }
         finally
         {

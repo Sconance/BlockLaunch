@@ -3,6 +3,7 @@ using System.IO;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shell;
@@ -43,8 +44,8 @@ static class Program
         var window = new MainWindow(root);
         SynchronizationContext.SetSynchronizationContext(new DispatcherSynchronizationContext());
         const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
-        object Field(string name) => typeof(MainWindow).GetField(name, flags)!.GetValue(window)!;
-        object? Call(string name, params object[] args) => typeof(MainWindow).GetMethod(name, flags)!.Invoke(window, args);
+        object Field(string name) => LauncherTestAccess.Get(window, name);
+        object? Call(string name, params object[] args) => LauncherTestAccess.Invoke(window, name, args);
         List<InlineDialog> Pages() => ((IEnumerable<InlineDialog>)Field("inlinePages")).ToList();
         void Check(bool ok, string label)
         {
@@ -138,8 +139,12 @@ static class Program
         {
             Check(((ComboBox)Field("AccountMode")).SelectedIndex == 2, "preferred MUA mode survives missing cache without offline fallback");
             ((ComboBox)Field("AccountMode")).SelectedIndex = 0;
+
             Check(window.WindowStyle == WindowStyle.None && WindowChrome.GetWindowChrome(window)?.ResizeBorderThickness.Left == 6, "custom integrated caption retains resize border");
-            Check(typeof(MainWindow).Assembly.GetName().Name == "MCUGLauncher" && typeof(MainWindow).Assembly.GetName().Version!.ToString() == "0.20.2.0", "final assembly name and version");
+            var launcherAssembly = typeof(MainWindow).Assembly;
+            var assemblyVersion = launcherAssembly.GetName().Version!.ToString();
+            var informationalVersion = launcherAssembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion?.Split('+')[0];
+            Check(launcherAssembly.GetName().Name == "MCUGLauncher" && assemblyVersion == informationalVersion + ".0", "final assembly name and version metadata agree");
             Check(window.Title.StartsWith("MCUG Launcher") && ((SolidColorBrush)app.Resources["AccentBrush"]).Color == Color.FromRgb(0, 109, 184), "new brand uses Wuhan CUG blue");
             Call("RefreshInstanceViews");
             var search = (TextBox)Field("instanceQuery");
@@ -150,17 +155,17 @@ static class Program
             Check(versions.Items.Count > 0, "installed version search finds local game version");
             search.Clear();
             Capture("v0162-home-offline.png");
-            Check(((StackPanel)Field("offlineIdentity")).Visibility == Visibility.Visible, "offline identity has explicitly labeled editable name");
-            typeof(MainWindow).GetField("savedAccount", flags)!.SetValue(window, new SavedMicrosoftAccount("OnlineFixture", "0123456789abcdef0123456789abcdef"));
+            Check(((AccountPanelView)Field("accountPanel")).OfflineIdentity.Visibility == Visibility.Visible, "offline identity has explicitly labeled editable name");
+            LauncherTestAccess.Set(window, "savedAccount", new SavedMicrosoftAccount("OnlineFixture", "0123456789abcdef0123456789abcdef"));
             ((ComboBox)Field("AccountMode")).SelectedIndex = 1;
-            Check(((StackPanel)Field("offlineIdentity")).Visibility == Visibility.Collapsed && ((TextBlock)Field("AvatarPlayerName")).Text == "OnlineFixture", "Microsoft mode displays saved role and hides offline input");
+            Check(((AccountPanelView)Field("accountPanel")).OfflineIdentity.Visibility == Visibility.Collapsed && ((TextBlock)Field("AvatarPlayerName")).Text == "OnlineFixture", "Microsoft mode displays saved role and hides offline input");
             Capture("v0162-home-online.png");
             Call("ThemeWindow", window);
-            Check(((SolidColorBrush)((RadioButton)Field("microsoftChip")).Foreground).Color == Colors.White, "theme preserves selected account chip foreground trigger");
+            Check(((SolidColorBrush)((AccountPanelView)Field("accountPanel")).MicrosoftMode.Foreground).Color == Colors.White, "theme preserves selected account chip foreground trigger");
             ((ComboBox)Field("AccountMode")).SelectedIndex = 2;
-            Check(((RadioButton)Field("muaChip")).IsChecked == true && ((StackPanel)Field("muaIdentity")).Visibility == Visibility.Visible && ((StackPanel)Field("offlineIdentity")).Visibility == Visibility.Collapsed && ((StackPanel)Field("microsoftIdentity")).Visibility == Visibility.Collapsed, "MUA is a separate right-hand login mode with no offline editor");
+            Check(((AccountPanelView)Field("accountPanel")).MuaMode.IsChecked == true && ((AccountPanelView)Field("accountPanel")).MuaIdentity.Visibility == Visibility.Visible && ((AccountPanelView)Field("accountPanel")).OfflineIdentity.Visibility == Visibility.Collapsed && ((AccountPanelView)Field("accountPanel")).MicrosoftIdentity.Visibility == Visibility.Collapsed, "MUA is a separate right-hand login mode with no offline editor");
             Capture("v0170-mua-home.png");
-            var mua = (RadioButton)Field("muaChip");
+            var mua = ((AccountPanelView)Field("accountPanel")).MuaMode;
             var accountChips = (StackPanel)mua.Parent;
             Check(accountChips.ActualWidth <= 244, "three login options fit the account card");
             Check(((TextBlock)Field("AvatarPlayerName")).Text == "尚未登录", "MUA mode never displays Microsoft or offline identity");
@@ -330,6 +335,29 @@ static class Program
             Drive(() => Call("OpenVersionSettings", "1.21.1"), page =>
             {
                 Check(page.Title.StartsWith("版本设置"), "version settings is an inline page");
+                foreach (var section in new[]
+                {
+                    ("概览", "修改版本名"),
+                    ("设置", "保存版本设置"),
+                    ("修改", "获取兼容加载器版本"),
+                    ("Mod 管理", "搜索下载 Mod"),
+                    ("导出", "选择位置并导出")
+                })
+                {
+                    var navigation = Walk(page).OfType<RadioButton>()
+                        .Single(button => Equals(button.Content, section.Item1 switch
+                        {
+                            "概览" => "◇   概览",
+                            "设置" => "⚙   设置",
+                            "修改" => "✎   修改",
+                            "Mod 管理" => "▦   Mod 管理",
+                            _ => "□   导出"
+                        }));
+                    navigation.IsChecked = true;
+                    Check(Buttons(page).Any(button => Equals(button.Content, section.Item2)),
+                        "independent version page renders its working controls: " + section.Item1);
+                }
+                Walk(page).OfType<RadioButton>().Single(button => Equals(button.Content, "◇   概览")).IsChecked = true;
                 Capture("v0162-version-page.png");
                 page.Close();
                 return true;
@@ -404,6 +432,21 @@ static class Program
                 var categories = Walk(page).OfType<RadioButton>().Where(r => r.GroupName == "SketchCategories").ToList();
                 Check(categories.Count == 7, "seven sketch content categories available");
                 var versionList = Walk(page).OfType<ListBox>().First();
+                var catalog = new InstanceCatalog(game);
+                var descriptor = catalog.GetOrCreate("1.21.1");
+                var originalName = descriptor.DisplayName;
+                descriptor.DisplayName = "Renamed inline fixture";
+                catalog.Save(descriptor);
+                Call("RefreshInstanceViews");
+                Check(versionList.SelectedItem is InstanceView selected && selected.Key == "1.21.1"
+                    && selected.Name == descriptor.DisplayName
+                    && Walk(page).OfType<TextBlock>().Any(text => text.Text == descriptor.DisplayName),
+                    "open content manager refreshes renamed metadata and retains selection");
+                Check(((TextBlock)Field("homeSelectedLabel")).Text.Contains(descriptor.DisplayName),
+                    "home launch label refreshes renamed metadata without changing the selection");
+                descriptor.DisplayName = originalName;
+                catalog.Save(descriptor);
+                Call("RefreshInstanceViews");
                 Check(!ScrollViewer.GetCanContentScroll(versionList), "manager version list scrolls in pixels");
                 Check(Walk(page).OfType<ComboBox>().Single().SelectedItem?.ToString() == game, "manager exposes current directory dropdown");
                 Check(((Grid)Field("inlineHost")).RowDefinitions[0].Height.Value == 8 && ((Button)Field("managerCaptionBack")).Visibility == Visibility.Visible, "manager title moves into caption without duplicate row");
@@ -446,7 +489,7 @@ static class Program
             preferences.GameRoots.Add(emptyRoot);
             var originalHttp = (System.Net.Http.HttpClient)Field("http");
             using var offlineHttp = new System.Net.Http.HttpClient(new OfflineDirectoryHandler());
-            typeof(MainWindow).GetField("http", flags)!.SetValue(window, offlineHttp);
+            LauncherTestAccess.Set(window, "http", offlineHttp);
             var rootStage = 0;
             Drive(() => Call("OpenSketchManager", "1.21.1"), page =>
             {
@@ -473,7 +516,7 @@ static class Program
                 page.Close();
                 return true;
             });
-            typeof(MainWindow).GetField("http", flags)!.SetValue(window, originalHttp);
+            LauncherTestAccess.Set(window, "http", originalHttp);
             Call("SetupLauncher");
             Check(((Button)Field("managerCaptionBack")).Visibility == Visibility.Collapsed && ((DockPanel)((Grid)window.Content).Children[0]).Children.OfType<TextBlock>().First().Text == "MCUG Launcher", "leaving manager restores brand caption");
             Drive(() => Call("OpenVersionSection", "1.21.1", "导出"), page =>
@@ -594,11 +637,11 @@ static class Program
                 type = "release",
                 libraries = Array.Empty<object>()
             });
-            typeof(MainWindow).GetField("sketchManagerKey", flags)!.SetValue(window, targetKey192);
+            LauncherTestAccess.Set(window, "sketchManagerKey", targetKey192);
             var directory192 = (string)Call("DropTargetDirectory")!;
             Wait((Task)Call("ImportDroppedFiles", new object[] { new[] { resource192 } })!);
             Check(File.Exists(Path.Combine(directory192, "resourcepacks", Path.GetFileName(resource192))), "resource drop imports into manager target rather than home selection");
-            typeof(MainWindow).GetField("sketchManagerKey", flags)!.SetValue(window, null);
+            LauncherTestAccess.Set(window, "sketchManagerKey", null);
             var live192 = queue192.Enqueue("下载交互验收", game, "fixture", new()
             {
                 Kind = "resource"
@@ -608,7 +651,7 @@ static class Program
                 c.Report("正在接收", 40);
                 await Task.Delay(30000, c.Token);
             }, live192);
-            typeof(MainWindow).GetField("busy", flags)!.SetValue(window, true);
+            LauncherTestAccess.Set(window, "busy", true);
             Call("SetInputs", false);
             Call("RefreshMiniDownloads", true);
             Check(((ComboBox)Field("AccountMode")).IsEnabled && ((ComboBox)Field("Versions")).IsEnabled && !((Button)Field("LaunchGameButton")).IsEnabled, "download keeps account and version browsing enabled while launch stays protected");
@@ -618,7 +661,7 @@ static class Program
             Capture("v0192-tasks.png");
             Call("ChangeDownloadById", live192.Id, OperationState.Paused);
             Wait(run192);
-            typeof(MainWindow).GetField("busy", flags)!.SetValue(window, false);
+            LauncherTestAccess.Set(window, "busy", false);
             Call("SetInputs", true);
             Call("RefreshMiniDownloads", true);
             Check(queue192.History().Single(r => r.Id == live192.Id).State == OperationState.Paused && window.TaskbarItemInfo.ProgressState == System.Windows.Shell.TaskbarItemProgressState.Paused, "task list pauses active transfer and taskbar");
@@ -627,6 +670,37 @@ static class Program
             Call("ChangeDownloadById", live192.Id, OperationState.Cancelled);
             Check(queue192.History().Single(r => r.Id == live192.Id).State == OperationState.Cancelled, "task list cancels resumed transfer");
             Pages().Last().Close();
+            var escapeCombo = new ComboBox { ItemsSource = new[] { "first", "second" }, SelectedIndex = 0 };
+            var escapePage = new InlineDialog { Owner = window, Title = "Escape routing fixture", Content = escapeCombo };
+            var keyboardSource = System.Windows.Interop.HwndSource.FromHwnd(
+                new System.Windows.Interop.WindowInteropHelper(window).EnsureHandle());
+            LauncherTestAccess.Set(window, "closeAfterTask", true);
+            window.Show();
+            Drive(() => escapePage.ShowDialog(), page =>
+            {
+                if ((bool)Field("busy") || !escapeCombo.IsLoaded)
+                    return false;
+                escapeCombo.IsDropDownOpen = true;
+                var key = new KeyEventArgs(Keyboard.PrimaryDevice, keyboardSource, 0, Key.Escape)
+                {
+                    RoutedEvent = Keyboard.PreviewKeyDownEvent
+                };
+                escapeCombo.RaiseEvent(key);
+                if (!key.Handled)
+                {
+                    key.RoutedEvent = Keyboard.KeyDownEvent;
+                    escapeCombo.RaiseEvent(key);
+                }
+                Check(Pages().Contains(page) && !escapeCombo.IsDropDownOpen,
+                    "Escape dismisses an open selector without leaving the inline editor");
+                window.RaiseEvent(new KeyEventArgs(Keyboard.PrimaryDevice, keyboardSource, 0, Key.Escape)
+                {
+                    RoutedEvent = Keyboard.PreviewKeyDownEvent
+                });
+                Check(!Pages().Contains(page), "unhandled Escape still returns from the inline editor");
+                return true;
+            });
+            window.Hide();
             Console.WriteLine("ALL_INLINE_UI_CHECKS_PASSED (component interactions; not live Microsoft authorization)");
         }
         catch (Exception ex)
