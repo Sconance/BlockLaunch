@@ -115,14 +115,15 @@ dotnet run --project tools/SourceFormatter
 
 ## test 分支的组件依赖细化
 
-查看 [窗口拆分与依赖约束](MAINWINDOW_REFACTOR.md) 和 [分支结构比较](TEST_REFACTOR_COMPARISON.md)。账号展示、加载器概览、网络编辑及原生窗口控件通过显式构造参数连接；新的小组件优先接收实际控件、只读状态或操作回调。公共 UI 元素位于 `Views/Shared`，表单位于 `Views/Forms`，数据记录位于 `Models`，纯文件构建位于 `Builders`。
+查看 [窗口拆分与依赖约束](MAINWINDOW_REFACTOR.md) 和 [分支结构比较](archive/TEST_REFACTOR_COMPARISON.md)。账号展示、加载器概览、网络编辑及原生窗口控件通过显式构造参数连接；新的小组件优先接收实际控件、只读状态或操作回调。公共 UI 元素位于 `Views/Shared`，表单位于 `Views/Forms`，数据记录位于 `Models`，纯文件构建位于 `Builders`。
 
 版本设置的页面主体位于 `Views/VersionSettings/`，动作连接在 `Composition/VersionSettingsComposition.cs`。新增或修改某一页时优先定位对应的 `Version*Page`，不要把页面代码重新加进版本设置协调器。
 
-内容管理、全局启动选项和实例导出分别位于 `Presentation/SketchContentManagerDialog.cs`、`LaunchOptionsDialog.cs`、`InstancePackExportDialog.cs`，组合在 `Composition/InstanceDialogComposition.cs`。内容更新的两个视图位于 `Views/Updates`；通用初始化与导航样式位于 `Initialization`、`Styling`。与参考分支的继承关系和准确复用范围见 [延续记录](REFACTOR_CONTINUATION.md)。
+内容管理、全局启动选项和实例导出分别位于 `Presentation/SketchContentManagerDialog.cs`、`LaunchOptionsDialog.cs`、`InstancePackExportDialog.cs`，组合在 `Composition/InstanceDialogComposition.cs`。内容更新的两个视图位于 `Views/Updates`；通用初始化与导航样式位于 `Initialization`、`Styling`。与参考分支的继承关系和准确复用范围见 [延续记录](archive/REFACTOR_CONTINUATION.md)。
 
-## 版本号与分支整合
+## 版本号与分支
 
 - 版本号唯一来源是根目录 `Directory.Build.props` 的 `McugVersion`；运行期读取 `ProductInfo.Version`，不要在界面、User-Agent 或诊断信息里写版本字面量。发版与标签规则见 [版本号控制](VERSIONING.md)。
-- `refactor` 已全量并入 `test`，结构以 `test` 为准；合并与退役文档见 [整合记录](REFACTOR_INTEGRATION.md)。不要重新引入 `partial MainWindow` 或把窗口字段汇总回组合根。
+- 0.22.0 在 `test` 分支准备合并到 `main`，步骤、验证与检查清单见 [合并到主分支前的说明](MERGE_TO_MAIN.md)。
+- `refactor` 分支已废弃并归档，历史材料见 [历史归档](archive/README.md)；不要重新引入 `partial MainWindow` 或把窗口字段汇总回组合根。
 - 合并其他分支时遵循 [重构路线图](../TODO.md) 中的整合检查要点：按组件迁移、保留数据兼容、先查对应服务与 `test/*Checks`，并同步文档与版本号。

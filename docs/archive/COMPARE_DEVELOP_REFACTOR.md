@@ -1,6 +1,9 @@
 # develop 与 refactor 功能对照
 
-> 本文记录 0.20.1 / 0.20.2 功能从 `develop` 迁入 `refactor` 的过程，表中的路径是 `refactor` 当时的 `MainWindow/**` 与 `UI/` 结构。`refactor` 已合入 `test`（`145bf37`），现行路径与迁移去向见 [refactor 分支整合记录](REFACTOR_INTEGRATION.md)，功能定位见 [开发导览](DEVELOPMENT.md)。文末验证记录属于 `refactor`，不作为 `test` 的验收依据。
+> 历史归档：本文记录 refactor 时期的一次性过程，`refactor` 分支已废弃。现行文档见 [开发导览](../DEVELOPMENT.md) 与 [合并到主分支前的说明](../MERGE_TO_MAIN.md)。
+
+
+> 本文记录 0.20.1 / 0.20.2 功能从 `develop` 迁入 `refactor` 的过程，表中的路径是 `refactor` 当时的 `MainWindow/**` 与 `UI/` 结构。`refactor` 已合入 `test`（`145bf37`），现行路径与迁移去向见 [refactor 分支整合记录](REFACTOR_INTEGRATION.md)，功能定位见 [开发导览](../DEVELOPMENT.md)。文末验证记录属于 `refactor`，不作为 `test` 的验收依据。
 
 ## 比较范围
 
@@ -18,7 +21,7 @@
 | 项目介绍、图片、标签、版本事实与依赖摘要 | 资源模型已含标题、描述、图标、标签；收藏系统有独立持久化 | `UI/Content/ResourcePresentationUI.cs` 从 Modrinth 加载有限长度的纯文本介绍和最多三张受限域名图片；详情展示版本信息及依赖摘要。版本选择和下载仍复用原流程。 |
 | 心形收藏、仅收藏筛选、排序和列表/卡片切换 | 已有收藏夹、标签、批量下载、项目收藏标记和排序 | `UI/Content/ResourceFavoritesUI.cs` 扩展在线资源卡片与详情收藏，复用 `ResourceBookmarkStore`；收藏筛选在本地收藏全量数据上检索，并按当前游戏/加载器/发布类型验证兼容性。普通搜索支持 relevance、downloads、updated 排序；旧版 `ContentService.Search` 签名继续保留。 |
 | 八个区域的代码级菜单注册 | 尚无统一的可扩展菜单注册入口 | `Models/LauncherMenuRegistry.cs` 定义区域、上下文、页面工厂和注册表；`UI/Shell/MenuExtensionsUI.cs` 接入顶部、下载、设置、更多、主页和资源详情；版本设置视图及实例内容对话框接入对应临时菜单。仅加载源码中注册的页面，不加载下载或远程插件代码。 |
-| 品牌资源、版本信息与回归断言 | 版本为 0.20.0，图标为旧资源 | refactor 曾以 **0.21.0** 发布；图标与 Logo 已同步。合并后版本号改为单一来源 `Directory.Build.props`，见 [版本号控制](VERSIONING.md)；程序集版本断言改为与程序集元数据比较。 |
+| 品牌资源、版本信息与回归断言 | 版本为 0.20.0，图标为旧资源 | refactor 曾以 **0.21.0** 发布；图标与 Logo 已同步。合并后版本号改为单一来源 `Directory.Build.props`，见 [版本号控制](../VERSIONING.md)；程序集版本断言改为与程序集元数据比较。 |
 
 ## 兼容和架构决定
 
@@ -30,9 +33,9 @@
 
 ## 相关说明
 
-- [增加菜单栏目](MENU_EXTENSIONS.md)
-- [MainWindow 职责拆分](MAINWINDOW_REFACTOR.md)
-- [更新记录](../CHANGELOG.md)
+- [增加菜单栏目](../MENU_EXTENSIONS.md)
+- [MainWindow 职责拆分](../MAINWINDOW_REFACTOR.md)
+- [更新记录](../../CHANGELOG.md)
 
 ## 验证记录（refactor 当时）
 

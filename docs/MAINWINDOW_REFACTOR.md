@@ -67,7 +67,7 @@
 
 原内容管理约 603 行的 `InstanceContentController` 缩减为约 285 行，内容管理对话框迁入 `Presentation/SketchContentManagerDialog`。原约 553 行的 `InstanceWorkspaceController` 缩减为约 322 行，启动设置、整合包导出和公共对话框构造分别迁入同名参考组件。更新选择/预览、工具提示、工具窗口初始化及导航样式直接复用参考实现。
 
-完整相同的文件、适配的文件及保留差异见 [refactor 延续记录](REFACTOR_CONTINUATION.md)。没有把整个 MainWindow 改名后交给新组件；独立对话框与更新模块不持有 LauncherWorkspace。
+完整相同的文件、适配的文件及保留差异见 [refactor 延续记录](archive/REFACTOR_CONTINUATION.md)。没有把整个 MainWindow 改名后交给新组件；独立对话框与更新模块不持有 LauncherWorkspace。
 
 ## 验证范围与限制
 
@@ -77,7 +77,7 @@
 
 ## refactor 分支合并与版本控制
 
-`refactor`（`db0ab6a`）已在 `145bf37` 合入主干，父提交为 `0eaf5ec`（原文 `test`）与 `db0ab6a`。合并保持本文件的窗口 shell、九个 XAML 页面与组合根结构；`refactor` 的 86 个 `partial MainWindow` 文件与 51 篇逐类文档按结构退役，逐项去向、退役理由与验证记录见 [整合记录](REFACTOR_INTEGRATION.md)。
+`refactor`（`db0ab6a`）已在 `145bf37` 合入主干，父提交为 `0eaf5ec`（原文 `test`）与 `db0ab6a`。合并保持本文件的窗口 shell、九个 XAML 页面与组合根结构；`refactor` 的 86 个 `partial MainWindow` 文件与 51 篇逐类文档按结构退役，逐项去向、退役理由与验证记录见 [整合记录](archive/REFACTOR_INTEGRATION.md)。
 
 - 版本号改为单一来源：`Directory.Build.props` 的 `McugVersion` 派生程序集元数据，运行期读取 `ProductInfo.Version`，界面、User-Agent 与诊断信息不再写死；规则见 [版本号控制](VERSIONING.md)。
 - 补充 `scripts/check-version.py` 与 CI 检查，避免 CHANGELOG、README、程序集版本与标签再次不一致。

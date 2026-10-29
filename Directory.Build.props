@@ -11,7 +11,7 @@
     规则见 docs/VERSIONING.md。
   -->
   <PropertyGroup>
-    <McugVersion>0.21.0</McugVersion>
+    <McugVersion>0.22.0</McugVersion>
     <Version>$(McugVersion)</Version>
   </PropertyGroup>
 

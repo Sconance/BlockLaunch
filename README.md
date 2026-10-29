@@ -50,7 +50,7 @@ MCUG Launcher 提供游戏启动、分类下载、账号登录和实例内容管
 
 ## 源码与构建
 
-当前版本为 **0.21.0**，最终产品名确定为 **MCUG Launcher**。使用 Windows x64 与 .NET 8 SDK：
+当前版本为 **0.22.0**，最终产品名确定为 **MCUG Launcher**。使用 Windows x64 与 .NET 8 SDK：
 
 ```powershell
 git clone https://github.com/Sconance/MCUGLauncher.git
@@ -61,14 +61,14 @@ dotnet publish src/MCUGLauncher/MCUGLauncher.csproj -c Release -o artifacts/publ
 
 详见 [构建与目录说明](docs/BUILD.md)。历史版本源码仍保留在各 Release 的手动 Source.zip 附件中；旧标签未移动，旧版自动生成的 Source code 归档可能仅含原仓库文件。
 
-版本号只有一个来源（`Directory.Build.props` 的 `McugVersion`），发版、标签与检查规则见 [版本号控制](docs/VERSIONING.md)。当前重构主线在 `test` 分支：`MainWindow` 已拆成窗口 shell、九个独立 XAML 页面与功能模块，剩余拆分计划见 [重构路线图](TODO.md)，`refactor` 分支的合并内容见 [整合记录](docs/REFACTOR_INTEGRATION.md)。各类型的职责、入口与源码位置见 [类文档目录](docs/classes/README.md)。
+版本号只有一个来源（`Directory.Build.props` 的 `McugVersion`），发版、标签与检查规则见 [版本号控制](docs/VERSIONING.md)。0.22.0 在 `test` 分支准备合并到 `main`：`Components/` 已按九个功能域重组，`MainWindow` 拆成窗口 shell、九个独立 XAML 页面与功能模块；合并步骤、验证结果与风险见 [合并到主分支前的说明](docs/MERGE_TO_MAIN.md)，后续计划见 [重构路线图](TODO.md)，历史材料在 [历史归档](docs/archive/README.md)，类型说明在 [类文档目录](docs/classes/README.md)。
 
 ```text
 src/       主程序与核心逻辑（2 个项目）
 test/      功能、界面与集成检查（22 个项目）
 tools/     隔离界面预览（4 个）和源码格式工具
 scripts/   构建与检查脚本
-docs/      使用、构建、历史测试记录与截图
+docs/      使用、构建、类文档（classes/）、历史归档（archive/）与截图
 ```
 
 ## 反馈与贡献
