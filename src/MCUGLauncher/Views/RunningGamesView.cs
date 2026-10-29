@@ -5,7 +5,7 @@ using System.Windows.Media;
 namespace BlockLaunch;
 
 /// <summary>WPF adapter for the session presentation port. It never reads files or controls processes.</summary>
-internal sealed class RunningGamesView(Button entry, Action<string, UIElement> showPage) : IRunningGamesView
+internal sealed class RunningGamesView(Button entry, Action<string, UIElement> showPage, Func<RunningGameRow, Task<bool>> confirmClose) : IRunningGamesView
 {
     IReadOnlyList<RunningGameRow> rows = [];
     StackPanel? sessionList;
@@ -38,7 +38,7 @@ internal sealed class RunningGamesView(Button entry, Action<string, UIElement> s
         foreach (var game in rows)
         {
             var body = new StackPanel();
-            body.Children.Add(FeatureUiElements.Heading(game.Version));
+            body.Children.Add(FeatureUiElements.Heading(game.Version + (game.PlayerName.Length > 0 ? " · " + game.PlayerName : "")));
             body.Children.Add(FeatureUiElements.Hint(game.Directory));
             var actions = new WrapPanel();
             actions.Children.Add(FeatureUiElements.ActionButton("请求关闭此游戏", (_, _) => CloseRequested?.Invoke(game.Id)));
@@ -55,6 +55,8 @@ internal sealed class RunningGamesView(Button entry, Action<string, UIElement> s
             });
         }
     }
+
+    public Task<bool> ConfirmClose(RunningGameRow game) => confirmClose(game);
 
     public void ShowLog(string version, string content) => showPage("运行日志 · " + version, new TextBox
     {

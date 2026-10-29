@@ -655,7 +655,7 @@ static class Program
             Call("SetInputs", false);
             Call("RefreshMiniDownloads", true);
             Check(((ComboBox)Field("AccountMode")).IsEnabled && ((ComboBox)Field("Versions")).IsEnabled && !((Button)Field("LaunchGameButton")).IsEnabled, "download keeps account and version browsing enabled while launch stays protected");
-            Check(Grid.GetRow((Border)Field("miniDownload")) == 0 && window.TaskbarItemInfo!.ProgressState == System.Windows.Shell.TaskbarItemProgressState.Normal, "download appears in caption and taskbar");
+            Check(Grid.GetRow((Border)Field("miniDownload")) == 0 && window.TaskbarItemInfo!.ProgressState == System.Windows.Shell.TaskbarItemProgressState.None, "download progress appears only in caption");
             Call("OpenDownloadTasks");
             Check(Pages().Single().Title == "下载任务" && Buttons(Pages().Single()).Any(b => Equals(b.Content, "取消")), "download task list has explicit cancel action");
             Capture("v0192-tasks.png");
@@ -664,7 +664,7 @@ static class Program
             LauncherTestAccess.Set(window, "busy", false);
             Call("SetInputs", true);
             Call("RefreshMiniDownloads", true);
-            Check(queue192.History().Single(r => r.Id == live192.Id).State == OperationState.Paused && window.TaskbarItemInfo.ProgressState == System.Windows.Shell.TaskbarItemProgressState.Paused, "task list pauses active transfer and taskbar");
+            Check(queue192.History().Single(r => r.Id == live192.Id).State == OperationState.Paused && window.TaskbarItemInfo.ProgressState == System.Windows.Shell.TaskbarItemProgressState.None, "task list pauses active transfer without a taskbar progress bar");
             Call("ChangeDownloadById", live192.Id, OperationState.Queued);
             Check(queue192.History().Single(r => r.Id == live192.Id).State == OperationState.Queued, "task list resumes queued transfer");
             Call("ChangeDownloadById", live192.Id, OperationState.Cancelled);

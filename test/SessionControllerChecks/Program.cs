@@ -82,6 +82,7 @@ sealed class FakeRunningView : IRunningGamesView
     public void Render(IReadOnlyList<RunningGameRow> rows) => Rows = rows;
     public void Show() => ShowCount++;
     public void ShowLog(string version, string content) => LastLog = content;
+    public Task<bool> ConfirmClose(RunningGameRow game) => Task.FromResult(false);
     public void RequestClose(Guid id) => CloseRequested?.Invoke(id);
     public void RequestLog(Guid id) => LogRequested?.Invoke(id);
 }

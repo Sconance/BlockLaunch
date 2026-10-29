@@ -1,6 +1,6 @@
 namespace BlockLaunch;
 
-internal sealed record RunningGameRow(Guid Id, string Version, string Directory);
+internal sealed record RunningGameRow(Guid Id, string Version, string Directory, string PlayerName = "");
 
 /// <summary>Presentation port. No WPF objects or process handles cross this boundary.</summary>
 internal interface IRunningGamesView
@@ -10,4 +10,5 @@ internal interface IRunningGamesView
     void Render(IReadOnlyList<RunningGameRow> games);
     void Show();
     void ShowLog(string version, string content);
+    Task<bool> ConfirmClose(RunningGameRow game);
 }

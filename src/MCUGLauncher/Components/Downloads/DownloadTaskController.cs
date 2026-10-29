@@ -80,7 +80,6 @@ internal sealed class DownloadTaskController
         var panel = new StackPanel();
         panel.Children.Add(new TextBlock { Text = record.Name, FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap });
         panel.Children.Add(FeatureUiElements.Hint(DownloadTaskStatus(record)));
-        panel.Children.Add(new ProgressBar { Minimum = 0, Maximum = 100, Value = record.Percent ?? 0, Height = 4, Margin = new Thickness(0, 4, 0, 8), IsIndeterminate = record.State == OperationState.Running && record.Percent == null });
         panel.Children.Add(new TextBlock { Text = record.Message, TextWrapping = TextWrapping.Wrap, FontSize = 11, ToolTip = record.Root });
         var actions = new WrapPanel();
         void Add(string name, OperationState state, bool enabled)
@@ -170,15 +169,8 @@ internal sealed class DownloadTaskController
     internal void UpdateTaskbarDownload(OperationRecord? record)
     {
         workspace.Window.TaskbarItemInfo ??= new TaskbarItemInfo();
-        workspace.Window.TaskbarItemInfo.ProgressState = record?.State switch
-        {
-            null => TaskbarItemProgressState.None,
-            OperationState.Failed => TaskbarItemProgressState.Error,
-            OperationState.Running when record.Percent == null => TaskbarItemProgressState.Indeterminate,
-            OperationState.Running => TaskbarItemProgressState.Normal,
-            _ => TaskbarItemProgressState.Paused
-        };
-        workspace.Window.TaskbarItemInfo.ProgressValue = Math.Clamp((record?.Percent ?? 0) / 100, 0, 1);
+        workspace.Window.TaskbarItemInfo.ProgressState = TaskbarItemProgressState.None;
+        workspace.Window.TaskbarItemInfo.ProgressValue = 0;
     }
 
     internal async Task RunAccountAction(Func<Task> action, string name)

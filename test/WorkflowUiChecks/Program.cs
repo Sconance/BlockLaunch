@@ -37,6 +37,9 @@ public static class Program
         using var startupHttp = new HttpClient(startupHandler);
         LauncherTestAccess.Set(window, "http", startupHttp);
         LauncherTestAccess.Invoke(window, "SetupLauncher");
+        var unexpectedStartupProgress = false;
+        var taskStatusBar = (FrameworkElement)LauncherTestAccess.Get(window, "TaskStatusBar");
+        taskStatusBar.IsVisibleChanged += (_, _) => unexpectedStartupProgress |= taskStatusBar.IsVisible;
         var startupClock = System.Diagnostics.Stopwatch.StartNew();
         window.Show();
 
@@ -65,8 +68,19 @@ public static class Program
             timer.Stop();
             try
             {
+                if (unexpectedStartupProgress)
+                    throw new Exception("Startup displayed the removed task progress bar");
                 if (startupHandler.Calls != 0)
                     throw new Exception("Local startup unexpectedly requested online metadata");
+                var cancelButton = (Button)LauncherTestAccess.Get(window, "CancelTaskButton");
+                if (cancelButton.Parent == taskStatusBar || !Equals(cancelButton.Content, "取消当前操作"))
+                    throw new Exception("Task cancellation was removed with the progress surface");
+                await (Task)LauncherTestAccess.Invoke(window, "Run", [(Func<Task>)(async () =>
+                {
+                    if (taskStatusBar.Visibility == Visibility.Visible) throw new Exception("Launch operation displayed a progress bar");
+                    await Task.Delay(10);
+                }), "启动游戏"])!;
+                Console.WriteLine("PASS startup/launch progress hidden and task cancellation retained");
                 Console.WriteLine($"PASS local startup made zero network requests ({startupClock.ElapsedMilliseconds} ms in isolated fixture)");
                 LauncherTestAccess.Set(window, "queueReady", false);
                 ((DispatcherTimer?)LauncherTestAccess.Get(window, "downloadTimer"))?.Stop();
@@ -185,6 +199,51 @@ public static class Program
                     if (failure != null)
                         throw failure;
                 }
+                ((Button)LauncherTestAccess.Get(window, "StopGameButton"))
+                    .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                var runningPage = ((IEnumerable<InlineDialog>)LauncherTestAccess.Get(window, "inlinePages"))
+                    .Single(page => page.Title == "运行中的游戏");
+                if (!Descendants(runningPage).OfType<TextBlock>().Any(text => text.Text.Contains("当前没有运行中的游戏")))
+                    throw new Exception("Running-game page not shown by the actual home entry");
+                runningPage.Close();
+                Console.WriteLine("PASS actual home running-game button opens its inline page");
+                var confirmationType = typeof(MainWindow).Assembly.GetType("BlockLaunch.GameCloseConfirmationView")!;
+                var confirmation = Activator.CreateInstance(confirmationType,
+                    BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public, null, [window], null)!;
+                var rowType = typeof(MainWindow).Assembly.GetType("BlockLaunch.RunningGameRow")!;
+                var sampleRow = Activator.CreateInstance(rowType, [Guid.NewGuid(), "fixture", game, "PlayerA"])!;
+                async Task ConfirmAndChoose(bool approve)
+                {
+                    var pending = (Task<bool>)confirmationType.GetMethod("Confirm", BindingFlags.Instance | BindingFlags.NonPublic)!
+                        .Invoke(confirmation, [sampleRow])!;
+                    var rootGrid = (Grid)window.Content;
+                    var overlay = rootGrid.Children.OfType<Grid>().Single(grid => Equals(grid.Tag, "GameCloseConfirmation"));
+                    if (!Descendants(overlay).OfType<TextBlock>().Any(text => text.Text.Contains("未保存的内容")))
+                        throw new Exception("Close confirmation lost unsaved-content warning");
+                    if (!approve)
+                        Save(overlay, "v0221-close-confirmation.png");
+                    Descendants(overlay).OfType<Button>().Single(button => Equals(button.Content, approve ? "确认关闭" : "取消"))
+                        .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                    if (await pending != approve || rootGrid.Children.Contains(overlay))
+                        throw new Exception("Compact close confirmation did not return/clean up correctly");
+                }
+                await ConfirmAndChoose(false);
+                await ConfirmAndChoose(true);
+                ((Button)LauncherTestAccess.Get(window, "StopGameButton"))
+                    .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                var beforeEscape = ((IEnumerable<InlineDialog>)LauncherTestAccess.Get(window, "inlinePages")).Count();
+                var escapeResult = (Task<bool>)confirmationType.GetMethod("Confirm", BindingFlags.Instance | BindingFlags.NonPublic)!
+                    .Invoke(confirmation, [sampleRow])!;
+                var escape = new System.Windows.Input.KeyEventArgs(System.Windows.Input.Keyboard.PrimaryDevice,
+                    PresentationSource.FromVisual(window), Environment.TickCount, System.Windows.Input.Key.Escape)
+                {
+                    RoutedEvent = System.Windows.Input.Keyboard.PreviewKeyDownEvent
+                };
+                window.RaiseEvent(escape);
+                if (await escapeResult || ((IEnumerable<InlineDialog>)LauncherTestAccess.Get(window, "inlinePages")).Count() != beforeEscape)
+                    throw new Exception("Escape closed the underlying running-game page instead of just the confirmation");
+                ((IEnumerable<InlineDialog>)LauncherTestAccess.Get(window, "inlinePages")).Last().Close();
+                Console.WriteLine("PASS compact in-window close confirmation supports cancel and confirm");
                 DriveDialog("启动设置", () => LauncherTestAccess.Invoke(window, "EditLaunchOptions", [null]), page =>
                 {
                     TextBox FieldAfter(string label)

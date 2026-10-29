@@ -104,6 +104,8 @@ static class Program
             Call("RefreshMiniDownloads", false);
             Assert(((TextBlock)Field("miniDownloadSpeed")).Text != "0 B/s", "speed is measured from actual consumed response bytes");
             var mini = (Border)Field("miniDownload");
+            Assert(Grid.GetRow(mini) == 0 && mini.HorizontalAlignment == HorizontalAlignment.Right &&
+                mini.VerticalAlignment == VerticalAlignment.Top, "global progress is anchored at the top right");
             foreach (var tab in new[] {
                 0,
                 1,

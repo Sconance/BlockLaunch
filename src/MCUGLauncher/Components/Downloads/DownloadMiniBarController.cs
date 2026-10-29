@@ -82,6 +82,7 @@ internal sealed class DownloadMiniBarController
             CornerRadius = new CornerRadius(6),
             Background = Brushes.White,
             HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Top,
             Visibility = Visibility.Collapsed,
             Child = content,
             Cursor = Cursors.Hand

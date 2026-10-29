@@ -134,8 +134,14 @@ dotnet run --project tools/SourceFormatter
 - `Components/Launch/RunningGamesController` 通过显式 UI 回调展示会话与退出诊断，关闭操作仅针对选中的会话；不调用 Process.Kill。
 - `Components/Downloads/VersionCatalogController` 独立负责在线列表的按需请求、同目录请求合并、12 秒超时和旧目录响应抑制。组合层连接现有 CmlLib 版本服务。
 - `StartupRecovery` 只完成本地事务恢复和实例列表刷新。首页刷新也只读取本地，进入原版/加载器下载页才请求在线元数据。在线等待不占用 OperationCoordinator 或禁用首页控件。
-- 为保护共享 libraries/assets 和实例内容，安装队列及破坏性内容变更仍在有游戏运行时暂停；不同独立实例可继续启动，同一个共享游戏目录不能多开。切换到已有运行会话的根目录时不对其执行恢复/迁移。
+- 为保护共享 libraries/assets 和实例内容，安装队列及破坏性内容变更仍在有游戏运行时暂停；不同独立实例可继续启动，同一目录仅允许不同离线 ID 多开；相同 ID 或在线会话仍阻止重复启动。切换到已有运行会话的根目录时不对其执行恢复/迁移。
 
 ### 运行会话的展示端口
 
 `RunningGamesController` 不再构造页面或引用 WPF。它把注册表映射成 `RunningGameRow` 快照，经 `IRunningGamesView` 更新展示，再按 ID 接收关闭/日志命令。`Views/RunningGamesView` 负责 WPF 控件构造，不接收进程会话、文件读取器或注册表。日志读取和诊断捕获由组合层注入 `RunningGameActions`。窗口关闭时控制器解除视图事件订阅。`SessionControllerChecks` 不启用 WPF，直接编译控制器与接口；`RuntimeChecks` 保留真实 WPF 视图和双测试进程的交互检查。
+
+### 0.22.1 交互修订
+
+- 运行会话登记包含运行期角色名和离线标记。同目录离线身份按忽略大小写的角色 ID 去重，不同 ID 可以共存；启动第二个会话时不重写语言和离线皮肤包配置。用户配置及认证协议没有新增字段。
+- 控制器通过展示端口请求确认，确认后再次核对会话；GameCloseConfirmationView 只管理主窗口内的紧凑遮罩，不接触进程或注册表。
+- 组合层负责真正显示运行列表。全局操作进度表面不再显示，下载进度只在标题栏右上角显示；任务列表保留文本状态与百分比。

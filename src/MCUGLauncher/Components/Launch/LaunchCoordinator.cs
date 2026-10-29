@@ -58,7 +58,7 @@ internal sealed class LaunchCoordinator
         };
     }
 
-    internal async Task Run(Func<Task> action, string? name = null, bool compactProgress = false)
+    internal async Task Run(Func<Task> action, string? name = null)
     {
         if (busy)
         {
@@ -66,10 +66,9 @@ internal sealed class LaunchCoordinator
             return;
         }
 
-        workspace.Window.TaskStatusBar.Height = compactProgress ? 32 : 57;
-        workspace.Window.TaskStatusBar.Visibility = Visibility.Visible;
+        workspace.Window.TaskStatusBar.Visibility = Visibility.Collapsed;
         busy = true;
-        workspace.Window.Progress.IsIndeterminate = true;
+        workspace.Window.Progress.IsIndeterminate = false;
         SetInputs(false);
         try
         {
@@ -289,10 +288,16 @@ internal sealed class LaunchCoordinator
             throw new IOException("所选版本尚未安装完成，请到「游戏安装」下载 / 修复后再启动。");
         workspace.Window.Status.Text = "构建启动命令…";
         var directory = Instance();
-        workspace.RunningGamesController.Registry.RequireAvailable(directory);
+        var offline = workspace.Controls.AccountMode.SelectedIndex == 0;
+        var playerName = session.Username ?? prefs.Player;
+        workspace.RunningGamesController.Registry.RequireAvailable(directory, playerName, offline);
+        var alreadyRunning = workspace.RunningGamesController.Registry.UsesDirectory(directory);
         var descriptor = new InstanceCatalog(prefs.Root).GetOrCreate(id);
-        GameDefaults.EnsureChinese(directory, workspace.ResourceBrowserController.Target().GameVersion);
-        OfflineSkinPackBuilder.Prepare(prefs.Root, directory, prefs.OfflineSkin, workspace.ResourceBrowserController.Target().GameVersion, workspace.Controls.AccountMode.SelectedIndex == 0);
+        if (!alreadyRunning)
+        {
+            GameDefaults.EnsureChinese(directory, workspace.ResourceBrowserController.Target().GameVersion);
+            OfflineSkinPackBuilder.Prepare(prefs.Root, directory, prefs.OfflineSkin, workspace.ResourceBrowserController.Target().GameVersion, offline);
+        }
         var launchSettings = descriptor.Launch ?? prefs.Launch;
         if (workspace.ExperienceController.nextServerAddress != null)
         {
@@ -321,7 +326,7 @@ internal sealed class LaunchCoordinator
             var secrets = new[] { access, workspace.Controls.AccountMode.SelectedIndex == 2 ? workspace.MuaAccountController.muaAccount?.ClientToken ?? "" : "" };
             var running = workspace.RunningGamesController.Registry.Start(prefs.Root, directory, id,
                 Path.Combine(settingsDir, "process-logs"), process,
-                line => workspace.TaskRecoveryController.QueueGameLine("[" + id + "] " + line), secrets);
+                line => workspace.TaskRecoveryController.QueueGameLine("[" + id + "/" + playerName + "] " + line), secrets, playerName, offline);
             var diagnosisContext = new DiagnosticContext(directory, descriptor.LaunchProfileId, running.LogFile,
                 running.StartedUtc, Secrets: secrets);
             _ = workspace.RunningGamesController.ObserveGame(running, diagnosisContext);
@@ -486,6 +491,7 @@ internal sealed class LaunchCoordinator
         http.DefaultRequestHeaders.UserAgent.ParseAdd($"MCUGLauncher/{ProductInfo.Version} (Windows-desktop-launcher)");
         SetupLauncher();
         workspace.InstanceWorkspaceController.BuildFeaturePages();
+        workspace.TaskRecoveryController.AttachTaskCancellation();
         workspace.InstanceWorkspaceController.ApplyPersonalization();
         workspace.AccountController.BuildAccountUI();
         workspace.DiagnosticsController.BuildDiagnosticsUI();
@@ -510,7 +516,7 @@ internal sealed class LaunchCoordinator
             if (closeAfterTask)
                 return;
             var startup = System.Diagnostics.Stopwatch.StartNew();
-            await Run(workspace.TaskRecoveryController.StartupRecovery, "读取本地游戏", compactProgress: true);
+            await Run(workspace.TaskRecoveryController.StartupRecovery, "读取本地游戏");
             Log($"本地启动准备完成：{startup.ElapsedMilliseconds} ms；在线版本按需加载。");
             if (!loginRequested)
                 await workspace.InstanceWorkspaceController.HandleScriptLaunch();

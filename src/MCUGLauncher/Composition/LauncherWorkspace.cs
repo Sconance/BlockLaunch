@@ -230,12 +230,13 @@ internal sealed partial class LauncherWorkspace
             (action, name) => LaunchCoordinator.Run(action, name), ResourceBrowserController.RequireStopped,
             InstanceWorkspaceController.FeatureDialog, DownloadQueueController.EnqueueDownload,
             ResourceBrowserController.Target, ResourceBrowserController.ManagedDirectory, ResourceBrowserController.RefreshLocalContent, LaunchCoordinator.Log));
+        var gameCloseConfirmation = new GameCloseConfirmationView(window);
         var runningView = new RunningGamesView(Controls.StopGameButton, (title, content) =>
         {
             var body = new System.Windows.Controls.StackPanel();
             body.Children.Add(content);
-            InstanceWorkspaceController.FeatureDialog(title, body);
-        });
+            InstanceWorkspaceController.FeatureDialog(title, body).Show();
+        }, gameCloseConfirmation.Confirm);
         RunningGamesController = new RunningGamesController(new RunningGameRegistry(), runningView, new(
             () => window.Dispatcher.HasShutdownStarted || !window.IsLoaded,
             LaunchCoordinator.Log,

@@ -82,6 +82,9 @@ internal sealed class InlineHostController
         root.Children.Add(inlineHost);
         workspace.Window.PreviewKeyDown += (_, e) =>
         {
+            // A foreground modal surface handles Escape before page-level navigation.
+            if (root.Children.OfType<FrameworkElement>().Any(surface => Panel.GetZIndex(surface) >= 1000 && surface.Visibility == Visibility.Visible))
+                return;
             if (e.Key == Key.Escape && inlinePages.Count > 0)
             {
                 e.Handled = true;

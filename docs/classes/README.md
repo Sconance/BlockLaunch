@@ -226,3 +226,5 @@
 - [RunningGameRow](Presentation/RunningGameRow.md) — 纯数据会话行。
 - [RunningGameActions](Components/Launch/RunningGameActions.md) — 注入的日志与诊断能力。
 - [RunningGamesView](Views/RunningGamesView.md) — WPF 视图适配器。
+
+- [GameCloseConfirmationView](Views/GameCloseConfirmationView.md) — 游戏关闭的紧凑二次确认。

@@ -31,6 +31,16 @@ internal sealed class TaskRecoveryController
         _ when method.Contains("UpdateContent") => "更新内容",
         _ => "内容与设置操作"
     };
+    internal void AttachTaskCancellation()
+    {
+        // Keep cancellation available after removing the global progress surface.
+        var cancel = workspace.Window.CancelTaskButton;
+        ((System.Windows.Controls.Panel)cancel.Parent).Children.Remove(cancel);
+        cancel.Content = "取消当前操作";
+        var tasks = (System.Windows.Controls.Grid)workspace.Controls.TaskHistoryList.Parent;
+        tasks.Children.OfType<System.Windows.Controls.WrapPanel>().Single().Children.Add(cancel);
+    }
+
     internal void ApplyOperation(OperationRecord record)
     {
         var active = workspace.LaunchCoordinator.operations.Current;

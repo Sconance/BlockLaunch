@@ -146,3 +146,11 @@ WorkflowUiChecks 的截图保存方法自行创建输出目录，不依赖其他
 ### 运行会话的展示端口回归
 
 控制器与 WPF 视图通过 IRunningGamesView/RunningGameRow 分离，日志读取和诊断捕获通过 RunningGameActions 注入。SessionControllerChecks 不启用 UseWPF，其 runtimeconfig 只依赖 Microsoft.NETCore.App，直接验证控制器的快照、日志命令、会话退出和事件退订。RuntimeChecks 保留真实视图与双进程检查；测试窗口必须先报告 Loaded，再发送关闭命令，避免把窗口创建句柄误当作界面准备完成。
+
+### 0.22.1 进度与运行入口修订
+
+WorkflowUiChecks 直接触发首页 StopGameButton 并断言 inlinePages 中出现运行列表，防止只创建页面未显示的回归；覆盖紧凑确认的确认、取消、Escape 与背后页面保留。RuntimeChecks 使用同一目录、不同离线 ID 的两个真实测试窗口，验证身份去重、取消不关闭、确认只关闭指定进程与日志隔离。它不代表真实 Minecraft 的世界锁或联机行为测试。
+
+MiniDownloadChecks 检查右上角锚定及跨页面可见；InlineUiChecks 继续覆盖暂停、继续、取消及进度位置，并断言任务栏不重复显示进度条。启动及普通操作不显示底部进度表面。
+
+本批全部 23 项非真实游戏检查通过；移除进度表面后，“取消当前操作”复用原按钮移至任务页，并额外复核启动/游戏启动不显示进度条、实际入口与确认遮罩。

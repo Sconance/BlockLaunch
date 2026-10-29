@@ -30,7 +30,7 @@ internal sealed class RunningGamesController : IDisposable
     internal void RefreshRunningGames()
     {
         if (!IsClosed)
-            view.Render(Registry.Active.Select(game => new RunningGameRow(game.Id, game.Version, game.Directory)).ToArray());
+            view.Render(Registry.Active.Select(game => new RunningGameRow(game.Id, game.Version, game.Directory, game.PlayerName)).ToArray());
     }
 
     internal void ShowRunningGames()
@@ -41,7 +41,7 @@ internal sealed class RunningGamesController : IDisposable
         view.Show();
     }
 
-    void CloseGame(Guid id)
+    async void CloseGame(Guid id)
     {
         if (IsClosed)
             return;
@@ -50,6 +50,9 @@ internal sealed class RunningGamesController : IDisposable
             return;
         try
         {
+            var approved = await view.ConfirmClose(new(game.Id, game.Version, game.Directory, game.PlayerName));
+            if (!approved || IsClosed || !Registry.Active.Any(current => current.Id == id))
+                return;
             if (!game.Session.Completion.IsCompleted && !game.Session.RequestStop())
                 actions.Log("未能发送关闭请求，请在对应游戏窗口内正常退出。");
         }

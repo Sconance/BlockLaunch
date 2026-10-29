@@ -66,7 +66,8 @@ internal static class Program
         var root = Path.Combine(Path.GetTempPath(), "MCUG-runtime-" + Guid.NewGuid().ToString("N"));
         var entry = new System.Windows.Controls.Button();
         UIElement? displayed = null;
-        var view = new RunningGamesView(entry, (_, page) => displayed = page);
+        var closeApproved = false;
+        var view = new RunningGamesView(entry, (_, page) => displayed = page, _ => Task.FromResult(closeApproved));
         using var controller = new RunningGamesController(new RunningGameRegistry(), view,
             new(() => false, _ => { }, _ => { }, context => Task.FromResult(Diagnostics.Capture(context)),
                 _ => { }, path => Task.FromResult(SharedLogs.ReadTail(path))));
@@ -78,9 +79,9 @@ internal static class Program
             var readyA = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             var readyB = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             var a = registry.Start(root, Path.Combine(root, "A"), "version-A", Path.Combine(root, "logs"), first,
-                line => { if (line == "fixture-window-ready") readyA.TrySetResult(); }, ["runtime-fixture-secret"]);
-            var b = registry.Start(root, Path.Combine(root, "B"), "version-B", Path.Combine(root, "logs"), second,
-                line => { if (line == "fixture-window-ready") readyB.TrySetResult(); }, ["runtime-fixture-secret"]);
+                line => { if (line == "fixture-window-ready") readyA.TrySetResult(); }, ["runtime-fixture-secret"], "PlayerA", true);
+            var b = registry.Start(root, Path.Combine(root, "A"), "version-B", Path.Combine(root, "logs"), second,
+                line => { if (line == "fixture-window-ready") readyB.TrySetResult(); }, ["runtime-fixture-secret"], "PlayerB", true);
             await Task.WhenAll(readyA.Task, readyB.Task).WaitAsync(TimeSpan.FromSeconds(15));
             var observeA = controller.ObserveGame(a, new(a.Directory, a.Version, a.LogFile));
             var observeB = controller.ObserveGame(b, new(b.Directory, b.Version, b.LogFile));
@@ -96,6 +97,15 @@ internal static class Program
             }
             catch (IOException) { }
             Check(registry.UsesRoot(root) && registry.UsesDirectory(Path.Combine(root, "A")), "same-directory guard and root tracking");
+            try
+            {
+                registry.RequireAvailable(Path.Combine(root, "A"), "playera", true);
+                throw new Exception("Duplicate offline identity accepted");
+            }
+            catch (IOException) { }
+            registry.RequireAvailable(Path.Combine(root, "A"), "PlayerC", true);
+            Check(registry.Active.Select(game => game.PlayerName).SequenceEqual(new[] { "PlayerA", "PlayerB" }),
+                "different offline identities share one instance, duplicate identity is rejected");
             var deadline = DateTime.UtcNow.AddSeconds(15);
             while (DateTime.UtcNow < deadline && (first.MainWindowHandle == 0 || second.MainWindowHandle == 0))
             {
@@ -103,6 +113,10 @@ internal static class Program
                 first.Refresh();
                 second.Refresh();
             }
+            Buttons(displayed!).First(button => Equals(button.Content, "请求关闭此游戏"))
+                .RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));
+            Check(!a.Session.StopRequested && registry.Active.Count == 2, "cancelled confirmation leaves both games running");
+            closeApproved = true;
             Buttons(displayed!).First(button => Equals(button.Content, "请求关闭此游戏"))
                 .RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));
             Check(a.Session.StopRequested, "targeted UI close reaches first window");
@@ -118,7 +132,7 @@ internal static class Program
             await observeA;
             Check(entry.Content!.ToString()!.Contains("1"), "running-game entry updates after first exit");
             Check(exit.Requested && registry.Active.Count == 1 && !second.HasExited, "closing first session leaves second running");
-            registry.RequireAvailable(Path.Combine(root, "A"));
+            registry.RequireAvailable(Path.Combine(root, "A"), "PlayerA", true);
             Check(b.Session.RequestStop(), "second session closes independently");
             await b.Session.Completion.WaitAsync(TimeSpan.FromSeconds(15));
             await observeB;
