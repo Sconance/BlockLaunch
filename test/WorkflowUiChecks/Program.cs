@@ -264,7 +264,10 @@ public static class Program
         bitmap.Render(window);
         var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
         encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
-        using var output = File.Create(Path.GetFullPath(Path.Combine("work", "verify", name)));
+        // CI starts from a clean checkout; screenshot output is not a tracked directory.
+        var path = Path.GetFullPath(Path.Combine("work", "verify", name));
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        using var output = File.Create(path);
         encoder.Save(output);
     }
 }

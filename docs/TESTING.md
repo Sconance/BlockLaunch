@@ -113,3 +113,7 @@
 ## 资源收藏解耦回归
 
 资源收藏界面与搜索布局移除完整工作区依赖后，重新运行全部 21 项检查通过。新增的收藏查询检查使用临时收藏目录和 HTTP 替身，覆盖类型过滤、下载量排序、15 项分页、兼容发布类型、四路请求上限和取消传播；CompactUiChecks 继续验证真实 Modrinth 搜索、独立资源下载及仅收藏筛选。检查未使用正式账号或游戏存档；本轮未重新执行原生点击和完整游戏启动矩阵，也未打包或替换正式 EXE。
+
+## CI 干净检出检查
+
+WorkflowUiChecks 的截图保存方法自行创建输出目录，不依赖其他检查或本地历史产物预先创建 work/verify。修复后，在全新的本地 Git 克隆中确认该目录不存在，再按 CI 顺序执行 AuthChecks、MuaChecks、DownloadChecks、QueueChecks、CompatibilityChecks、VersionUiChecks、WorkflowUiChecks、CollectionChecks，全部通过，截图正常生成。该修复仅涉及测试，不改变启动器业务实现。
