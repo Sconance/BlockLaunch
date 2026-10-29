@@ -36,7 +36,7 @@ test 主干：0eaf5ec + 合并提交 145bf37（父提交 0eaf5ec、db0ab6a）
 
 - Release 构建：0 警告、0 错误；程序集版本 `0.21.0`，`InformationalVersion` 与合并提交一致。
 - 源码格式、布局、UI 边界、复用基线（仍以 `db0ab6a` 为准）与版本元数据检查全部通过。
-- 通过检查：`InlineUiChecks`、`VersionUiChecks`、`WorkflowUiChecks`、`CollectionChecks`、`AuthChecks`、`MuaChecks`、`DownloadChecks`、`QueueChecks`、`CompatibilityChecks`、`MiniDownloadChecks`、`StabilityChecks`、`UninstallChecks`、`UpgradeChecks`、`ExperienceChecks`、`ContentSafetyChecks`、`DependencyChecks`、`LibraryChecks`、`ResourceDownloadChecks`。
+- 通过检查：`InlineUiChecks`、`VersionUiChecks`、`WorkflowUiChecks`、`CollectionChecks`、`AuthChecks`、`MuaChecks`、`DownloadChecks`、`QueueChecks`、`CompatibilityChecks`、`MiniDownloadChecks`、`StabilityChecks`、`UninstallChecks`、`UpgradeChecks`、`ExperienceChecks`、`ContentSafetyChecks`、`DependencyChecks`、`LibraryChecks`、`ResourceDownloadChecks`、`CompactUiChecks`、`DownloadUiChecks`。
 - `DiagnosticChecks` 在本机因缺少符号链接特权停在 `File.CreateSymbolicLink`，属环境限制；详细记录见 [验证记录](TESTING.md)。
 - 未执行 `IntegrationChecks`、真实微软 / MUA 授权与完整游戏启动矩阵。
 

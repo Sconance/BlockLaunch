@@ -29,6 +29,8 @@
 
 ## 参考 refactor 的第二轮细化
 
+以下记录合并前的迁移方式；`refactor` 随后已合入主干，结论见下文「refactor 分支合并与版本控制」。
+
 本轮只修改 `test`。参考远程 `refactor` 的 `db0ab6a` 快照，保留现有独立 XAML 页面与窗口组合结构，逐项迁移小组件，不直接合并另一条分支。
 
 - `AvatarController`、`HomeAccountController`、`KeyboardNavigationController`、`LoaderOverviewController`、`NetworkController`、`WindowChromeController` 不再接收整个 `LauncherWorkspace`。它们通过构造参数接收实际需要的控件、状态读取函数与操作回调。

@@ -127,8 +127,8 @@ WorkflowUiChecks 的截图保存方法自行创建输出目录，不依赖其他
 - `dotnet build src/MCUGLauncher/MCUGLauncher.csproj -c Release`：0 警告、0 错误；程序集版本与文件版本为 `0.21.0`，`InformationalVersion` 形如 `0.21.0+<提交>`。
 - `tools/SourceFormatter`：0 个文件需要格式化。
 - `scripts/check-layout.py`、`check-ui-boundaries.py`、`check-refactor-reuse.py`、`check-version.py`：全部通过；复用基线仍为 `refactor` `db0ab6a` 的 11 个整文件。
-- 检查程序通过：`InlineUiChecks`（含程序集名称与版本元数据一致性断言）、`VersionUiChecks`、`WorkflowUiChecks`、`CollectionChecks`、`AuthChecks`、`MuaChecks`、`DownloadChecks`、`QueueChecks`、`CompatibilityChecks`、`MiniDownloadChecks`、`StabilityChecks`、`UninstallChecks`、`UpgradeChecks`、`ExperienceChecks`、`ContentSafetyChecks`、`DependencyChecks`、`LibraryChecks`、`ResourceDownloadChecks`。
+- 检查程序通过：`InlineUiChecks`（含程序集名称与版本元数据一致性断言）、`VersionUiChecks`、`WorkflowUiChecks`、`CollectionChecks`、`AuthChecks`、`MuaChecks`、`DownloadChecks`、`QueueChecks`、`CompatibilityChecks`、`MiniDownloadChecks`、`StabilityChecks`、`UninstallChecks`、`UpgradeChecks`、`ExperienceChecks`、`ContentSafetyChecks`、`DependencyChecks`、`LibraryChecks`、`ResourceDownloadChecks`、`CompactUiChecks`、`DownloadUiChecks`（后两项使用实时 Modrinth 搜索与下载队列）。
 - `DiagnosticChecks` 在 `Program.cs` 第 111 行创建符号链接时被本机权限拒绝（缺少符号链接特权，开发者模式未开启），该断言之前的输出检查均已通过；这是本地会话限制，与本次版本号改动无关，CI 仍会执行该检查。
-- 未执行：`IntegrationChecks`、真实微软/MUA 授权、完整游戏启动矩阵、`CompactUiChecks`/`DownloadUiChecks` 的实时网络部分，以及正式 EXE 打包。这些仍以远程 CI 与人工验收为准。
+- 未执行：`IntegrationChecks`、真实微软/MUA 授权、完整游戏启动矩阵，以及正式 EXE 打包。这些仍以远程 CI 与人工验收为准。
 
 版本号改动后，导航区与关于区不再写死版本，诊断信息与两处 User-Agent 读取 `ProductInfo.Version`；`scripts/check-version.py` 会阻止版本字面量重新进入源码、界面、CHANGELOG 与 README 的不一致状态。
