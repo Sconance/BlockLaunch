@@ -4,6 +4,7 @@ public sealed record FrontAccounts(string Selected, string OfflineName, string M
 public sealed record FrontProfile(string Id, string Label, bool Installed)
 {
     public string Type { get; init; } = "release";
+    public DateTimeOffset? Published { get; init; }
     public string Group => Installed ? "已安装" : Type.Equals("snapshot", StringComparison.OrdinalIgnoreCase) ? "预览版本" : "正式版本";
 }
 public sealed record FrontProfiles(string Root, IReadOnlyList<FrontProfile> Items, string Warning);
@@ -44,7 +45,8 @@ public interface IFrontLauncher : IFrontResourceDownloads, IFrontResourceInstall
     Task<FrontProfiles> ReadProfiles(CancellationToken token);
     Task<IReadOnlyList<FrontLoader>> ReadLoaders(string version, string loader, CancellationToken token);
     void EnqueueGame(string version, string loader, string loaderVersion);
-    Task ImportPack(string file, CancellationToken token);
+    Task ImportPack(string file, CancellationToken token, bool optional = false);
+    Task RunOfficialInstaller(string file, CancellationToken token);
     Task Launch(string version, Func<string, bool> confirmPreflight, CancellationToken token);
     void StopGame();
     IReadOnlyList<FrontLocalContent> ReadContent(string version);

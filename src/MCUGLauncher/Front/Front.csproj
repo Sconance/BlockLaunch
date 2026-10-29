@@ -10,8 +10,11 @@
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <SelfContained>true</SelfContained>
     <Version>0.21.0</Version>
+    <ApplicationIcon>Assets/MCUGLauncher.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
+    <Resource Include="Assets/MCUGLogo.png" />
+    <Resource Include="Assets/MCUGLauncher.ico" />
     <ProjectReference Include="../../MCUGLauncher.Application/MCUGLauncher.Application.csproj" />
     <ProjectReference Include="../../MCUGLauncher.SharedUI/MCUGLauncher.SharedUI.csproj" />
   </ItemGroup>

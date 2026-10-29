@@ -1,5 +1,3 @@
-using System.Text.Json;
-using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -13,19 +11,12 @@ public partial class MainWindow
     {
         try
         {
-            using var document = JsonDocument.Parse(await http.GetStringAsync(
-                "https://api.modrinth.com/v2/project/" + Uri.EscapeDataString(project.Id), token));
+            var presentation = await resourceManagement.ReadPresentation(project.Id, token);
             token.ThrowIfCancellationRequested();
-            var root = document.RootElement;
-            if (root.TryGetProperty("gallery", out var gallery))
+            foreach (var url in presentation.Gallery)
             {
-                foreach (var entry in gallery.EnumerateArray().Take(3))
+                if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
                 {
-                    if (!entry.TryGetProperty("url", out var url)
-                        || !Uri.TryCreate(url.GetString(), UriKind.Absolute, out var uri)
-                        || uri.Scheme != Uri.UriSchemeHttps
-                        || uri.Host != "cdn.modrinth.com")
-                        continue;
                     var bitmap = new BitmapImage();
                     bitmap.BeginInit();
                     bitmap.DecodePixelWidth = 320;
@@ -42,21 +33,12 @@ public partial class MainWindow
                         {
                             Source = bitmap,
                             Stretch = Stretch.UniformToFill,
-                            ToolTip = entry.TryGetProperty("title", out var title) ? title.GetString() : project.Title
+                            ToolTip = project.Title
                         }
                     });
                 }
             }
-            if (root.TryGetProperty("body", out var body))
-            {
-                var text = body.GetString() ?? "";
-                text = text[..Math.Min(text.Length, 12000)];
-                text = Regex.Replace(text, @"!\[[^\]]*\]\([^)]*\)", "");
-                text = Regex.Replace(text, @"\[([^\]]+)\]\([^)]*\)", "$1");
-                text = Regex.Replace(text, "<[^>]*>", "");
-                text = Regex.Replace(text, @"(?m)^#{1,6}\s+", "");
-                resourceBody.Text = text.Replace("**", "").Replace("__", "").Replace("```", "").Trim();
-            }
+            resourceBody.Text = presentation.Body;
         }
         catch (OperationCanceledException)
         {

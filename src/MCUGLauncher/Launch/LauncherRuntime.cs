@@ -199,7 +199,7 @@ public class LauncherRuntime : IFrontLauncher, IFrontSettings, IFrontPreferences
         using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(token, lifetime.Token);
         var snapshot = await versions.Read(prefs.Root, cancellation.Token);
         profileSnapshot = snapshot;
-        return new(snapshot.Root, snapshot.Versions.Select(row => new FrontProfile(row.Id, row.Label, snapshot.LocalVersions.Contains(row.Id)) { Type = row.Type }).ToArray(), snapshot.OnlineError ?? "");
+        return new(snapshot.Root, snapshot.Versions.Select(row => new FrontProfile(row.Id, row.Label, snapshot.LocalVersions.Contains(row.Id)) { Type = row.Type, Published = row.Published }).ToArray(), snapshot.OnlineError ?? "");
     }
 
     public async Task<IReadOnlyList<FrontLoader>> ReadLoaders(string version, string loader, CancellationToken token)
@@ -221,7 +221,8 @@ public class LauncherRuntime : IFrontLauncher, IFrontSettings, IFrontPreferences
         RequireLoader(loader);
         if (profileSnapshot == null || !SamePath(profileSnapshot.Root, prefs.Root)
             || !profileSnapshot.Versions.Any(row => row.Id == version &&
-                (row.Type.Equals("release", StringComparison.OrdinalIgnoreCase) || row.Type.Equals("snapshot", StringComparison.OrdinalIgnoreCase))))
+                (row.Type.Equals("release", StringComparison.OrdinalIgnoreCase) || row.Type.Equals("snapshot", StringComparison.OrdinalIgnoreCase)
+                    || loader == "vanilla" && row.Type.Contains("old", StringComparison.OrdinalIgnoreCase))))
             throw new ArgumentException("请刷新版本列表并选择官方原版版本。");
         if (string.IsNullOrWhiteSpace(version) || loader != "vanilla" && string.IsNullOrWhiteSpace(loaderVersion))
             throw new ArgumentException("请选择游戏版本和加载器版本。");
@@ -233,7 +234,7 @@ public class LauncherRuntime : IFrontLauncher, IFrontSettings, IFrontPreferences
         Report("已加入游戏安装队列。");
     }
 
-    public Task ImportPack(string file, CancellationToken token) => Exclusive(async cancellation =>
+    public Task ImportPack(string file, CancellationToken token, bool optional = false) => Exclusive(async cancellation =>
     {
         var overview = await Task.Run(() => PackService.ReadOverview(file), cancellation);
         var hash = await Task.Run(() => ContentTransaction.Hash(file), cancellation);
@@ -241,14 +242,21 @@ public class LauncherRuntime : IFrontLauncher, IFrontSettings, IFrontPreferences
         queue.Enqueue("导入整合包 · " + Path.GetFileName(file), prefs.Root, file, new()
         {
             Kind = "import", File = Path.GetFullPath(file), SourceHash = hash, Java = prefs.Java,
-            Version = overview.Requirements.Minecraft, Optional = false
+            Version = overview.Requirements.Minecraft, Optional = optional
         });
         Report("整合包已加入导入队列。");
     }, token);
 
+    public Task RunOfficialInstaller(string file, CancellationToken token) => Exclusive(async cancellation =>
+    {
+        await OfficialLoaderInstaller.Run(prefs.Root, prefs.Java, file, Report, cancellation);
+        profileSnapshot = null;
+        Report("官方安装器已完成，请刷新版本列表。");
+    }, token);
+
     public Task EnqueueResource(string project, string version, FrontResourceQuery query, string destination, CancellationToken token) => Exclusive(async cancellation =>
     {
-        var result = await resources.Versions(project, new(query.Text, query.GameVersion, query.Loader, query.Kind, query.Offset, query.Sort), cancellation);
+        var result = await resources.Versions(project, new(query.Text, query.GameVersion, query.Loader, query.Kind, query.Offset, query.Sort, query.Channel), cancellation);
         var content = result.SingleOrDefault(item => item.Id == version) ?? throw new IOException("资源版本已变化，请重新读取。");
         var target = string.IsNullOrWhiteSpace(destination) ? prefs.ResourceDownloadDirectory : Path.GetFullPath(destination);
         var request = resources.PrepareDownload(prefs.Root, target, query.Kind, content);

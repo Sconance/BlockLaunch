@@ -1,23 +1,101 @@
 <UserControl x:Class="BlockLaunch.Front.DownloadBrowserView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <UserControl.Resources>
+    <Style x:Key="DownloadCategory" TargetType="RadioButton" BasedOn="{StaticResource Nav}">
+      <Setter Property="ContentTemplate" Value="{x:Null}" />
+      <Setter Property="Margin" Value="0,0,0,5" />
+      <Setter Property="Padding" Value="8" />
+    </Style>
+    <Style x:Key="DownloadCard" TargetType="Border" BasedOn="{StaticResource Card}">
+      <Setter Property="CornerRadius" Value="7" />
+      <Setter Property="Padding" Value="12" />
+      <Setter Property="Margin" Value="0,0,0,9" />
+    </Style>
+    <Style x:Key="VersionDownloadRow" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+      <Setter Property="ContentTemplate" Value="{x:Null}" />
+      <Setter Property="Padding" Value="9,6" />
+      <Setter Property="Margin" Value="0,2" />
+      <Setter Property="HorizontalContentAlignment" Value="Left" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Border Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}">
+              <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center" />
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True"><Setter Property="Opacity" Value="0.8" /></Trigger>
+              <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.4" /></Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+  </UserControl.Resources>
   <Grid>
-    <Grid.ColumnDefinitions>
-      <ColumnDefinition Width="120" />
-      <ColumnDefinition />
-    </Grid.ColumnDefinitions>
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-      <StackPanel x:Name="Categories" Margin="0,0,14,0">
-        <RadioButton Style="{StaticResource Nav}" Content="原版游戏" Tag="原版游戏" Checked="CategoryChanged" GroupName="DownloadCategory" />
-        <RadioButton Style="{StaticResource Nav}" Content="Mod" Tag="Mod" Checked="CategoryChanged" GroupName="DownloadCategory" />
-        <RadioButton Style="{StaticResource Nav}" Content="整合包" Tag="整合包" Checked="CategoryChanged" GroupName="DownloadCategory" />
-        <RadioButton Style="{StaticResource Nav}" Content="数据包" Tag="数据包" Checked="CategoryChanged" GroupName="DownloadCategory" />
-        <RadioButton Style="{StaticResource Nav}" Content="资源包" Tag="资源包" Checked="CategoryChanged" GroupName="DownloadCategory" />
-        <RadioButton Style="{StaticResource Nav}" Content="光影包" Tag="光影包" Checked="CategoryChanged" GroupName="DownloadCategory" />
-        <RadioButton Style="{StaticResource Nav}" Content="本地整合包" Tag="本地整合包" Checked="CategoryChanged" GroupName="DownloadCategory" />
-        <RadioButton Style="{StaticResource Nav}" Content="模组加载器" Tag="模组加载器" Checked="CategoryChanged" GroupName="DownloadCategory" />
-      </StackPanel>
+    <Grid.ColumnDefinitions><ColumnDefinition Width="120" /><ColumnDefinition /></Grid.ColumnDefinitions>
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+      <StackPanel x:Name="Categories" Margin="0,0,14,0" />
     </ScrollViewer>
-    <ContentControl x:Name="CategoryHost" Grid.Column="1" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
+    <Grid Grid.Column="1">
+      <Grid.RowDefinitions><RowDefinition /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+      <ContentControl x:Name="CategoryHost" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
+        <DockPanel x:Name="VanillaPage">
+          <Border DockPanel.Dock="Top" Style="{StaticResource DownloadCard}" Padding="18,12" Margin="0">
+            <DockPanel>
+              <WrapPanel DockPanel.Dock="Right" Margin="15,0,0,0" VerticalAlignment="Center">
+                <Button Content="刷新列表" Click="RefreshClick" />
+                <Button x:Name="InstallVanilla" Content="下载 / 修复" Style="{StaticResource Primary}" Click="InstallVanillaClick" IsEnabled="False" />
+              </WrapPanel>
+              <StackPanel VerticalAlignment="Center">
+                <TextBlock x:Name="InstallTarget" Text="请选择游戏版本" FontSize="17" FontWeight="SemiBold" />
+                <TextBlock Text="选择下方版本后下载；已安装版本可修复。" Style="{StaticResource Caption}" Margin="0,4,0,0" />
+              </StackPanel>
+            </DockPanel>
+          </Border>
+          <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="0,14,0,0">
+              <DockPanel>
+                <TextBlock Text="搜索版本" Margin="0,9,14,0" />
+                <TextBox x:Name="VanillaQuery" ToolTip="搜索游戏版本" Margin="0,0,0,14" TextChanged="VanillaQueryChanged" />
+              </DockPanel>
+              <StackPanel x:Name="VanillaGroups" />
+            </StackPanel>
+          </ScrollViewer>
+        </DockPanel>
+      </ContentControl>
+      <ScrollViewer x:Name="PackPage" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
+        <Border Style="{StaticResource DownloadCard}" Padding="18">
+          <StackPanel>
+            <TextBlock Text="整合包" FontSize="19" FontWeight="SemiBold" />
+            <TextBlock Text="从内容中心搜索下载，或导入 Modrinth / MultiMC / Prism 整合包。" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,9,0,12" />
+            <Button Content="导入本地整合包 .mrpack / .zip" Click="ImportPackClick" Style="{StaticResource Primary}" HorizontalAlignment="Left" />
+            <CheckBox x:Name="PackOptional" Content="同时安装整合包的可选客户端文件" Margin="0,12,0,0" />
+            <TextBlock Text="每个整合包拥有独立的模组、配置与存档，安装后自动出现在首页版本列表。" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,12,0,0" />
+          </StackPanel>
+        </Border>
+      </ScrollViewer>
+      <ScrollViewer x:Name="LoaderPage" Visibility="Collapsed" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel>
+          <TextBlock Text="版本安装配置" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,8" />
+          <TextBlock Text="选择 Minecraft 版本和一种兼容的加载器，版本列表来自对应官方服务。" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,0,0,12" />
+          <Border Style="{StaticResource DownloadCard}" Padding="14,10">
+            <StackPanel>
+              <TextBlock Text="Minecraft 版本" FontWeight="SemiBold" Margin="0,0,0,5" />
+              <ComboBox x:Name="LoaderMinecraft" DisplayMemberPath="Id" MinWidth="180" SelectionChanged="LoaderMinecraftChanged" />
+            </StackPanel>
+          </Border>
+          <StackPanel x:Name="LoaderRows" />
+          <TextBlock Text="每次安装一种加载器，生成独立版本。Forge、NeoForge、Fabric 和 Quilt 不能混合安装。" Style="{StaticResource Caption}" TextWrapping="Wrap" />
+          <Expander Header="高级 · 本地官方安装器" Margin="0,10,0,0">
+            <StackPanel>
+              <Button Content="选择 Forge / NeoForge 安装器 .jar" Click="OfficialInstallerClick" HorizontalAlignment="Left" />
+              <TextBlock Text="本地官方安装器的目标目录应设为游戏根目录，完成后刷新版本。" Style="{StaticResource Caption}" TextWrapping="Wrap" />
+            </StackPanel>
+          </Expander>
+        </StackPanel>
+      </ScrollViewer>
+      <TextBlock x:Name="DownloadStatus" Grid.Row="1" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,6,0,0" />
+    </Grid>
   </Grid>
 </UserControl>

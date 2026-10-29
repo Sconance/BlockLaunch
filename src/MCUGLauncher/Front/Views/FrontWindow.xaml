@@ -2,7 +2,8 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="MCUG Launcher · Minecraft 启动器" Width="1060" Height="740" MinWidth="940" MinHeight="650"
-        Background="#F3F7F9" FontFamily="Microsoft YaHei UI" WindowStartupLocation="CenterScreen">
+        Background="#F3F7F9" FontFamily="Microsoft YaHei UI" WindowStartupLocation="CenterScreen"
+        Icon="/MCUGLauncher.Front;component/Assets/MCUGLauncher.ico">
   <Grid x:Name="SurfaceRoot">
     <Grid.RowDefinitions>
       <RowDefinition Height="48" />
@@ -15,9 +16,7 @@
         <Button Style="{StaticResource CaptionButton}" Content="&#xE8BB;" ToolTip="关闭启动器" Click="CloseClick" />
       </StackPanel>
       <StackPanel Orientation="Horizontal" VerticalAlignment="Center" DockPanel.Dock="Left">
-        <Border Background="#006DB8" CornerRadius="7" Width="30" Height="30" Margin="12,6,0,6">
-          <TextBlock Text="▧" FontSize="21" Foreground="White" HorizontalAlignment="Center" VerticalAlignment="Center" />
-        </Border>
+        <Image Source="/MCUGLauncher.Front;component/Assets/MCUGLogo.png" Width="30" Height="30" Margin="12,6,0,6" Stretch="Uniform" />
         <TextBlock Text="MCUG Launcher" Foreground="{DynamicResource ThemeTextBrush}" FontSize="17" FontWeight="SemiBold"
                    Width="146" Margin="8,0,0,0" VerticalAlignment="Center" />
       </StackPanel>

@@ -54,9 +54,11 @@ public partial class FrontWindow : Window
         settingsView = new SettingsView(settings);
         downloadsView = new DownloadTasksView(new DownloadTasksViewModel(downloads));
         launcherView = new LauncherView(launcher);
+        resources.CurrentInstance = () => launcher is IFrontVersions versions && launcherView.SelectedProfile is { } key
+            ? versions.ReadInstance(key) : null;
         logView = new LogView(launcher, () => launcherView.SelectedProfile);
         launcherView.RequestPage += NavigatePage;
-        downloadView = new DownloadBrowserView(launcherView, browser, resources);
+        downloadView = new DownloadBrowserView(launcher, browser, resources);
         launcherView.MenuPages = MenuPages;
         FrontMenuContext Context() => new(this, launcher, launcherView.SelectedProfile, resources.Selected);
         MenuPages.Attach(FrontMenuArea.Top, NavigationPanel, Context);
@@ -165,6 +167,7 @@ public partial class FrontWindow : Window
         resources.Dispose();
         settings.Dispose();
         downloadsView.Dispose();
+        downloadView.Dispose();
         launcherView.Dispose();
         RuntimeStatus.Text = "正在清理任务；提交中的安装需要完成。游戏未退出时，请先在游戏中保存并退出。";
         try
@@ -252,6 +255,7 @@ public partial class FrontWindow : Window
                 break;
             case "resources":
                 PageSubtitle.Text = "发现并下载 Minecraft 内容。";
+                browser.ShowContentCenter();
                 PageHost.Content = browser;
                 browser.ShowResults();
                 break;

@@ -384,59 +384,8 @@ public partial class MainWindow
         };
         if (dialog.ShowDialog() != true)
             return;
-        if (!Path.GetFileName(dialog.FileName).Contains("installer", StringComparison.OrdinalIgnoreCase))
-            throw new IOException("请选择官方网站提供的 installer.jar 安装器。");
-        var java = prefs.Java.Length > 0 ? prefs.Java : "java";
-        // A profile marker allows the official installer to recognize an existing launcher directory.
-        var marker = Path.Combine(prefs.Root, "launcher_profiles.json");
-        if (!File.Exists(marker))
-            await File.WriteAllTextAsync(marker, "{\"profiles\":{}}");
-        var start = new ProcessStartInfo(java)
-        {
-            UseShellExecute = false,
-            WorkingDirectory = prefs.Root,
-            CreateNoWindow = true,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true
-        };
-        start.ArgumentList.Add("-jar");
-        start.ArgumentList.Add(dialog.FileName);
-        start.ArgumentList.Add("--installClient");
-        start.ArgumentList.Add(prefs.Root);
-        using var installer = Process.Start(start) ?? throw new IOException("安装器无法启动。");
-        async Task Drain(StreamReader reader)
-        {
-            var last = DateTime.MinValue;
-            while (await reader.ReadLineAsync() is
-                {
-                } line)
-                if ((DateTime.UtcNow - last).TotalSeconds >= 1)
-                {
-                    Log("安装器：" + line[..Math.Min(line.Length, 220)]);
-                    last = DateTime.UtcNow;
-                }
-        }
-
-        var output = Drain(installer.StandardOutput);
-        var error = Drain(installer.StandardError);
         OperationStatusLabel.Text = "正在后台运行官方安装器…";
-        try
-        {
-            await installer.WaitForExitAsync(CurrentToken);
-        }
-        catch (OperationCanceledException)
-        {
-            installer.Kill(true);
-            await installer.WaitForExitAsync();
-            throw;
-        }
-        finally
-        {
-            await Task.WhenAll(output, error);
-        }
-
-        if (installer.ExitCode != 0)
-            throw new IOException("官方安装器返回失败，请查看运行日志。");
+        await OfficialLoaderInstaller.Run(prefs.Root, prefs.Java, dialog.FileName, Log, CurrentToken);
         await Refresh();
         Log("官方安装器已完成，请在首页选择新增版本。");
     });

@@ -1,10 +1,35 @@
 using System.IO;
 using System.Net.Http;
+using System.Text.Json;
+using System.Text.RegularExpressions;
+using BlockLaunch.Contracts;
 
 namespace BlockLaunch;
 
 public sealed class ResourceManagementService(HttpClient http)
 {
+    public async Task<FrontResourcePresentation> ReadPresentation(string project, CancellationToken token)
+    {
+        using var document = JsonDocument.Parse(await http.GetStringAsync("https://api.modrinth.com/v2/project/" + Uri.EscapeDataString(project), token));
+        var root = document.RootElement;
+        var body = root.TryGetProperty("body", out var content) ? content.GetString() ?? "" : "";
+        body = body[..Math.Min(body.Length, 12000)];
+        body = Regex.Replace(body, @"!\[[^\]]*\]\([^)]*\)", "", RegexOptions.None, TimeSpan.FromSeconds(1));
+        body = Regex.Replace(body, @"\[([^\]]+)\]\([^)]*\)", "$1", RegexOptions.None, TimeSpan.FromSeconds(1));
+        body = Regex.Replace(body, "<[^>]*>", "", RegexOptions.None, TimeSpan.FromSeconds(1));
+        body = Regex.Replace(body, @"(?m)^#{1,6}\s+", "", RegexOptions.None, TimeSpan.FromSeconds(1));
+        var gallery = new List<string>();
+        if (root.TryGetProperty("gallery", out var images))
+            foreach (var image in images.EnumerateArray().Take(3))
+                if (image.TryGetProperty("url", out var url) && Uri.TryCreate(url.GetString(), UriKind.Absolute, out var uri)
+                    && uri.Scheme == Uri.UriSchemeHttps && uri.Host == "cdn.modrinth.com")
+                    gallery.Add(uri.AbsoluteUri);
+        var slug = root.TryGetProperty("slug", out var name) ? name.GetString() ?? project : project;
+        var type = root.TryGetProperty("project_type", out var kind) ? kind.GetString() ?? "mod" : "mod";
+        return new(body.Replace("**", "").Replace("__", "").Replace("```", "").Trim(), gallery,
+            "https://modrinth.com/" + Uri.EscapeDataString(type) + "/" + Uri.EscapeDataString(slug));
+    }
+
     public Task<SearchPage> Search(ResourceSearchQuery query, CancellationToken token) =>
         new ContentService(http, token).Search(query.Query, query.GameVersion, query.Loader, query.Kind, query.Offset, query.Sort);
 

@@ -12,14 +12,19 @@ public sealed class ResourceBrowserViewModel(IFrontResourceBrowser browser, IFro
     FrontResourceQuery? currentQuery;
     bool disposed;
     string queryText = "";
-    string gameVersion = "";
-    string loader = "";
+    string gameVersion = "跟随实例";
+    string loader = "跟随实例";
     string kind = "mod";
     string sort = "relevance";
+    string channel = "";
+    string source = "modrinth";
     bool favoritesOnly;
     string favoriteLabels = "";
     string favoriteFolder = "默认收藏夹";
     string favoriteStatus = "";
+    string projectBody = "";
+    string projectWebsite = "";
+    IReadOnlyList<string> gallery = [];
     string status = "输入关键词搜索，或直接浏览资源。";
     string detailStatus = "选择项目查看兼容版本。";
     bool isBusy;
@@ -42,10 +47,16 @@ public sealed class ResourceBrowserViewModel(IFrontResourceBrowser browser, IFro
     public string Loader { get => loader; set => Set(ref loader, value); }
     public string Kind { get => kind; set => Set(ref kind, value); }
     public string Sort { get => sort; set => Set(ref sort, value); }
+    public string Channel { get => channel; set => Set(ref channel, value); }
+    public string Source { get => source; set => Set(ref source, value); }
+    public Func<FrontInstance?>? CurrentInstance { get; set; }
     public bool FavoritesOnly { get => favoritesOnly; set => Set(ref favoritesOnly, value); }
     public string FavoriteLabels { get => favoriteLabels; set => Set(ref favoriteLabels, value); }
     public string FavoriteFolder { get => favoriteFolder; set => Set(ref favoriteFolder, value); }
     public string FavoriteStatus { get => favoriteStatus; private set => Set(ref favoriteStatus, value); }
+    public string ProjectBody { get => projectBody; private set => Set(ref projectBody, value); }
+    public string ProjectWebsite { get => projectWebsite; private set => Set(ref projectWebsite, value); }
+    public IReadOnlyList<string> Gallery { get => gallery; private set => Set(ref gallery, value); }
     public string Status { get => status; private set => Set(ref status, value); }
     public string DetailStatus { get => detailStatus; private set => Set(ref detailStatus, value); }
     public bool IsBusy { get => isBusy; private set => Set(ref isBusy, value); }
@@ -63,7 +74,36 @@ public sealed class ResourceBrowserViewModel(IFrontResourceBrowser browser, IFro
     public bool CanPrevious => !IsBusy && currentQuery != null && offset > 0;
     public bool CanNext => !IsBusy && currentQuery != null && Items.Count > 0 && offset + Items.Count < total;
 
-    public Task Search() => Load(new(QueryText.Trim(), GameVersion.Trim(), Loader.Trim(), Kind, Sort: Sort, FavoritesOnly: FavoritesOnly));
+    public Task Search()
+    {
+        if (disposed)
+            return Task.CompletedTask;
+        if (Source != "modrinth")
+        {
+            Cancel();
+            currentQuery = null;
+            Items = [];
+            total = 0;
+            Status = "CurseForge 需要官方 API Key，当前未启用。请使用 Modrinth 或手动下载后导入。";
+            NotifyPaging();
+            return Task.CompletedTask;
+        }
+        var game = GameVersion.Trim();
+        var selectedLoader = Loader.Trim();
+        FrontInstance? instance;
+        try { instance = game == "跟随实例" || selectedLoader == "跟随实例" ? CurrentInstance?.Invoke() : null; }
+        catch (Exception exception)
+        {
+            Cancel();
+            Status = "无法读取当前实例，请刷新实例列表或将筛选改为全部：" + exception.Message;
+            return Task.CompletedTask;
+        }
+        game = game == "跟随实例" ? instance?.Minecraft ?? "" : game is "全部" ? "" : game;
+        selectedLoader = selectedLoader == "跟随实例" ? instance?.Loader ?? "" : selectedLoader is "全部加载器" or "全部" ? "" : selectedLoader;
+        if (selectedLoader == "vanilla")
+            selectedLoader = "";
+        return Load(new(QueryText.Trim(), game, selectedLoader, Kind, Sort: Sort, FavoritesOnly: FavoritesOnly, Channel: Channel));
+    }
 
     public Task Previous() => CanPrevious ? Load(currentQuery! with { Offset = Math.Max(0, offset - 15) }) : Task.CompletedTask;
 
@@ -128,6 +168,8 @@ public sealed class ResourceBrowserViewModel(IFrontResourceBrowser browser, IFro
         Versions = [];
         SelectedVersion = null;
         DetailStatus = "选择项目查看兼容版本。";
+        ProjectBody = ProjectWebsite = "";
+        Gallery = [];
         if (disposed || item == null || currentQuery == null)
             return;
         var query = currentQuery;
@@ -157,7 +199,21 @@ public sealed class ResourceBrowserViewModel(IFrontResourceBrowser browser, IFro
                 return;
             cancellation.Token.ThrowIfCancellationRequested();
             Versions = result;
+            SelectedVersion = result.FirstOrDefault();
             DetailStatus = result.Count == 0 ? "没有符合条件的兼容版本。" : $"{result.Count} 个兼容版本";
+            if (browser is IFrontResourcePresentation presentation)
+                try
+                {
+                    var content = await presentation.ReadPresentation(item.Id, cancellation.Token);
+                    if (!disposed && ReferenceEquals(detailCancellation, cancellation))
+                    {
+                        ProjectBody = content.Body;
+                        ProjectWebsite = content.Website;
+                        Gallery = content.Gallery;
+                    }
+                }
+                catch (OperationCanceledException) { }
+                catch (Exception) { if (!disposed && ReferenceEquals(detailCancellation, cancellation)) ProjectBody = "项目介绍暂不可用，仍可选择版本和下载。"; }
         }
         catch (OperationCanceledException)
         {
@@ -259,11 +315,30 @@ public sealed class ResourceBrowserViewModel(IFrontResourceBrowser browser, IFro
             else
                 collections.SaveBookmark(Selected, currentQuery.Kind, FavoriteLabels, FavoriteFolder);
             FavoriteStatus = remove ? "已取消收藏；仅收藏列表可重新搜索刷新。" : "收藏与标签已保存。";
+            Items = Items.Select(item => item.Id == Selected.Id ? item with { IsFavorite = !remove } : item).ToArray();
         }
         catch (Exception exception)
         {
             FavoriteStatus = "收藏操作失败：" + exception.Message;
         }
+    }
+
+    public void ToggleFavorite(FrontResourceItem item)
+    {
+        try
+        {
+            if (browser is not IFrontResourceCollections collections)
+                return;
+            var saved = collections.ReadBookmark(item.Id);
+            if (saved == null)
+                collections.SaveBookmark(item, Kind, "", "默认收藏夹");
+            else
+                collections.RemoveBookmark(item.Id);
+            Items = Items.Where(value => !FavoritesOnly || value.Id != item.Id || saved == null)
+                .Select(value => value.Id == item.Id ? value with { IsFavorite = saved == null } : value).ToArray();
+            FavoriteStatus = saved == null ? "已收藏" : "已取消收藏";
+        }
+        catch (Exception exception) { Status = "收藏操作失败：" + exception.Message; }
     }
 
     void CancelDetails()
@@ -292,7 +367,7 @@ public sealed class ResourceBrowserViewModel(IFrontResourceBrowser browser, IFro
 
     void NotifyActions()
     {
-            NotifyActions();
+        PropertyChanged?.Invoke(this, new(nameof(CanDownload)));
         PropertyChanged?.Invoke(this, new(nameof(CanInstall)));
     }
 
