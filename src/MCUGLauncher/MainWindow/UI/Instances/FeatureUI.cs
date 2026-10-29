@@ -299,12 +299,7 @@ public partial class MainWindow
                 2 => "mua",
                 _ => "offline"
             };
-            var powershell = Path.GetExtension(picker.FileName).Equals(".ps1", StringComparison.OrdinalIgnoreCase);
-            var command = LaunchScriptBuilder.Build(Environment.ProcessPath!, prefs.Root, key, account, powershell);
-            if (powershell)
-                File.WriteAllText(picker.FileName, command, new System.Text.UTF8Encoding(true));
-            else
-                File.WriteAllText(picker.FileName, command, new System.Text.UTF8Encoding(false));
+            LaunchScriptExporter.Export(Environment.ProcessPath!, prefs.Root, key, account, picker.FileName);
             InlineMessageBox.Show("脚本已导出；请保持启动器路径有效。微软账号仍需在启动器内授权。");
         }
         catch (Exception ex)

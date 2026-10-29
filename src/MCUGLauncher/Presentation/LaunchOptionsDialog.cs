@@ -33,8 +33,8 @@ internal sealed class LaunchOptionsDialog(
                 try
                 {
                     host.RequireStopped();
+                    host.versionManagement.SaveLaunch(host.prefs.Root, descriptor.Key, null);
                     descriptor.Launch = null;
-                    host.versionManagement.Save(host.prefs.Root, descriptor);
                     dialog.Close();
                 }
                 catch (Exception ex)
@@ -51,18 +51,13 @@ internal sealed class LaunchOptionsDialog(
                 updated.Validate();
                 if (descriptor != null)
                 {
+                    host.versionManagement.SaveLaunch(host.prefs.Root, descriptor.Key, updated);
                     descriptor.Launch = updated;
-                    host.versionManagement.Save(host.prefs.Root, descriptor);
                 }
                 else
                 {
-                    host.prefs.Launch = updated;
-                    host.prefs.Ram = updated.RamMb;
-                    host.prefs.Java = updated.Java;
-                    host.prefs.Width = updated.Width;
-                    host.prefs.Height = updated.Height;
+                    host.launcherSettings.SaveGlobalLaunch(host.prefs, updated);
                     host.RefreshLaunchSettingsFields();
-                    host.settings.Save(host.prefs);
                 }
 
                 dialog.Close();

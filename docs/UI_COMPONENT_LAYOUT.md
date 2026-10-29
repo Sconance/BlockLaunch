@@ -5,17 +5,23 @@
 ```text
 src/MCUGLauncher/
 ├── MainWindow/       主窗口、UI partial、构建器、展示模型、样式和初始化
+├── Builders/         共享启动脚本与离线皮肤包生成（无窗口依赖）
 ├── Controllers/      12 个交互控制器
 ├── Presentation/     11 个对话框、视图和页面上下文类
 ├── Versions/         版本业务服务
 ├── Resources/        资源业务服务
-├── Downloads/        下载执行器
+├── Downloads/        统一下载控制、暂停存储与任务执行器
+├── Front/Hosting/    新 Front 的真实模块组装、配置锁与生命周期（不创建 MainWindow）
+├── Front/Front.csproj 独立新前端，只引用 Application 和 SharedUI
+├── Front/Views/      真实账号/实例/内容页面及 Front 窗口
 ├── Launch/           启动编排与游戏会话监控
-├── Settings/         设置校验与持久化服务
+├── Settings/         设置模型、持久化、网络策略与设置校验服务
 └── Accounts/         账号会话及提供方抽象
 ```
 
 原 MainWindow 子目录中的 Controllers 和 Presentation 共 23 个源文件原样迁移。
+后续项目级拆分已实施：共享业务由 Application 链接编译，下载 UI 位于 `src/MCUGLauncher.SharedUI/Downloads/`。
+主项目排除 Front 及共享业务源码的重复编译；最新项目图见 [FRONTEND_PROJECTS.md](dcg/FRONTEND_PROJECTS.md)。下述原样迁移说明是历史步骤。
 保留现有工作区内的代码修改，不重置为 Git 基线；命名空间、访问级别、构造函数和方法均不改变。
 MainWindow 继续按原方式创建、持有和调用组件，原有组件间调用也不变。
 不移动 XAML，不调整事件绑定、资源 URI 或程序集名称。
@@ -24,6 +30,8 @@ MainWindow 继续按原方式创建、持有和调用组件，原有组件间调
 不需要新增项目引用或改变 `using`。显式文档源码链接及目录说明同步修改。
 
 ## 验证边界
+
+共享 Builder 的迁移范围、保留在旧前端的 UI 构建器及独立测试入口见 [BUILDERS_MODULE.md](dcg/BUILDERS_MODULE.md)。
 
 - 对迁移前工作区的 23 个文件记录 SHA-256，与新路径逐一对比，确认没有修改源码内容。
 - 检查旧路径残留、文档源码链接、项目中的显式资源/源码引用，以及旧目录无重复源文件。

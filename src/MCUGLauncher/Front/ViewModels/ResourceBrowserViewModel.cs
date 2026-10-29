@@ -4,7 +4,7 @@ using BlockLaunch.Contracts;
 
 namespace BlockLaunch.Front;
 
-public sealed class ResourceBrowserViewModel(IFrontResourceBrowser browser) : INotifyPropertyChanged, IDisposable
+public sealed class ResourceBrowserViewModel(IFrontResourceBrowser browser, IFrontResourceDownloads? downloads = null) : INotifyPropertyChanged, IDisposable
 {
     public event PropertyChangedEventHandler? PropertyChanged;
     CancellationTokenSource? searchCancellation;
@@ -20,6 +20,11 @@ public sealed class ResourceBrowserViewModel(IFrontResourceBrowser browser) : IN
     string detailStatus = "选择项目查看兼容版本。";
     bool isBusy;
     bool isDetailBusy;
+    bool isDownloading;
+    FrontResourceVersion? selectedVersion;
+    string destination = "";
+    string downloadStatus = "资源下载到游戏目录之外，不自动安装到实例。";
+    readonly CancellationTokenSource lifetime = new();
     int total;
     int offset;
     FrontResourceItem? selected;
@@ -38,6 +43,10 @@ public sealed class ResourceBrowserViewModel(IFrontResourceBrowser browser) : IN
     public IReadOnlyList<FrontResourceItem> Items { get => items; private set => Set(ref items, value); }
     public IReadOnlyList<FrontResourceVersion> Versions { get => versions; private set => Set(ref versions, value); }
     public FrontResourceItem? Selected { get => selected; private set => Set(ref selected, value); }
+    public FrontResourceVersion? SelectedVersion { get => selectedVersion; set => Set(ref selectedVersion, value); }
+    public string Destination { get => destination; set => Set(ref destination, value); }
+    public string DownloadStatus { get => downloadStatus; private set => Set(ref downloadStatus, value); }
+    public bool CanDownload => downloads != null && Selected != null && SelectedVersion != null && currentQuery != null && !IsBusy && !IsDetailBusy && !isDownloading && !disposed;
     public bool CanPrevious => !IsBusy && currentQuery != null && offset > 0;
     public bool CanNext => !IsBusy && currentQuery != null && Items.Count > 0 && offset + Items.Count < total;
 
@@ -60,6 +69,7 @@ public sealed class ResourceBrowserViewModel(IFrontResourceBrowser browser) : IN
         Selected = null;
         Items = [];
         Versions = [];
+        SelectedVersion = null;
         total = 0;
         offset = query.Offset;
         Status = "正在搜索 Modrinth…";
@@ -103,6 +113,7 @@ public sealed class ResourceBrowserViewModel(IFrontResourceBrowser browser) : IN
         CancelDetails();
         Selected = item;
         Versions = [];
+        SelectedVersion = null;
         DetailStatus = "选择项目查看兼容版本。";
         if (disposed || item == null || currentQuery == null)
             return;
@@ -118,7 +129,7 @@ public sealed class ResourceBrowserViewModel(IFrontResourceBrowser browser) : IN
                 return;
             cancellation.Token.ThrowIfCancellationRequested();
             Versions = result;
-            DetailStatus = result.Count == 0 ? "没有符合条件的兼容版本。" : $"{result.Count} 个兼容版本 · 当前为只读预览，不执行安装。";
+            DetailStatus = result.Count == 0 ? "没有符合条件的兼容版本。" : $"{result.Count} 个兼容版本";
         }
         catch (OperationCanceledException)
         {
@@ -147,6 +158,39 @@ public sealed class ResourceBrowserViewModel(IFrontResourceBrowser browser) : IN
         detailCancellation?.Cancel();
     }
 
+    public async Task DownloadSelected()
+    {
+        if (!CanDownload)
+            return;
+        var project = Selected!.Id;
+        var version = SelectedVersion!.Id;
+        var query = currentQuery!;
+        var target = Destination.Trim();
+        try
+        {
+            isDownloading = true;
+            PropertyChanged?.Invoke(this, new(nameof(CanDownload)));
+            await downloads!.EnqueueResource(project, version, query, target, lifetime.Token);
+            if (!disposed)
+                DownloadStatus = "已加入真实下载队列。";
+        }
+        catch (OperationCanceledException)
+        {
+            if (!disposed)
+                DownloadStatus = "加入队列已取消。";
+        }
+        catch (Exception exception)
+        {
+            if (!disposed)
+                DownloadStatus = "加入队列失败：" + exception.Message;
+        }
+        finally
+        {
+            isDownloading = false;
+            PropertyChanged?.Invoke(this, new(nameof(CanDownload)));
+        }
+    }
+
     void CancelDetails()
     {
         var cancellation = detailCancellation;
@@ -157,8 +201,12 @@ public sealed class ResourceBrowserViewModel(IFrontResourceBrowser browser) : IN
 
     public void Dispose()
     {
+        if (disposed)
+            return;
         disposed = true;
+        lifetime.Cancel();
         Cancel();
+        lifetime.Dispose();
     }
 
     void NotifyPaging()
@@ -173,5 +221,7 @@ public sealed class ResourceBrowserViewModel(IFrontResourceBrowser browser) : IN
             return;
         field = value;
         PropertyChanged?.Invoke(this, new(property));
+        if (property != nameof(CanDownload))
+            PropertyChanged?.Invoke(this, new(nameof(CanDownload)));
     }
 }

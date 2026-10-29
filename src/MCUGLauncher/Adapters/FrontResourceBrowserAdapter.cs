@@ -7,7 +7,8 @@ public sealed class FrontResourceBrowserAdapter(ResourceManagementService resour
     public async Task<FrontResourcePage> Search(FrontResourceQuery query, CancellationToken token)
     {
         var page = await resources.Search(Convert(query), token);
-        return new(page.Items.Select(item => new FrontResourceItem(item.Id, item.Title, item.Description, item.Author, item.Downloads)).ToList(), page.Total);
+        return new(page.Items.Select(item => new FrontResourceItem(item.Id, item.Title, item.Description, item.Author, item.Downloads)
+            { IconUrl = item.IconUrl, Tags = item.Tags }).ToList(), page.Total);
     }
 
     public async Task<IReadOnlyList<FrontResourceVersion>> Versions(string project, FrontResourceQuery query, CancellationToken token)

@@ -139,7 +139,7 @@ static class Program
             Call("RefreshMiniDownloads", true);
             Assert(fixture.LastOffset == offset && File.ReadAllBytes(target).SequenceEqual(bytes), "HTTP range resume produces exact verified file");
             Assert(context!.TransferredBytes == bytes.Length - offset, "resume speed counts only newly received bytes");
-            coordinator.ChangePending(second.Id, OperationState.Cancelled);
+            Call("ChangeDownloadById", second.Id, OperationState.Cancelled);
             Call("RefreshMiniDownloads", true);
             Assert(mini.Visibility == Visibility.Collapsed, "indicator hides when queue finishes");
             record = coordinator.Enqueue("commit", root, target, new());
@@ -162,6 +162,33 @@ static class Program
                 await response.Content.ReadAsByteArrayAsync();
                 Assert(c.TransferredBytes == bytes.Length, "buffered response is not double counted");
             }, record));
+            var unified = coordinator.Enqueue("unified controls", root, "unified", new());
+            Call("OpenDownloadTasks");
+            var tasksPage = (InlineDialog)Field("downloadTasksPage");
+            Assert(tasksPage.Content is BlockLaunch.Front.DownloadTasksView, "legacy task page hosts shared Front component");
+            tasksPage.Close();
+            var history = (ListBox)window.FindName("TaskHistoryList");
+            Call("RefreshOperations");
+            history.SelectedItem = history.Items.Cast<OperationRecord>().Single(item => item.Id == unified.Id);
+            Call("ChangeDownload", OperationState.Paused);
+            Assert(prefs.DownloadsPaused && prefs.PausedDownloadId == unified.Id
+                && new SettingsStore(root).Load().DownloadsPaused, "history pause uses unified persisted queue state");
+            Call("ChangeDownloadById", unified.Id, OperationState.Queued);
+            Assert(!prefs.DownloadsPaused && prefs.PausedDownloadId == "", "task card resumes task paused through history controls");
+            Call("RefreshMiniDownloads", true);
+            Call("ToggleMiniDownload");
+            Assert(prefs.DownloadsPaused && prefs.PausedDownloadId == unified.Id, "mini control pauses the same task through unified service");
+            Call("ChangeDownloadById", unified.Id, OperationState.Cancelled);
+            Assert(prefs.PausedDownloadId == "" && prefs.DownloadsPaused
+                && coordinator.History().Single(item => item.Id == unified.Id).State == OperationState.Cancelled,
+                "task card cancellation clears mini pause anchor without starting other downloads");
+            var resume = coordinator.Enqueue("release pause", root, "resume", new());
+            Call("RefreshOperations");
+            history.SelectedItem = history.Items.Cast<OperationRecord>().Single(item => item.Id == resume.Id);
+            Call("ChangeDownload", OperationState.Queued);
+            Assert(!prefs.DownloadsPaused && !new SettingsStore(root).Load().DownloadsPaused,
+                "history continue releases global pause on an already waiting task");
+            Call("ChangeDownloadById", resume.Id, OperationState.Cancelled);
             Console.WriteLine("ALL_MINI_DOWNLOAD_CHECKS_PASSED");
         }
         catch (Exception ex)

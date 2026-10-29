@@ -60,7 +60,8 @@ dotnet build src/MCUGLauncher/MCUGLauncher.csproj -c Release
 dotnet publish src/MCUGLauncher/MCUGLauncher.csproj -c Release -o artifacts/publish
 ```
 
-详见 [构建与目录说明](docs/BUILD.md)。历史版本源码仍保留在各 Release 的手动 Source.zip 附件中；旧标签未移动，旧版自动生成的 Source code 归档可能仅含原仓库文件。
+新 Front 可独立构建：`dotnet build src/MCUGLauncher/Front/Front.csproj -c Release`；两个入口均通过共享业务项目调用服务，互不引用。
+详见 [构建与目录说明](docs/BUILD.md) 和 [双前端独立项目](docs/dcg/FRONTEND_PROJECTS.md)。历史版本源码仍保留在各 Release 的手动 Source.zip 附件中；旧标签未移动，旧版自动生成的 Source code 归档可能仅含原仓库文件。
 
 ### 窗口组件索引
 
@@ -69,9 +70,9 @@ dotnet publish src/MCUGLauncher/MCUGLauncher.csproj -c Release -o artifacts/publ
 重构分支变更记录见 [update_refactor.md](update_refactor.md)，后续拆分与主分支整合计划见 [TODO.md](TODO.md)。
 
 ```text
-src/       主程序与核心逻辑（2 个项目）
-test/      功能、界面与集成检查（22 个项目）
-tools/     隔离界面预览（4 个）和源码格式工具
+src/       两个独立前端、共享业务、共享 UI 与 Core
+test/      功能、界面与集成检查
+tools/     辅助界面预览和源码格式工具
 scripts/   构建与检查脚本
 docs/      使用、构建、历史测试记录与截图
 ```

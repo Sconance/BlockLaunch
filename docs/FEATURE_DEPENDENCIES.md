@@ -14,7 +14,7 @@
 
 - `Window/`：`src/MCUGLauncher/MainWindow/`。
 - `Controllers/`、`Presentation/`：分别位于 `src/MCUGLauncher/Controllers/` 和 `src/MCUGLauncher/Presentation/`，不再属于窗口子目录。
-- `Auth/`：`src/MCUGLauncher/Authentication/`。
+- `Auth/`：现为 `src/MCUGLauncher/Accounts/`（由共享 Application 编译）；旧授权窗口与头像渲染位于 `MainWindow/UI/Accounts/`。详见 [账号模块](dcg/ACCOUNTS_MODULE.md)。
 - `Core/`：`src/MCUGLauncher.Core/`。
 - `A → B`：A 调用或需要 B；不表示 B 反向依赖 A。
 - “刷新”：调用界面更新，不表示已建立统一的事件总线。
@@ -48,8 +48,8 @@ XAML / UI 组件
 
 | 公共依赖 | 当前所有者或入口 | 用途与约束 |
 | --- | --- | --- |
-| `prefs`、`settings` | MainWindow；`Core/Domain/Preferences.cs` | 当前根目录、启动参数、网络、账号偏好、主题等；多个功能共用同一配置对象 |
-| `http`、`runtimeNetwork` | MainWindow；`Core/Infrastructure/NetworkPolicy.cs` | 认证、资源查询、下载和组件请求；网络设置有保存值和运行时值之分 |
+| `prefs`、`settings` | 共享 `Settings/Preferences.cs`、`SettingsStore`；由 MainWindow/Front 持有 | 当前根目录、启动参数、网络、账号偏好、主题等；多个功能共用同一配置对象 |
+| `http`、`runtimeNetwork` | 共享 `Settings/NetworkPolicy.cs`；由各前端创建 | 认证、资源查询、下载和组件请求；网络设置有保存值和运行时值之分 |
 | `operations`、`CurrentToken` | MainWindow；OperationCoordinator | 当前操作、进度、取消、队列及历史；不能随意为每个组件各建一个协调器 |
 | `busy`、`Run`、`RequireStopped` | MainWindow | 界面门禁、操作执行和游戏运行检查；不同入口的限制并不完全相同 |
 | 当前实例与资源目标 | `Selected`、`Instance`、`Target`、`ManagedDirectory` 等 | 全局选中版本不一定就是某个已打开管理页的目标；排队任务另外保存自己的参数 |
@@ -68,7 +68,7 @@ XAML / UI 组件
   `EmbeddedMicrosoftOAuthUI`、`MinecraftOwnershipGuard` 与 `ProtectedAccountStorage` 完成授权、授权检查和存储。
 - **共享状态**：账号模式、`online`、保存的账号、账号偏好、配置目录、HTTP 客户端和当前操作。
 - **影响其他功能**：登录或退出后更新账号面板与头像；启动流程通过 `EnsureMicrosoftLogin` 取得可用会话。
-- **耦合点**：控制器持有 MainWindow；认证服务仍位于主程序项目，不是 Core 的独立账号模块。
+- **耦合点**：旧控制器仍持有 MainWindow，但认证服务与策略已由共享 Application 编译，不依赖任一前端；它不是独立账号程序集。
 
 ### 4.2 MUA 账号与认证组件
 

@@ -4,7 +4,7 @@ using System.Text.Json;
 
 namespace BlockLaunch;
 
-internal sealed class GameLaunchController(IGameLaunchInteraction interaction)
+public sealed class GameLaunchController(IGameLaunchInteraction interaction)
 {
     public async Task Launch(CancellationToken token)
     {

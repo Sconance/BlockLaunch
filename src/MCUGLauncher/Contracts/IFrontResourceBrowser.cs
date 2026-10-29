@@ -2,7 +2,11 @@ namespace BlockLaunch.Contracts;
 
 public sealed record FrontResourceQuery(string Text, string GameVersion, string Loader, string Kind, int Offset = 0, string Sort = "relevance");
 
-public sealed record FrontResourceItem(string Id, string Title, string Description, string Author, long Downloads);
+public sealed record FrontResourceItem(string Id, string Title, string Description, string Author, long Downloads)
+{
+    public string IconUrl { get; init; } = "";
+    public string Tags { get; init; } = "";
+}
 
 public sealed record FrontResourcePage(IReadOnlyList<FrontResourceItem> Items, int Total);
 

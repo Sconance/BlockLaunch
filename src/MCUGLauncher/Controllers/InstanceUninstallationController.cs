@@ -77,7 +77,7 @@ internal sealed class InstanceUninstallationController(MainWindow host)
                 host.RequireStopped();
                 foreach (var record in host.operations.History().Where(r => r.Download != null && r.Root.Equals(root, StringComparison.OrdinalIgnoreCase)))
                     if (record.Target == key || record.Download!.Version == key || record.Download.Destination.Length > 0 && frozen.Paths.Any(path => InstanceUninstaller.Inside(record.Download.Destination, path)))
-                        host.operations.ChangePending(record.Id, OperationState.Cancelled);
+                        host.ChangeDownloadById(record.Id, OperationState.Cancelled);
                 try
                 {
                     await host.versionManagement.Uninstall(frozen, defaults);

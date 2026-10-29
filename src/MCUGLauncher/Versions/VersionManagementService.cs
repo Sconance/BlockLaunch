@@ -59,6 +59,42 @@ public sealed class VersionManagementService(HttpClient http)
 
     public void Save(string root, InstanceDescriptor descriptor) => new InstanceCatalog(root).Save(descriptor);
 
+    public void SaveIdentity(string root, string key, string name, string description, string category, bool favorite)
+    {
+        if (string.IsNullOrWhiteSpace(name) || name.Length > 200)
+            throw new ArgumentException("版本名长度必须为 1–200 字符。");
+        if (category is not ("自动" or "原版游戏" or "整合包" or "常用版本" or "测试版本"))
+            throw new ArgumentException("版本分类无效。");
+        var descriptor = Descriptor(root, key);
+        descriptor.DisplayName = name.Trim();
+        descriptor.Description = description;
+        descriptor.Category = category;
+        descriptor.Favorite = favorite;
+        Save(root, descriptor);
+    }
+
+    public void SaveLaunch(string root, string key, LaunchSettings? settings)
+    {
+        var value = settings == null ? null : JsonSerializer.Deserialize<LaunchSettings>(JsonSerializer.Serialize(settings))!;
+        value?.Validate();
+        var descriptor = Descriptor(root, key);
+        descriptor.Launch = value;
+        Save(root, descriptor);
+    }
+
+    public Task<string> Clone(string root, string key, LaunchSettings defaults, string name, CloneOptions options,
+        Action<string>? progress = null, CancellationToken token = default)
+    {
+        token.ThrowIfCancellationRequested();
+        if (!ProfileKeys(root).Contains(key) || !VersionInstallation.IsReady(root, key))
+            throw new IOException("请先安装源实例所需的游戏版本。");
+        var descriptor = Descriptor(root, key);
+        var effective = JsonSerializer.Deserialize<LaunchSettings>(JsonSerializer.Serialize(descriptor.Launch ?? defaults))!;
+        var directory = InstanceDirectory(root, key, defaults);
+        var requirements = Requirements(root, descriptor.LaunchProfileId);
+        return Task.Run(() => InstanceCloner.Copy(root, key, directory, requirements.Minecraft, name, effective, options, progress, token), token);
+    }
+
     public Task<UninstallPlan> PlanUninstall(string root, string key, LaunchSettings defaults, bool deleteSharedData = false) =>
         Task.Run(() => InstanceUninstaller.Plan(root, key, defaults, deleteSharedData));
 
@@ -72,7 +108,27 @@ public sealed class VersionManagementService(HttpClient http)
         return new(key, requirements.Minecraft, requirements.Loader);
     }
 
-    public Task<List<LoaderRelease>> Loaders(string minecraft, string loader, CancellationToken token) => LoaderCatalog.Get(http, minecraft, loader, token);
+    public async Task<List<LoaderRelease>> Loaders(string minecraft, string loader, CancellationToken token)
+    {
+        if (loader is "forge" or "neoforge")
+            return await LoaderCatalog.Get(http, minecraft, loader, token);
+        if (loader is not ("fabric" or "quilt"))
+            throw new ArgumentException("不支持的加载器。");
+        var endpoint = loader == "fabric" ? "https://meta.fabricmc.net/v2/versions/loader/" : "https://meta.quiltmc.org/v3/versions/loader/";
+        using var document = JsonDocument.Parse(await http.GetStringAsync(endpoint + Uri.EscapeDataString(minecraft), token));
+        return document.RootElement.EnumerateArray()
+            .Select(element => element.GetProperty("loader"))
+            .Select(element =>
+            {
+                var version = element.GetProperty("version").GetString()!;
+                var preview = element.TryGetProperty("stable", out var stable) && stable.ValueKind == JsonValueKind.False
+                    || version.Contains("beta", StringComparison.OrdinalIgnoreCase) || version.Contains("alpha", StringComparison.OrdinalIgnoreCase);
+                return new LoaderRelease(version, version + (preview ? " · 测试版" : ""));
+            })
+            .DistinctBy(release => release.Version)
+            .OrderBy(release => release.Label.Contains("测试版", StringComparison.Ordinal))
+            .ToList();
+    }
 
     public async Task<DownloadRequest> StableFabric(string version, IEnumerable<VersionRow> versions, CancellationToken token)
     {

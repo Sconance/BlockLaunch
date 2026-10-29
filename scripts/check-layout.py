@@ -6,7 +6,7 @@ import xml.etree.ElementTree as ET
 def main():
     root = Path(__file__).resolve().parent.parent
     errors = []
-    projects = sorted(root.glob('src/*/*.csproj'))
+    projects = sorted((root / 'src').rglob('*.csproj'))
     projects += sorted(root.glob('test/*/*.csproj'))
     projects += sorted(root.glob('tools/*/*.csproj'))
     if not projects:
@@ -22,7 +22,7 @@ def main():
         for tag in ('ProjectReference', 'Compile', 'Content', 'Resource', 'EmbeddedResource', 'None'):
             for element in document.iter(tag):
                 include = element.get('Include') or element.get('Update')
-                if include and not (project.parent / include).is_file():
+                if include and not any(path.is_file() for path in project.parent.glob(include)):
                     errors.append(f'{project.relative_to(root)}: missing {tag} {include}')
         for element in document.iter('ApplicationIcon'):
             if element.text and not (project.parent / element.text).is_file():

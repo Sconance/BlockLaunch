@@ -5,11 +5,10 @@
     <UseWPF>true</UseWPF>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <SelfContained>true</SelfContained>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="../../src/MCUGLauncher/MCUGLauncher.csproj" />
-    <Content Include="../../src/MCUGLauncher/App.xaml" Link="Fixtures/LauncherApp.xaml" CopyToOutputDirectory="PreserveNewest" />
+    <ProjectReference Include="../../src/MCUGLauncher/Front/Front.csproj" />
   </ItemGroup>
 </Project>

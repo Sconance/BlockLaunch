@@ -56,7 +56,7 @@ public partial class MainWindow
 
     async Task PumpDownloads()
     {
-        if (!queueReady || prefs.DownloadsPaused || busy || closeAfterTask || instanceUninstallationController.PreviewOpen || game is
+        if (!queueReady || downloadQueue.IsPaused || busy || closeAfterTask || instanceUninstallationController.PreviewOpen || game is
             {
                 HasExited: false
             })
@@ -123,17 +123,7 @@ public partial class MainWindow
             return;
         }
 
-        var changed = downloadQueue.ChangeState(record.Id, state);
-        if (changed && state == OperationState.Queued)
-        {
-            prefs.DownloadsPaused = false;
-            prefs.PausedDownloadId = "";
-            SaveDownloadPause();
-        }
-
-        if (!changed)
-            OperationStatusLabel.Text = "当前状态不能执行此操作；提交文件阶段请等待完成。";
-        RefreshOperations();
+        ChangeDownloadById(record.Id, state);
     }
 
     void QueueContent(ContentVersion version)

@@ -449,9 +449,6 @@ public partial class MainWindow
         {
             var catalog = new InstanceCatalog(prefs.Root);
             var original = catalog.GetOrCreate(key);
-            var effective = original.Launch ?? prefs.Launch;
-            var source = effective.Isolation == "共享根目录" ? prefs.Root : catalog.DirectoryFor(key);
-            var requirements = RequirementsFor(original.LaunchProfileId);
             var body = new StackPanel();
             body.Children.Add(Heading("复制实例 · " + original.DisplayName));
             body.Children.Add(Hint("复制模组、配置、资源和启动设置，创建独立实例。游戏主体、加载器和公共库沿用已有安装；存档、截图和服务器列表按需勾选。复制前请退出使用源实例的游戏。"));
@@ -486,7 +483,7 @@ public partial class MainWindow
                 await Run(async () =>
                 {
                     RequireStopped();
-                    var newKey = await Task.Run(() => InstanceCloner.Copy(prefs.Root, key, source, requirements.Minecraft, chosenName, effective, options, text => operations.Current?.Report(text), CurrentToken));
+                    var newKey = await versionManagement.Clone(prefs.Root, key, prefs.Launch, chosenName, options, text => operations.Current?.Report(text), CurrentToken);
                     await Refresh();
                     VersionSelectorControl.SelectedValue = newKey;
                     RefreshInstanceViews();

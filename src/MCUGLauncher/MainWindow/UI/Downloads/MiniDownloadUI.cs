@@ -164,7 +164,7 @@ public partial class MainWindow
                 Download: not null
             } active)
             return active;
-        var pending = miniRecords.FirstOrDefault(r => r.Id == prefs.PausedDownloadId && r.State is OperationState.Paused or OperationState.Queued) ?? miniRecords.Where(r => r.Download != null && r.State is OperationState.Queued or OperationState.Paused).OrderBy(r => r.QueueOrder == 0 ? r.Started.UtcTicks : r.QueueOrder).FirstOrDefault();
+        var pending = miniRecords.FirstOrDefault(r => r.Id == downloadQueue.PauseState.TaskId && r.State is OperationState.Paused or OperationState.Queued) ?? miniRecords.Where(r => r.Download != null && r.State is OperationState.Queued or OperationState.Paused).OrderBy(r => r.QueueOrder == 0 ? r.Started.UtcTicks : r.QueueOrder).FirstOrDefault();
         if (pending != null)
             return pending;
         var recent = miniRecords.Where(r => r.Download != null && r.Root.Equals(prefs.Root, StringComparison.OrdinalIgnoreCase)).OrderByDescending(r => r.Updated).FirstOrDefault();
@@ -221,7 +221,7 @@ public partial class MainWindow
             sampledTick = tick;
         }
 
-        var paused = prefs.DownloadsPaused || record.State == OperationState.Paused;
+        var paused = downloadQueue.IsPaused || record.State == OperationState.Paused;
         var pausing = record.State == OperationState.Pausing;
         var running = active?.Record.Id == record.Id && record.State == OperationState.Running;
         var percent = record.Percent is
@@ -244,43 +244,6 @@ public partial class MainWindow
         var record = MiniDownloadRecord();
         if (record == null || !miniDownloadToggle.IsEnabled)
             return;
-        if (record.State == OperationState.Failed)
-        {
-            if (operations.ChangePending(record.Id, OperationState.Queued))
-            {
-                prefs.DownloadsPaused = false;
-                prefs.PausedDownloadId = "";
-                SaveDownloadPause();
-                RefreshMiniDownloads(true);
-                RefreshOperations();
-            }
-
-            return;
-        }
-
-        var resume = prefs.DownloadsPaused || record.State == OperationState.Paused;
-        bool changed;
-        if (resume)
-            changed = record.State == OperationState.Queued || operations.ChangePending(record.Id, OperationState.Queued);
-        else
-            changed = operations.Current?.Record.Id == record.Id ? operations.Cancel(pause: true) : operations.ChangePending(record.Id, OperationState.Paused);
-        if (!changed)
-            return;
-        prefs.DownloadsPaused = !resume;
-        prefs.PausedDownloadId = resume ? "" : record.Id;
-        SaveDownloadPause();
-        RefreshMiniDownloads(true);
-    }
-
-    void SaveDownloadPause()
-    {
-        try
-        {
-            settings.Save(prefs);
-        }
-        catch (Exception ex)
-        {
-            Log("下载暂停状态暂未保存：" + ex.Message);
-        }
+        ApplyDownloadChange(downloadQueue.Toggle(record.Id));
     }
 }

@@ -1,101 +1,21 @@
-# Front 界面迁移预览
+# Front 入口（已从预览切换为真实宿主）
 
-完整待测步骤与旧 UI 删除门槛见 [Front 验收清单](FRONT_ACCEPTANCE.md)。目前不满足删除条件，保留旧 UI。
-本轮设置页的跨设备交接、编译命令和逐项通过标准见 [Windows 设置页验收指南](FRONT_SETTINGS_WINDOWS_TEST.md)。根目录 `AGENT.md` 是供测试 agent 使用的临时提示词，完成测试并记录后删除。
-
-## 第一阶段范围
-
-新界面位于 [`Front/`](../src/MCUGLauncher/Front/Views/FrontWindow.xaml)，与 MainWindow 同级。
-原 App.xaml 的 StartupUri、MainWindow、账号配置和启动流程均不改动。
-这不是所有旧页面迁移完成，也不是 Web 前端或独立进程。
-
-| 页面 | 本阶段实现 |
-| --- | --- |
-| 主窗口与开始游戏 | 复用旧 XAML 的导航分区、尺寸、配色和卡片风格；展示模拟实例/玩家，启动按钮禁用 |
-| 内容中心 | 可搜索、按类型/游戏版本/加载器筛选、排序、翻页、选择项目并读取兼容版本 |
-| 启动设置 | 游戏目录、Java、内存与窗口宽高的真实读取/保存；预览采用独立测试配置，保留其他偏好 |
-| 游戏安装、内容管理、日志、任务 | 导航和明确的未迁移提示；不提供假装已接通的业务按钮 |
-
-整体风格参考现有界面，未逐像素复刻所有运行时 Builders/Styling 的效果。
-本轮不接入登录、启动、下载、安装、删除或事务回退。设置会真实写入独立测试目录，不能再将整个预览称为“只读”。
-
-## 分层
-
-```text
-Front/Views                         XAML 布局和界面事件
-    ↓
-Front/ViewModels                    输入、列表、加载/空/错误/取消状态
-    ↓
-Contracts/IFrontResourceBrowser     纯 C# 查询接口和显示数据
-    ↑
-Adapters/FrontResourceBrowserAdapter
-    ↓
-Resources/ResourceManagementService → Core ContentService
-
-Front/Views/SettingsView → SettingsViewModel → Contracts/IFrontSettings
-    ↑ Adapters/FrontSettingsAdapter → LauncherSettingsService → SettingsStore
-```
-
-Front 只依赖契约，不直接引用 MainWindow、Controller、HttpClient、文件操作或资源业务实现。
-适配器调用现有服务而不是另写搜索/兼容性规则。
-Contract 与 Front 仍在原主项目内，当前隔离由代码边界维护，不是独立程序集强制隔离。
-
-模拟实现位于工具目录，不混入界面；独立工具负责创建 Application、注入服务和复用样式。
-预览从 App.xaml 的 Application.Resources 提取同一套样式，不复制整份样式，不触发旧 StartupUri。
-原资源文件中的样式仍是共享依赖，尚未迁到 Front/Styles。
-
-## 在 Windows 上打开预览
-
-需要仓库 global.json 指定的 .NET 8 SDK 和 Windows Desktop 环境。
+当前架构、模块调用边界、Windows 编译/回归和真实操作警告见 [Front 真实模块接入](dcg/FRONT_RUNTIME.md)。
 
 ```powershell
-dotnet run --project tools/FrontPreview/FrontPreview.csproj -c Release
+.\scripts\build-windows.ps1 -Frontend Front
 ```
 
-默认模拟模式不会发起网络请求。点击“内容中心”，搜索 `empty` 检查空列表，搜索 `error` 检查失败状态；
-清空关键词可查看 32 个示例项目、分页和模拟版本，查看加载状态时可点击取消。
-模拟内容均标明为演示数据，不代表真实项目。模拟筛选用于传参/布局预览，不能验证真实兼容性。
+输出：`artifacts/windows/front/Release/build/MCUGLauncher.Front.exe`。独立工程为 `src/MCUGLauncher/Front/Front.csproj`，历史 tools/FrontPreview 工程已移除。
+必须保留整个输出目录和依赖文件；自身 Styles/Theme.xaml 已编译进 Front 程序，不再需要 Fixtures。
 
-真实只读模式：
+Front 默认读取 `%LOCALAPPDATA%\BlockLaunch` 正式配置，共用账号、实例和持久化下载队列，启动恢复后会实际执行未暂停的下载。
+新旧入口不能同时打开同一配置目录。新前端直接组装服务，不通过隐藏的 MainWindow 执行业务。
 
-```powershell
-dotnet run --project tools/FrontPreview/FrontPreview.csproj -c Release -- --live
-```
+已接入账号、版本与加载器、启动/正常停止、资源浏览与下载、本地内容读取/启停、设置、任务列表与运行日志。
+更新/事务回退、实例卸载、个性化等旧页面尚未完整迁移，不能整体删除旧 UI。
 
-此模式通过现有 ResourceManagementService 调用 Modrinth；HttpClient 由预览工具创建，
-不会读取旧账号或配置，也不加载旧网络偏好。查询可能受网络限制而失败，错误展示在页面。
-不显示图标远程加载、项目长描述、收藏等尚未适配的完整功能。
+旧隔离预览的 `.front-preview` 标记检查、模拟资源、`--live` 和 `--simulate-game-running` 参数已经移除。
+`--settings-dir <目录>` 仅指定真实配置位置，不禁止联网、下载、登录或游戏启动，也不自动把游戏根目录改到该位置。
 
-## 生命周期和状态
-
-每次搜索保存查询快照，后续分页/详情使用同一组条件，不读取用户尚未提交的新筛选值。
-新搜索和新选择会取消上一请求，并检查响应所属请求，避免忽略取消的旧请求覆盖新界面。
-搜索/详情超时为 60 秒；关闭窗口释放 ViewModel，离开资源页取消当前查询。
-未完成加载或错误状态不允许继续翻页；错误后可以重新搜索。
-
-## 检查
-
-[`FrontResourceBrowserChecks`](../test/CompatibilityChecks/FrontResourceBrowserChecks.cs) 在无 WPF 的检查项目中链接
-契约、真实适配器和 ViewModel，覆盖服务映射、查询快照、分页、乱序响应、取消、错误、空结果和关闭。
-
-```powershell
-dotnet run --project test/CompatibilityChecks/CompatibilityChecks.csproj -c Release -- --front
-```
-
-本次环境无 .NET SDK 且不是 Windows，未编译、未运行检查、未打开界面；静态验证不能代替上述验收。
-
-下一阶段可沿用同一模式为版本列表添加契约/适配器，再单独接入启动和下载命令，
-必须保留原操作协调器、运行门禁和事务保护，不能让 ViewModel 自行执行安装或文件修改。
-
-## 设置页读写与隔离
-
-```powershell
-dotnet run --project tools/FrontPreview/FrontPreview.csproj -c Release -- --settings-dir "$env:TEMP\MCUG Front Settings Test"
-dotnet run --project test/CompatibilityChecks/CompatibilityChecks.csproj -c Release -- --front-settings
-```
-
-首次启动初始化测试配置；第一次打开设置页读取，显式点击保存后提交编辑。省略目录参数时使用 `%TEMP%\MCUGLauncher-FrontPreview`。
-仅接管空目录或已含 `.front-preview` 标记的测试目录；独占 `download-queue.lock`，同目录不能同时启动两个宿主。
-不要将正式配置目录传入，也不要手动为它添加标记。`--live` 仅改变资源查询来源，不改变设置隔离策略。
-`--simulate-game-running` 用于测试保存门禁，不启动真实游戏。切换页面保留编辑，重新读取放弃编辑；关闭期间已开始的原子保存可能完成。
-自动内存、隔离模式和实例级设置仍未开放编辑，保存本页不会覆盖这些偏好。正式入口和旧设置页均保留。
+本次尚未在 Windows 编译或运行。历史设置预览报告仅描述历史源码，不代表当前宿主通过测试。

@@ -163,13 +163,8 @@ public partial class MainWindow
         {
             try
             {
-                prefs.DarkMode = dark.IsChecked == true;
-                prefs.Accent = accent.SelectedItem as string ?? "地大蓝";
-                prefs.BackgroundPath = images.SelectedItem as string ?? "";
-                prefs.BackgroundImages = choices;
-                prefs.BackgroundFit = fit.SelectedItem as string ?? "裁剪填充";
-                prefs.BackgroundOpacity = opacity.Value;
-                settings.Save(prefs);
+                launcherSettings.SaveAppearance(prefs, dark.IsChecked == true, accent.SelectedItem as string ?? "地大蓝",
+                    images.SelectedItem as string ?? "", opacity.Value, fit.SelectedItem as string ?? "裁剪填充", choices);
                 ApplyPersonalization();
                 ThemeWindow(this);
                 status.Text = "外观已保存并应用，无需重启。";

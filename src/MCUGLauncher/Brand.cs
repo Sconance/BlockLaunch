@@ -1,6 +1,6 @@
 namespace BlockLaunch;
 
-internal static class Brand
+public static class Brand
 {
     public const string Name = "MCUG Launcher";
     public const string Version = "0.21.0";

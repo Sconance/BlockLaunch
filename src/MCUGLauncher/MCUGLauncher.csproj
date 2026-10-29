@@ -21,10 +21,13 @@
   </PropertyGroup>
   <ItemGroup>
     <Resource Include="Assets/MCUGLogo.png" />
-    <ProjectReference Include="../MCUGLauncher.Core/MCUGLauncher.Core.csproj" />
-    <PackageReference Include="CmlLib.Core.Auth.Microsoft" Version="3.3.0" />
+    <ProjectReference Include="../MCUGLauncher.Application/MCUGLauncher.Application.csproj" />
+    <ProjectReference Include="../MCUGLauncher.SharedUI/MCUGLauncher.SharedUI.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Remove="Front/**/*.cs;Accounts/**/*.cs;Adapters/**/*.cs;Builders/**/*.cs;Contracts/**/*.cs;Downloads/**/*.cs;Launch/**/*.cs;Resources/**/*.cs;Settings/**/*.cs;Versions/**/*.cs;Brand.cs" />
+    <Page Remove="Front/**/*.xaml" />
+    <None Remove="Front/**/*" />
     <EmbeddedResource Include="Resources/Notices.txt" LogicalName="BlockLaunch.Resources.Notices.txt" />
   </ItemGroup>
 </Project>

@@ -1,0 +1,46 @@
+<UserControl x:Class="BlockLaunch.SharedUI.DownloadTasksView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <DockPanel>
+    <StackPanel DockPanel.Dock="Top" Margin="0,0,0,12">
+      <TextBlock Text="任务保留各自的下载目录；暂停保留进度，取消保留已校验缓存；提交结果期间不可操作。" TextWrapping="Wrap" />
+      <TextBlock Text="{Binding QueueStatus}" TextWrapping="Wrap" Margin="0,8,0,0" />
+      <TextBlock Text="{Binding Status}" TextWrapping="Wrap" Margin="0,8,0,0" AutomationProperties.Name="下载操作状态" />
+      <Button Content="刷新任务" Click="RefreshClick" HorizontalAlignment="Left" Margin="0,8,0,0" />
+    </StackPanel>
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+      <StackPanel>
+        <TextBlock Text="暂无下载任务。">
+          <TextBlock.Style>
+            <Style TargetType="TextBlock">
+              <Setter Property="Visibility" Value="Collapsed" />
+              <Style.Triggers>
+                <DataTrigger Binding="{Binding Tasks.Count}" Value="0"><Setter Property="Visibility" Value="Visible" /></DataTrigger>
+              </Style.Triggers>
+            </Style>
+          </TextBlock.Style>
+        </TextBlock>
+        <ItemsControl ItemsSource="{Binding Tasks}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <Border Background="White" BorderBrush="#DBE5EB" BorderThickness="1" CornerRadius="16" Margin="0,0,0,10" Padding="12">
+                <StackPanel>
+                  <TextBlock Text="{Binding Name}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                  <TextBlock Text="{Binding Status}" Margin="0,6,0,0" />
+                  <ProgressBar Minimum="0" Maximum="100" Value="{Binding Percent, TargetNullValue=0}" IsIndeterminate="{Binding IsIndeterminate}" Height="4" Margin="0,8" />
+                  <TextBlock Text="{Binding Percent, StringFormat={}{0:0}%}" />
+                  <TextBlock Text="{Binding Message}" TextWrapping="Wrap" ToolTip="{Binding Root}" />
+                  <WrapPanel Margin="0,8,0,0">
+                    <Button Content="暂停" IsEnabled="{Binding CanPause}" Click="PauseClick" Margin="0,0,8,0" />
+                    <Button Content="{Binding ResumeLabel}" IsEnabled="{Binding CanResume}" Click="ResumeClick" Margin="0,0,8,0" />
+                    <Button Content="取消" IsEnabled="{Binding CanCancel}" Click="CancelClick" />
+                  </WrapPanel>
+                </StackPanel>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </ScrollViewer>
+  </DockPanel>
+</UserControl>

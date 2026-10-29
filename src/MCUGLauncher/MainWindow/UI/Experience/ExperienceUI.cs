@@ -65,7 +65,7 @@ public partial class MainWindow
             {
                 if (TaskHistoryListControl.SelectedItem is OperationRecord record)
                 {
-                    operations.MovePending(record.Id, pair.Item2);
+                    downloadQueue.Move(record.Id, pair.Item2);
                     RefreshOperations();
                 }
             }));
@@ -156,9 +156,8 @@ public partial class MainWindow
             {
                 if (!int.TryParse(input.Text, out var limit) || limit is < 0 or > 1048576)
                     throw new IOException("请输入 0–1048576。");
-                prefs.Network.LimitKibPerSecond = limit;
+                launcherSettings.SaveDownloadLimit(prefs, limit);
                 runtimeNetwork.LimitKibPerSecond = limit;
-                settings.Save(prefs);
                 dialog.Close();
             }
             catch (Exception ex)
@@ -223,10 +222,15 @@ public partial class MainWindow
                     return;
                 }
 
-                prefs.ProtectSaves = enabled.IsChecked == true;
-                prefs.SaveBackupCount = keep;
-                settings.Save(prefs);
-                preview.Text = "策略已保存。";
+                try
+                {
+                    launcherSettings.SaveBackupPolicy(prefs, enabled.IsChecked == true, keep);
+                    preview.Text = "策略已保存。";
+                }
+                catch (Exception ex)
+                {
+                    preview.Text = "保存失败：" + ex.Message;
+                }
             }));
             body.Children.Add(ActionButton("立即备份所有世界", async (_, _) =>
             {

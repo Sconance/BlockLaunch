@@ -78,6 +78,11 @@ public partial class MainWindow
 
     void CancelTaskClick(object s, RoutedEventArgs e)
     {
+        if (DownloadInProgress)
+        {
+            ChangeDownloadById(operations.Current!.Record.Id, OperationState.Cancelled);
+            return;
+        }
         if (!operations.Cancel())
             OperationStatusLabel.Text = "当前正在提交文件，完成后可以继续操作。";
     }

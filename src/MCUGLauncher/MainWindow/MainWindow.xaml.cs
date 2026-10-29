@@ -33,7 +33,8 @@ public partial class MainWindow : Window
     GameLaunchController gameLaunchController = null!;
     DownloadTaskExecutor downloadTaskExecutor = null!;
     DownloadQueueService downloadQueue = null!;
-    LauncherSettingsService launcherSettings = null!;
+    DownloadFrontendService downloadFrontend = null!;
+    internal LauncherSettingsService launcherSettings = null!;
     internal AccountSessionService accountSessions = null!;
     internal GameSessionMonitor gameSessionMonitor = new();
     internal VersionManagementService versionManagement = null!;
@@ -210,7 +211,8 @@ public partial class MainWindow : Window
         }
 
         operations = new OperationCoordinator(Path.Combine(settingsDir, "tasks"));
-        downloadQueue = new DownloadQueueService(operations);
+        downloadQueue = new DownloadQueueService(operations, new DownloadPauseStore(settings, () => prefs));
+        downloadFrontend = new DownloadFrontendService(downloadQueue);
         operations.Changed += record => Dispatcher.BeginInvoke(() =>
         {
             ApplyOperation(record);
@@ -276,11 +278,15 @@ public partial class MainWindow : Window
             {
                 e.Cancel = true;
                 closeAfterTask = true;
-                operations.Cancel(operations.Current?.Record.Download != null, operations.Current?.Record.Download != null);
+                if (DownloadInProgress)
+                    downloadQueue.SuspendForShutdown();
+                else
+                    operations.Cancel();
                 OperationStatusLabel.Text = "正在清理当前任务，完成后自动关闭…";
             }
         };
         Closed += (_, _) => browseCancellation?.Cancel();
+        Closed += (_, _) => downloadTasksView?.Dispose();
     }
 
     internal void SetupLauncher()

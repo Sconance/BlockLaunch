@@ -27,7 +27,7 @@ MCUGLauncher（WPF 应用）
 │   └── Initialization/              界面初始化辅助
 ├── Controllers/                     交互流程和操作协调；部分仍持有窗口
 ├── Presentation/                    对话框、页面宿主与呈现上下文
-├── Authentication/                  微软、MUA 认证及凭据和头像处理
+├── Accounts/                        共享账号、微软/MUA 认证策略及凭据处理（Application 编译）
 ├── Launch/                          独立启动编排、交互接口和输入/结果模型
 ├── Downloads/                       独立下载任务执行器；队列控制暂留窗口
 ├── Versions/                        版本查询、实例目标、加载器与配置/卸载服务入口
@@ -129,7 +129,7 @@ Presentation 负责内嵌页面栈、实例管理和更新确认等呈现过程�
   → 窗口沿用日志、退出诊断和窗口行为组件
 ```
 
-认证服务目前位于主程序的 `Authentication/`，而不是全部位于 Core。
+认证业务现位于与 MainWindow 同级的 `Accounts/`，由共享 Application 项目编译；旧授权窗口与头像渲染位于 `MainWindow/UI/Accounts/`。详见 [账号与认证模块](dcg/ACCOUNTS_MODULE.md)。
 Core 的启动请求还包含 CmlLib 的会话类型，说明第三方依赖尚未完全封装在适配层内部。
 
 ### 下载与安装

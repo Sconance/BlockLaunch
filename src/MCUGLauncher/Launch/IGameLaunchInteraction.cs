@@ -1,6 +1,6 @@
 namespace BlockLaunch;
 
-internal interface IGameLaunchInteraction
+public interface IGameLaunchInteraction
 {
     bool IsGameRunning { get; }
     GameSession? CurrentSession { get; }

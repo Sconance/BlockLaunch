@@ -16,7 +16,8 @@
     <Compile Include="../../src/MCUGLauncher/Accounts/AccountExceptions.cs" Link="Accounts/AccountExceptions.cs" />
     <Compile Include="../../src/MCUGLauncher/Settings/LauncherSettingsService.cs" Link="Settings/LauncherSettingsService.cs" />
     <Compile Include="../../src/MCUGLauncher/Launch/GameSessionMonitor.cs" Link="Launch/GameSessionMonitor.cs" />
-    <Compile Include="../../src/MCUGLauncher/MainWindow/Builders/OfflineSkinPackBuilder.cs" Link="Launch/OfflineSkinPackBuilder.cs" />
+    <Compile Include="../../src/MCUGLauncher/Launch/GameLogReader.cs" Link="Launch/GameLogReader.cs" />
+    <Compile Include="../../src/MCUGLauncher/Builders/OfflineSkinPackBuilder.cs" Link="Builders/OfflineSkinPackBuilder.cs" />
     <Compile Include="../../src/MCUGLauncher/Versions/VersionManagementService.cs" Link="Versions/VersionManagementService.cs" />
     <Compile Include="../../src/MCUGLauncher/Versions/VersionManagementModels.cs" Link="Versions/VersionManagementModels.cs" />
     <Compile Include="../../src/MCUGLauncher/Resources/ResourceManagementService.cs" Link="Resources/ResourceManagementService.cs" />
@@ -27,6 +28,7 @@
     <Compile Include="../../src/MCUGLauncher/Adapters/FrontResourceBrowserAdapter.cs" Link="Adapters/FrontResourceBrowserAdapter.cs" />
     <Compile Include="../../src/MCUGLauncher/Front/ViewModels/ResourceBrowserViewModel.cs" Link="Front/ResourceBrowserViewModel.cs" />
     <Compile Include="../../src/MCUGLauncher/Contracts/IFrontSettings.cs" Link="Contracts/IFrontSettings.cs" />
+    <Compile Include="../../src/MCUGLauncher/Contracts/IFrontLauncher.cs" Link="Contracts/IFrontLauncher.cs" />
     <Compile Include="../../src/MCUGLauncher/Adapters/FrontSettingsAdapter.cs" Link="Adapters/FrontSettingsAdapter.cs" />
     <Compile Include="../../src/MCUGLauncher/Front/ViewModels/SettingsViewModel.cs" Link="Front/SettingsViewModel.cs" />
   </ItemGroup>

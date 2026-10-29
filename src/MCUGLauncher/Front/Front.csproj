@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>MCUGLauncher.Front</AssemblyName>
+    <StartupObject>BlockLaunch.Front.Program</StartupObject>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <Version>0.21.0</Version>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../MCUGLauncher.Application/MCUGLauncher.Application.csproj" />
+    <ProjectReference Include="../../MCUGLauncher.SharedUI/MCUGLauncher.SharedUI.csproj" />
+  </ItemGroup>
+</Project>

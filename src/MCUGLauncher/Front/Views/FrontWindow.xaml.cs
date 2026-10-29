@@ -1,105 +1,324 @@
+using System.ComponentModel;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Shell;
+using System.Windows.Threading;
 using BlockLaunch.Contracts;
+using BlockLaunch.SharedUI;
 
 namespace BlockLaunch.Front;
 
 public partial class FrontWindow : Window
 {
+    readonly IFrontLauncher launcher;
     readonly ResourceBrowserViewModel resources;
     readonly ResourceBrowserView browser;
     readonly SettingsViewModel settings;
     readonly SettingsView settingsView;
+    readonly DownloadTasksView downloadsView;
+    readonly LauncherView launcherView;
+    readonly DispatcherTimer timer;
+    readonly CancellationTokenSource lifetime = new();
+    readonly LogView logView;
+    readonly Func<CancellationToken, Task>? startupAction;
+    bool closing;
+    bool canClose;
+    bool navigating;
 
-    public FrontWindow(IFrontResourceBrowser resourceBrowser, IFrontSettings settingsService, string mode)
+    public FrontWindow(IFrontResourceBrowser resourceBrowser, IFrontSettings settingsService, IFrontDownloadTasks downloads, IFrontLauncher launcher, string mode,
+        Func<CancellationToken, Task>? startupAction = null)
     {
+        this.launcher = launcher;
+        this.startupAction = startupAction;
         InitializeComponent();
-        ModeLabel.Text = mode;
-        resources = new ResourceBrowserViewModel(resourceBrowser);
+        WindowStyle = WindowStyle.None;
+        ResizeMode = ResizeMode.CanResize;
+        WindowChrome.SetWindowChrome(this, new WindowChrome
+        {
+            CaptionHeight = 48,
+            ResizeBorderThickness = new Thickness(6),
+            GlassFrameThickness = new Thickness(0),
+            CornerRadius = new CornerRadius(10),
+            UseAeroCaptionButtons = false
+        });
+        WindowChrome.SetIsHitTestVisibleInChrome(NavigationPanel, true);
+        WindowChrome.SetIsHitTestVisibleInChrome(HeaderBar.Children.OfType<StackPanel>().First(), true);
+        ToolTip = mode;
+        resources = new ResourceBrowserViewModel(resourceBrowser, launcher) { Destination = launcher.DownloadDirectory };
         browser = new ResourceBrowserView(resources);
         settings = new SettingsViewModel(settingsService);
         settingsView = new SettingsView(settings);
+        downloadsView = new DownloadTasksView(new DownloadTasksViewModel(downloads));
+        launcherView = new LauncherView(launcher);
+        logView = new LogView(launcher, () => launcherView.SelectedProfile);
+        launcherView.RequestPage += NavigatePage;
+        downloadView = new DownloadBrowserView(launcherView, browser, resources);
+        if (launcher is IFrontPreferences preferences)
+        {
+            settingsView.ConfigurePreferences(preferences);
+            settingsView.AppearanceChanged += ApplyAppearance;
+            ApplyAppearance(preferences.ReadPreferences());
+        }
+        timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
+        timer.Tick += async (_, _) =>
+        {
+            UpdateStatus();
+            try
+            {
+                await launcher.Tick();
+            }
+            catch (Exception exception)
+            {
+                RuntimeStatus.Text = "下载调度失败：" + exception.Message;
+            }
+        };
+        Loaded += Initialize;
+        Closing += CloseSafely;
         Closed += (_, _) =>
         {
-            resources.Dispose();
-            settings.Dispose();
+            timer.Stop();
+            lifetime.Dispose();
         };
-        HomeNavigation.IsChecked = true;
+        StartNavigation.IsChecked = true;
+        StateChanged += (_, _) => MaximizeButton.Content = WindowState == WindowState.Maximized ? "\uE923" : "\uE922";
+    }
+
+    void MinimizeClick(object sender, RoutedEventArgs args) => WindowState = WindowState.Minimized;
+
+    void MaximizeClick(object sender, RoutedEventArgs args) => WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+
+    void CloseClick(object sender, RoutedEventArgs args) => Close();
+
+    async void Initialize(object sender, RoutedEventArgs args)
+    {
+        IsEnabled = false;
+        try
+        {
+            await launcher.Initialize(lifetime.Token);
+            if (!closing)
+            {
+                IsEnabled = true;
+                if (startupAction != null)
+                {
+                    try
+                    {
+                        await startupAction(lifetime.Token);
+                    }
+                    catch (OperationCanceledException) when (closing)
+                    {
+                        return;
+                    }
+                    catch (Exception exception) when (!closing)
+                    {
+                        MessageBox.Show(this, exception.Message, "脚本启动未完成", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    }
+                }
+                if (closing)
+                    return;
+                timer.Start();
+                UpdateStatus();
+                await launcherView.RefreshProfiles();
+            }
+        }
+        catch (OperationCanceledException) when (closing)
+        {
+        }
+        catch (Exception exception) when (!closing)
+        {
+            MessageBox.Show(this, exception.Message, "启动恢复失败", MessageBoxButton.OK, MessageBoxImage.Error);
+            Close();
+        }
+        catch (Exception) when (closing)
+        {
+        }
+    }
+
+    async void CloseSafely(object? sender, CancelEventArgs args)
+    {
+        if (canClose)
+            return;
+        args.Cancel = true;
+        if (closing)
+            return;
+        if (launcher.IsGameRunning && MessageBox.Show(this, "游戏仍在运行。关闭启动器将请求游戏退出，并等待游戏和任务清理完成。继续？",
+            "关闭启动器", MessageBoxButton.OKCancel, MessageBoxImage.Warning) != MessageBoxResult.OK)
+            return;
+        closing = true;
+        IsEnabled = false;
+        timer.Stop();
+        lifetime.Cancel();
+        resources.Dispose();
+        settings.Dispose();
+        downloadsView.Dispose();
+        launcherView.Dispose();
+        RuntimeStatus.Text = "正在清理任务；提交中的安装需要完成。游戏未退出时，请先在游戏中保存并退出。";
+        try
+        {
+            await launcher.Shutdown();
+            canClose = true;
+            Close();
+        }
+        catch (Exception exception)
+        {
+            RuntimeStatus.Text = "关闭清理失败：" + exception.Message + "。请再次关闭窗口重试。";
+            PageHost.IsEnabled = false;
+            NavigationPanel.IsEnabled = false;
+            IsEnabled = true;
+            closing = false;
+        }
+    }
+
+    void UpdateStatus()
+    {
+        RuntimeStatus.Text = launcher.Status;
+        launcherView.UpdateGameState();
+        if (!ReferenceEquals(PageHost.Content, logView))
+            return;
+        logView.Update();
     }
 
     void Navigate(object sender, RoutedEventArgs args)
     {
-        if (sender is not RadioButton { Tag: string page })
+        if (navigating || sender is not RadioButton { Tag: string page })
             return;
-        if (page == "resources")
-        {
-            PageTitle.Text = "内容中心";
-            PageSubtitle.Text = "搜索、筛选和查看兼容版本，通过接口接入现有资源服务。";
-            PageHost.Content = browser;
-            return;
-        }
-        if (page == "home")
-        {
-            ShowHome();
-            return;
-        }
-        if (page == "settings")
-        {
-            PageTitle.Text = "启动设置";
-            PageSubtitle.Text = "通过独立接口读取、校验和保存设置，不依赖旧窗口。";
-            PageHost.Content = settingsView;
-            return;
-        }
-        var description = page switch
-        {
-            "install" => ("游戏安装", "版本列表、加载器选择与安装任务将在下一阶段接入。"),
-            "content" => ("内容管理", "本地资源列表、启用/禁用和更新预览尚未迁移。"),
-            "logs" => ("运行日志", "游戏输出与诊断尚未接入；这里不会读取真实日志。"),
-            _ => ("任务与恢复", "下载进度、暂停、继续和事务回退尚未接入。")
-        };
-        PageTitle.Text = description.Item1;
-        PageSubtitle.Text = "导航已复现 · 功能尚未迁移";
-        var panel = new StackPanel();
-        panel.Children.Add(Heading(description.Item1));
-        panel.Children.Add(Hint(description.Item2));
-        panel.Children.Add(Hint("请使用原启动器执行这项操作；Front 预览不提供未接入的业务按钮。"));
-        PageHost.Content = Card(panel);
+        NavigatePage(page);
     }
 
-    void ShowHome()
+    void NavigateMenu(object sender, RoutedEventArgs args)
     {
-        PageTitle.Text = "开始游戏";
-        PageSubtitle.Text = "欢迎回来，今天也去创造一点不同。";
-        var panel = new StackPanel();
-        var hero = new StackPanel();
-        hero.Children.Add(Heading("你的下一段冒险，从这里开始"));
-        hero.Children.Add(Hint("沿用现有浅色、蓝色强调和卡片布局；当前为迁移预览，不读取账号与本地实例。"));
-        panel.Children.Add(Card(hero));
-        var columns = new Grid { Margin = new Thickness(0, 18, 0, 0) };
-        columns.ColumnDefinitions.Add(new() { Width = new GridLength(2, GridUnitType.Star) });
-        columns.ColumnDefinitions.Add(new() { Width = new GridLength(18) });
-        columns.ColumnDefinitions.Add(new() { Width = new GridLength(1, GridUnitType.Star) });
-        var launch = new StackPanel();
-        launch.Children.Add(Heading("选择你的世界"));
-        launch.Children.Add(Hint("示例实例 · Minecraft 1.21.1 · Fabric"));
-        launch.Children.Add(new ComboBox { ItemsSource = new[] { "演示实例（模拟数据）" }, SelectedIndex = 0, Margin = new Thickness(0, 14, 0, 8) });
-        launch.Children.Add(new Button { Content = "启动游戏 · 尚未接入", IsEnabled = false });
-        launch.Children.Add(Hint("启动控制器尚未接入，避免预览期间执行真实操作。"));
-        columns.Children.Add(Card(launch));
-        var identity = new StackPanel();
-        identity.Children.Add(Heading("玩家档案"));
-        identity.Children.Add(new TextBlock { Text = "Player", FontSize = 24, Margin = new Thickness(0, 20, 0, 8) });
-        identity.Children.Add(Hint("模拟玩家 · 不读取真实账号"));
-        var identityCard = Card(identity);
-        Grid.SetColumn(identityCard, 2);
-        columns.Children.Add(identityCard);
-        panel.Children.Add(columns);
-        PageHost.Content = new ScrollViewer { Content = panel, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
+        if (sender is not MenuItem { Tag: string page })
+            return;
+        NavigatePage(page);
     }
 
-    static TextBlock Heading(string text) => new() { Text = text, FontSize = 20, FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap };
+    void OpenMoreMenu(object sender, RoutedEventArgs args)
+    {
+        if (sender is Button { ContextMenu: { } menu } button)
+        {
+            menu.PlacementTarget = button;
+            menu.IsOpen = true;
+        }
+    }
 
-    static TextBlock Hint(string text) => new() { Text = text, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 12, 0, 0), Style = (Style)Application.Current.FindResource("Caption") };
+    void NavigatePage(string page)
+    {
+        navigating = true;
+        try
+        {
+            StartNavigation.IsChecked = page is "start" or "accounts" or "content";
+            DownloadNavigation.IsChecked = page == "download";
+            SettingsNavigation.IsChecked = page == "settings";
+        }
+        finally
+        {
+            navigating = false;
+        }
+        PageHost.Content = null;
+        downloadView.DetachContent();
+        PageTitle.Text = page switch
+        {
+            "download" => "下载", "settings" => "设置", "resources" => "内容中心",
+            "accounts" => "账号管理", "content" => "内容管理", "logs" => "运行日志",
+            "tasks" => "任务与恢复", _ => "启动"
+        };
+        switch (page)
+        {
+            case "download":
+                PageHost.Content = downloadView;
+                downloadView.ShowCategory(downloadView.CurrentCategory);
+                break;
+            case "settings":
+                PageHost.Content = settingsView;
+                break;
+            case "start":
+            case "accounts":
+                launcherView.Navigate(page);
+                PageHost.Content = launcherView;
+                break;
+            case "resources":
+                PageSubtitle.Text = "发现并下载 Minecraft 内容。";
+                PageHost.Content = browser;
+                browser.ShowResults();
+                break;
+            case "content":
+                PageSubtitle.Text = "管理当前实例中的本地内容。";
+                launcherView.Navigate(page);
+                PageHost.Content = launcherView;
+                break;
+            case "logs":
+                PageSubtitle.Text = "查看当前 Front 宿主与游戏运行日志。";
+                PageHost.Content = logView;
+                UpdateStatus();
+                break;
+            case "tasks":
+                PageSubtitle.Text = "查看下载任务与恢复状态。";
+                PageHost.Content = downloadsView;
+                break;
+        }
+    }
 
-    static Border Card(UIElement content) => new() { Child = content, Style = (Style)Application.Current.FindResource("Card"), VerticalAlignment = VerticalAlignment.Top };
+    readonly DownloadBrowserView downloadView;
+
+    void ApplyAppearance(Preferences value)
+    {
+        var accent = value.Accent switch
+        {
+            "青绿" => "#147D78",
+            "石墨" => "#526375",
+            "紫罗兰" => "#7658A8",
+            _ => "#006DB8"
+        };
+        var palette = new Dictionary<string, string>
+        {
+            ["ThemeSurfaceBrush"] = value.DarkMode ? "#212837" : "#FFFFFF",
+            ["ThemeInputBrush"] = value.DarkMode ? "#283041" : "#F6F9FB",
+            ["ThemeTextBrush"] = value.DarkMode ? "#D6E1E8" : "#243B49",
+            ["ThemeSelectedBrush"] = value.DarkMode ? "#30415F" : "#E8F2F8",
+            ["ThemeBorderBrush"] = value.DarkMode ? "#444F64" : "#D6E1E8"
+        };
+        foreach (var pair in palette)
+            Application.Current.Resources[pair.Key] = new SolidColorBrush((Color)ColorConverter.ConvertFromString(pair.Value));
+        Application.Current.Resources["AccentBrush"] = new SolidColorBrush((Color)ColorConverter.ConvertFromString(accent));
+        HeaderBar.SetResourceReference(Panel.BackgroundProperty, "ThemeSurfaceBrush");
+        Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(value.DarkMode ? "#171D2A" : "#F3F7F9"));
+        SurfaceRoot.Background = Brushes.Transparent;
+        if (!string.IsNullOrWhiteSpace(value.BackgroundPath) && File.Exists(value.BackgroundPath))
+        {
+            try
+            {
+                if (new FileInfo(value.BackgroundPath).Length > 40 * 1024 * 1024)
+                    throw new IOException("背景图片不能超过 40 MB。");
+                using var stream = File.OpenRead(value.BackgroundPath);
+                var decoder = BitmapDecoder.Create(stream, BitmapCreateOptions.DelayCreation, BitmapCacheOption.None);
+                var frame = decoder.Frames[0];
+                if (frame.PixelWidth > 32768 || frame.PixelHeight > 32768 || (long)frame.PixelWidth * frame.PixelHeight > 100_000_000)
+                    throw new IOException("背景图片尺寸过大。");
+                stream.Position = 0;
+                var image = new BitmapImage();
+                image.BeginInit();
+                image.StreamSource = stream;
+                image.CacheOption = BitmapCacheOption.OnLoad;
+                image.DecodePixelWidth = Math.Min(2560, frame.PixelWidth);
+                image.EndInit();
+                image.Freeze();
+                SurfaceRoot.Background = new ImageBrush(image)
+                {
+                    Opacity = double.IsFinite(value.BackgroundOpacity) ? Math.Clamp(value.BackgroundOpacity, 0, 0.65) : 0.22,
+                    Stretch = value.BackgroundFit switch
+                    {
+                        "完整显示" => Stretch.Uniform,
+                        "拉伸" => Stretch.Fill,
+                        _ => Stretch.UniformToFill
+                    }
+                };
+            }
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or NotSupportedException or ArgumentException or FileFormatException)
+            {
+                SurfaceRoot.Background = Brushes.Transparent;
+            }
+        }
+    }
 }

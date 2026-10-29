@@ -10,9 +10,15 @@
           <TextBlock Text="内存值会保存为手动内存偏好；已有的自动内存开关不会在此页被改变。" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,0,0,12" />
           <StackPanel IsEnabled="{Binding CanEdit}">
             <TextBlock Text="游戏目录" />
-            <TextBox Text="{Binding Root, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="游戏目录" />
+            <DockPanel>
+              <Button DockPanel.Dock="Right" Content="浏览…" Click="BrowseRootClick" />
+              <TextBox Text="{Binding Root, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="游戏目录" />
+            </DockPanel>
             <TextBlock Text="Java 可执行文件（留空自动选择）" />
-            <TextBox Text="{Binding Java, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Java 可执行文件" />
+            <DockPanel>
+              <Button DockPanel.Dock="Right" Content="浏览…" Click="BrowseJavaClick" />
+              <TextBox Text="{Binding Java, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Java 可执行文件" />
+            </DockPanel>
             <TextBlock Text="内存（MB，512–131072）" />
             <TextBox Text="{Binding Ram, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="内存 MB" />
             <WrapPanel>
@@ -34,7 +40,27 @@
       </Border>
       <ProgressBar Height="3" IsIndeterminate="{Binding IsBusy}" Margin="0,12,0,0" />
       <TextBlock Text="{Binding Status}" TextWrapping="Wrap" Margin="0,12,0,0" AutomationProperties.Name="设置操作状态" />
-      <TextBlock Text="仅点击保存才提交输入。切换页面会保留当前编辑；重新读取会放弃编辑。预览关闭期间已开始的原子保存仍可能完成。" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,12,0,0" />
+      <TextBlock Text="仅点击保存才提交输入。切换页面会保留当前编辑；重新读取会放弃编辑。修改正式配置会影响下次使用旧前端。" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,12,0,0" />
+      <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+        <StackPanel>
+          <TextBlock Text="关于 MCUG Launcher" FontSize="17" FontWeight="SemiBold" />
+          <TextBlock Text="参考 PCL / HMCL / SJMCL 的使用习惯，独立设计与实现。非 Mojang / Microsoft 官方产品。" TextWrapping="Wrap" Style="{StaticResource Caption}" Margin="0,10,0,0" />
+          <TextBlock Text="0.21.0 · 账号凭据使用 Windows 用户级加密保存。" TextWrapping="Wrap" Style="{StaticResource Caption}" Margin="0,9,0,0" />
+        </StackPanel>
+      </Border>
+      <Border Style="{StaticResource Card}" Margin="0,16,0,0">
+        <StackPanel>
+          <TextBlock Text="其他设置" FontSize="17" FontWeight="SemiBold" />
+          <TextBlock Text="这些设置仍由共享 Settings 模块保存，修改期间需要没有运行任务或游戏。" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,8,0,12" />
+          <WrapPanel>
+            <Button Content="高级启动设置" Click="GlobalLaunchClick" />
+            <Button Content="网络与下载" Click="NetworkClick" />
+            <Button Content="界面与背景" Click="AppearanceClick" />
+            <Button Content="存档保护" Click="BackupClick" />
+          </WrapPanel>
+          <TextBlock x:Name="AdvancedStatus" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,8,0,0" />
+        </StackPanel>
+      </Border>
     </StackPanel>
   </ScrollViewer>
 </UserControl>

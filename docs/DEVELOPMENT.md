@@ -28,7 +28,7 @@ MCUG Launcher 是 .NET 8 / WPF 应用。先从本文件定位功能，再阅读�
 
 | 想修改的内容 | 界面入口 | 服务或数据 |
 | --- | --- | --- |
-| 账号面板、登录方式与头像 | `UI/Accounts/HomeAccountUI.cs`、`Controllers/MicrosoftAccountController.cs`、`Controllers/PlayerIdentityController.cs` | `Authentication/` |
+| 账号面板、登录方式与头像 | `UI/Accounts/HomeAccountUI.cs`、`Controllers/MicrosoftAccountController.cs`、`Controllers/PlayerIdentityController.cs` | 共享 `Accounts/`；旧授权窗口与头像渲染在 `MainWindow/UI/Accounts/` |
 | 主导航、窗口拖动、大小适配 | `UI/Shell/ModernUI.cs`、`UI/Shell/CompactShellUI.cs`、`Controllers/PageNavigationController.cs`、`Builders/WindowChromeBuilder.cs`、`Initialization/LauncherTooltipInitializer.cs`、`Styling/ModernThemeStyler.cs`、`Styling/WindowThemeStyler.cs` | 窗口自身 |
 | 内嵌管理页栈与呈现 | `Presentation/InlinePageHost.cs` | `InlineDialog` 页面及窗口标题栏 |
 | 主页版本选择、版本搜索与内容管理 | `UI/Instances/SketchUI.cs`、`UI/Instances/VersionSettingsUI.cs`、`Controllers/InstanceSearchController.cs`、`Controllers/InstanceUninstallationController.cs` | Core `Domain/Instances.cs`、`Application/InstanceManagement.cs` |
@@ -39,7 +39,7 @@ MCUG Launcher 是 .NET 8 / WPF 应用。先从本文件定位功能，再阅读�
 | 文件拖入、资源导入 | `Controllers/FileImportController.cs`、`UI/Instances/InstanceLibraryUI.cs`、`Presentation/InstanceLibraryDialog.cs` | Core `Application/LocalImportClassifier.cs`、`WorldArchives.cs` |
 | 整合包导入、导出、升级 | `UI/Packs/PackUI.cs`、`Controllers/PackUpgradeController.cs` | Core `PackService.cs`、`Application/PackUpgrade.cs` |
 | Java 与游戏启动 | `Controllers/JavaManagerController.cs`、`UI/Launch/GameLaunchUI.cs`（窗口适配）、`src/MCUGLauncher/Launch/GameLaunchController.cs`（独立启动编排） | Core `Application/Java*.cs`、`LaunchService.cs` |
-| 主题、背景 | `UI/Experience/AppearanceUI.cs`、`Styling/WindowThemeStyler.cs`、`Initialization/UtilityWindowInitializer.cs`、`App.xaml` | Core `Domain/Preferences.cs` |
+| 主题、背景 | `UI/Experience/AppearanceUI.cs`、`Styling/WindowThemeStyler.cs`、`Initialization/UtilityWindowInitializer.cs`、`App.xaml` | 共享 `Settings/Preferences.cs` |
 | 下载与网络设置 | `Controllers/NetworkSettingsController.cs` | `NetworkPolicyHandler`、Core 网络策略 |
 | 崩溃分析与反馈 | `UI/Support/DiagnosticsUI.cs` | Core `Application/Diagnostics.cs` |
 
@@ -56,7 +56,7 @@ MCUG Launcher 是 .NET 8 / WPF 应用。先从本文件定位功能，再阅读�
 版本与资源管理分别位于同级 `Versions/`、`Resources/`：查询、目标解析、资源操作和更新准备通过服务调用；
 窗口保留表单、确认与显示。边界和隔离检查见 [版本与资源管理模块](VERSION_RESOURCE_MODULES.md)。
 
-表中的 Core 路径相对于 `src/MCUGLauncher.Core/`；`Controllers/`、`Presentation/`、`Authentication/` 和
+表中的 Core 路径相对于 `src/MCUGLauncher.Core/`；`Controllers/`、`Presentation/`、`Accounts/` 和
 显式列出的 XAML 路径相对于 `src/MCUGLauncher/`；其他界面代码路径相对于 `src/MCUGLauncher/MainWindow/`。
 迁移验证方式与后续解耦方案见 [界面组件布局与解耦](UI_COMPONENT_LAYOUT.md)。
 内容更新控制器已通过小型交互接口解除具体窗口依赖，见 [内容更新解耦](CONTENT_UPDATE_DECOUPLING.md)。
@@ -66,7 +66,7 @@ MCUG Launcher 是 .NET 8 / WPF 应用。先从本文件定位功能，再阅读�
 - 先在 Core 定义业务操作，接收明确参数、取消令牌和进度回调；不要让服务访问 WPF 控件。
 - UI 负责读取输入、调用操作和展示结果。长时间任务沿用现有 `Run` / 下载队列入口。
 - 账号面板的三种内容分别在 `BuildOfflineIdentity`、`BuildMicrosoftIdentity`、`BuildMuaIdentity` 中构建；
-  显示切换统一由 `UpdateAccountPanel` 处理。认证请求仍进入 `Authentication/` 服务。
+  显示切换统一由 `UpdateAccountPanel` 处理。认证请求进入共享 Application 中的 `Accounts/` 服务，详见 [账号模块](dcg/ACCOUNTS_MODULE.md)。
 - 下载任务卡片由 `BuildDownloadTaskCard` 创建；状态变更统一进入 `ChangeDownloadById`，
   再交给协调器处理。不要在按钮回调里直接修改任务文件。
   持久化任务模型在 Core `Domain/Operations.cs`，单次执行上下文在 `Application/OperationContext.cs`，

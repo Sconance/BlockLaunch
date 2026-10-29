@@ -6,6 +6,8 @@
     <DebugType>embedded</DebugType>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="../MCUGLauncher/Settings/Preferences.cs" Link="Settings/Preferences.cs" />
+    <Compile Include="../MCUGLauncher/Settings/NetworkPolicy.cs" Link="Settings/NetworkPolicy.cs" />
     <PackageReference Include="CmlLib.Core" Version="4.1.0" />
   </ItemGroup>
 </Project>

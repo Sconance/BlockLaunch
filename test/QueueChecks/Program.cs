@@ -1,6 +1,14 @@
 using BlockLaunch;
 using System.Text.Json;
 
+await DownloadRunnerChecks.Run();
+if (args.Contains("--download-runner"))
+    return;
+
+await FrontDownloadChecks.Run();
+if (args.Contains("--download-front"))
+    return;
+
 await DownloadQueueServiceChecks.Run();
 if (args.Contains("--queue-service"))
     return;

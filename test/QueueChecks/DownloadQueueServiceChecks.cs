@@ -14,7 +14,9 @@ internal static class DownloadQueueServiceChecks
             var second = service.Enqueue("second", root, "target", new());
             Check(service.NextQueued()?.Id == first.Id, "queue service preserves enqueue order");
             Check(service.ChangeState(first.Id, OperationState.Paused), "queue service pauses pending task");
-            Check(service.NextQueued()?.Id == second.Id, "queue service skips paused task");
+            Check(service.NextQueued() == null, "pausing a task holds the entire download queue");
+            Check(service.ChangeState(second.Id, OperationState.Queued), "resuming a waiting task releases the global pause");
+            Check(service.NextQueued()?.Id == second.Id, "queue service skips individually paused tasks after global resume");
             Check(!service.ChangeState(second.Id, OperationState.Completed), "queue service rejects invalid state transition");
             await service.Execute(second, context =>
             {
@@ -35,6 +37,8 @@ internal static class DownloadQueueServiceChecks
             await entered.Task;
             Check(service.ChangeState(queued.Id, OperationState.Paused), "queue service pauses active task through coordinator");
             Check((await running).State == OperationState.Paused, "queue service waits for active task cleanup");
+            await DownloadControlChecks.Run(Path.Combine(directory, "controls"));
+            Console.WriteLine("ALL_DOWNLOAD_QUEUE_SERVICE_CHECKS_PASSED");
         }
         finally
         {

@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../MCUGLauncher.Core/MCUGLauncher.Core.csproj" />
+    <PackageReference Include="CmlLib.Core.Auth.Microsoft" Version="3.3.0" />
+    <Compile Include="../MCUGLauncher/Brand.cs" Link="Brand.cs" />
+    <Compile Include="../MCUGLauncher/Accounts/*.cs" Link="Accounts/%(Filename)%(Extension)" />
+    <Compile Include="../MCUGLauncher/Adapters/*.cs" Link="Adapters/%(Filename)%(Extension)" />
+    <Compile Include="../MCUGLauncher/Builders/*.cs" Link="Builders/%(Filename)%(Extension)" />
+    <Compile Include="../MCUGLauncher/Contracts/*.cs" Link="Contracts/%(Filename)%(Extension)" />
+    <Compile Include="../MCUGLauncher/Downloads/*.cs" Link="Downloads/%(Filename)%(Extension)" />
+    <Compile Include="../MCUGLauncher/Launch/*.cs" Link="Launch/%(Filename)%(Extension)" />
+    <Compile Include="../MCUGLauncher/Resources/*.cs" Link="Resources/%(Filename)%(Extension)" />
+    <Compile Include="../MCUGLauncher/Settings/*.cs" Link="Settings/%(Filename)%(Extension)" />
+    <Compile Remove="../MCUGLauncher/Settings/Preferences.cs;../MCUGLauncher/Settings/NetworkPolicy.cs" />
+    <Compile Include="../MCUGLauncher/Versions/*.cs" Link="Versions/%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

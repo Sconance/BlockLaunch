@@ -2,8 +2,9 @@
 
 ## 当前结果
 
-- `Settings/LauncherSettingsService` 接收设置快照，负责数值校验、目录规范化、Java 检查、写回 `Preferences` 和持久化；控件读取仍由 `PreferencesUI` 完成。
+- `Settings/` 现在集中保存配置模型、持久化、网络策略和设置校验；`LauncherSettingsService` 接收设置快照，负责数值校验、目录规范化、Java 检查、写回 `Preferences` 和持久化；控件读取仍由各前端 UI 完成。
 - `Downloads/DownloadQueueService` 负责入队、选择下一个任务、执行和状态切换；WPF `DispatcherTimer`、进度条和提示文本仍属于 UI 宿主。
+- 下载暂停标记与保存现由 `Downloads/DownloadPauseStore` 统一处理；三处 UI 不再各自改写偏好，见 [下载模块](dcg/DOWNLOAD_MODULE.md)。
 - `Accounts/AccountSessionService` 统一微软/MUA/离线会话模型；微软 OAuth 窗口、MUA 角色选择和账号管理对话框仍是交互适配层。
 - `Launch/GameLaunchController` 负责启动编排；`Launch/GameSessionMonitor` 负责等待游戏退出、生成诊断结果；窗口显示诊断和日志仍由 UI 负责。
 
@@ -20,7 +21,7 @@ WPF UI
 
 ## 尚未完全移出的内容
 
-- 下载定时器、任务列表刷新、暂停标记保存和窗口关闭策略仍在 `MainWindow` partial UI 中。
+- 下载定时器、任务列表刷新和窗口关闭触发仍在 `MainWindow` partial UI 中；暂停状态保存及退出挂起规则已委托下载模块。
 - 账号管理对话框仍负责 OAuth WebView、密码输入、MUA 角色选择和提示文案。
 - 启动后的窗口隐藏/恢复、游戏输出队列和诊断页面仍是 UI 适配职责。
 

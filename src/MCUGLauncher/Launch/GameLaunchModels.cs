@@ -2,7 +2,7 @@ using System.Net.Http;
 
 namespace BlockLaunch;
 
-internal sealed record GameLaunchSelection(
+public sealed record GameLaunchSelection(
     string Root,
     string Version,
     bool IsInstalled,
@@ -14,7 +14,7 @@ internal sealed record GameLaunchSelection(
     string? ServerAddress,
     HttpClient Http);
 
-internal sealed record GameLaunchResult(
+public sealed record GameLaunchResult(
     GameSession Session,
     DiagnosticContext Diagnostics,
     LaunchSettings Settings);

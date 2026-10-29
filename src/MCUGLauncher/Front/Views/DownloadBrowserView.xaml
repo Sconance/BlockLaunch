@@ -1,0 +1,23 @@
+<UserControl x:Class="BlockLaunch.Front.DownloadBrowserView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Grid>
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="120" />
+      <ColumnDefinition />
+    </Grid.ColumnDefinitions>
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+      <StackPanel x:Name="Categories" Margin="0,0,14,0">
+        <RadioButton Style="{StaticResource Nav}" Content="原版游戏" Tag="原版游戏" Checked="CategoryChanged" GroupName="DownloadCategory" />
+        <RadioButton Style="{StaticResource Nav}" Content="Mod" Tag="Mod" Checked="CategoryChanged" GroupName="DownloadCategory" />
+        <RadioButton Style="{StaticResource Nav}" Content="整合包" Tag="整合包" Checked="CategoryChanged" GroupName="DownloadCategory" />
+        <RadioButton Style="{StaticResource Nav}" Content="数据包" Tag="数据包" Checked="CategoryChanged" GroupName="DownloadCategory" />
+        <RadioButton Style="{StaticResource Nav}" Content="资源包" Tag="资源包" Checked="CategoryChanged" GroupName="DownloadCategory" />
+        <RadioButton Style="{StaticResource Nav}" Content="光影包" Tag="光影包" Checked="CategoryChanged" GroupName="DownloadCategory" />
+        <RadioButton Style="{StaticResource Nav}" Content="本地整合包" Tag="本地整合包" Checked="CategoryChanged" GroupName="DownloadCategory" />
+        <RadioButton Style="{StaticResource Nav}" Content="模组加载器" Tag="模组加载器" Checked="CategoryChanged" GroupName="DownloadCategory" />
+      </StackPanel>
+    </ScrollViewer>
+    <ContentControl x:Name="CategoryHost" Grid.Column="1" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
+  </Grid>
+</UserControl>

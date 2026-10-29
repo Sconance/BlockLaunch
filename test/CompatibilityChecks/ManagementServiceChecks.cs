@@ -35,6 +35,16 @@ internal static class ManagementServiceChecks
             descriptor.Launch = new() { Isolation = "独立实例" };
             versions.Save(root, descriptor);
             Check(versions.InstanceDirectory(root, "ready", new() { Isolation = "共享根目录" }) != root, "instance isolation overrides global defaults");
+            versions.SaveIdentity(root, "ready", "Renamed", "Description", "常用版本", true);
+            Check(versions.Descriptor(root, "ready").DisplayName == "Renamed" && versions.Descriptor(root, "ready").Category == "常用版本", "shared version identity updates metadata");
+            var launchSettings = new LaunchSettings { AutoMemory = false, RamMb = 3072 };
+            versions.SaveLaunch(root, "ready", launchSettings);
+            launchSettings.RamMb = 8192;
+            Check(versions.Descriptor(root, "ready").Launch?.RamMb == 3072, "version launch settings save a detached validated snapshot");
+            await Fails<ArgumentException>(() => Task.Run(() => versions.SaveLaunch(root, "ready", new() { RamMb = 1 })));
+            Check(versions.Descriptor(root, "ready").Launch?.RamMb == 3072, "invalid version launch settings preserve stored configuration");
+            versions.SaveLaunch(root, "ready", null);
+            Check(versions.Descriptor(root, "ready").Launch == null, "version launch settings can resume following global defaults");
             var remote = versions.Target(root, "remote", online.Versions);
             Check(remote == new InstanceTarget("remote", "remote", "vanilla"), "uninstalled official version resolves without creating an instance");
             Check(!Directory.Exists(Path.Combine(root, "instances", "remote")), "resolving remote versions does not write metadata");
@@ -49,6 +59,8 @@ internal static class ManagementServiceChecks
             var beforeInvalidVersion = handler.Requests;
             await Fails<IOException>(() => versions.StableFabric("broken", online.Versions, CancellationToken.None));
             Check(handler.Requests == beforeInvalidVersion, "Fabric rejects non-official profiles before querying loaders");
+            var loaders = await versions.Loaders("remote", "fabric", CancellationToken.None);
+            Check(loaders.Any(loader => loader.Version == "stable-loader"), "shared version module provides Fabric loader list");
 
             var query = new ResourceSearchQuery("sample", "1.21.1", "fabric", "mod", Channel: "beta");
             var page = await resources.Search(query, CancellationToken.None);

@@ -1,5 +1,7 @@
 # Front 设置页：Windows agent 编译与验收指南
 
+> 历史指南：当前 Front 已切换为真实模块宿主。旧 `--live` / `--simulate-game-running` 和临时预览规则已移除；当前验收以 [FRONT_RUNTIME.md](dcg/FRONT_RUNTIME.md) 为准，不要按本文旧命令操作正式配置。
+
 ## 0. 本轮范围与通过条件
 
 本轮只实现“设置页面 → 接口 → 适配器 → 设置业务 → SettingsStore”的独立闭环，不迁移账号、启动或下载页面。

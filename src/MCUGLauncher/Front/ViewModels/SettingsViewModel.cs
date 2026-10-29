@@ -56,7 +56,7 @@ public sealed class SettingsViewModel(IFrontSettings settings) : INotifyProperty
             Width = snapshot.Width;
             Height = snapshot.Height;
             loaded = true;
-            Status = save ? "设置已保存。重启预览后仍可读取。" : "设置已读取；编辑后点击保存。";
+            Status = save ? "设置已保存。重启后仍可读取。" : "设置已读取；编辑后点击保存。";
         }
         catch (OperationCanceledException)
         {

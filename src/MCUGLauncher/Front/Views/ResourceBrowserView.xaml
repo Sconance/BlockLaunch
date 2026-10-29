@@ -8,13 +8,13 @@
       <RowDefinition Height="*" />
       <RowDefinition Height="Auto" />
     </Grid.RowDefinitions>
-    <Border Style="{StaticResource Card}" Padding="18">
+    <Border x:Name="SearchPanel" Style="{StaticResource Card}" Padding="18">
       <StackPanel>
         <TextBlock Text="发现属于你的游戏内容" FontSize="20" FontWeight="SemiBold" />
-        <TextBlock Text="Modrinth · 资源查询通过接口适配现有业务；本页不执行下载或修改实例。" Style="{StaticResource Caption}" Margin="0,8,0,12" TextWrapping="Wrap" />
+        <TextBlock Text="Modrinth · 调用真实资源服务；资源下载到外部目录，不自动安装到实例。" Style="{StaticResource Caption}" Margin="0,8,0,12" TextWrapping="Wrap" />
         <DockPanel>
           <Button DockPanel.Dock="Right" Content="搜索" Click="SearchClick" Margin="8,0,0,0" />
-          <TextBox Text="{Binding QueryText, UpdateSourceTrigger=PropertyChanged}" ToolTip="搜索名称或描述；模拟模式输入 empty / error 查看空列表和错误状态" KeyDown="SearchKeyDown" />
+          <TextBox Text="{Binding QueryText, UpdateSourceTrigger=PropertyChanged}" ToolTip="搜索名称或描述" KeyDown="SearchKeyDown" />
         </DockPanel>
         <WrapPanel Margin="0,12,0,0">
           <StackPanel Margin="0,0,12,0">
@@ -51,45 +51,71 @@
       <TextBlock Text="{Binding Status}" Margin="0,8,0,0" TextWrapping="Wrap" />
     </StackPanel>
     <Grid Grid.Row="2">
-      <Grid.ColumnDefinitions>
-        <ColumnDefinition Width="3*" />
-        <ColumnDefinition Width="16" />
-        <ColumnDefinition Width="2*" />
-      </Grid.ColumnDefinitions>
-      <ListBox ItemsSource="{Binding Items}" SelectionChanged="ProjectChanged" HorizontalContentAlignment="Stretch" Background="White" BorderBrush="{DynamicResource ThemeBorderBrush}" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+      <ListBox x:Name="Results" ItemsSource="{Binding Items}" SelectionChanged="ProjectChanged" HorizontalContentAlignment="Stretch" Background="{DynamicResource ThemeSurfaceBrush}" BorderBrush="{DynamicResource ThemeBorderBrush}" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
         <ListBox.ItemTemplate>
           <DataTemplate>
-            <StackPanel Margin="10">
-              <TextBlock Text="{Binding Title}" FontSize="16" FontWeight="SemiBold" TextWrapping="Wrap" />
-              <TextBlock Text="{Binding Description}" Margin="0,8" TextWrapping="Wrap" />
-              <TextBlock Style="{StaticResource Caption}">
-                <Run Text="{Binding Author}" /><Run Text="  ·  " /><Run Text="{Binding Downloads}" /><Run Text=" 次下载" />
-              </TextBlock>
-            </StackPanel>
+            <Grid Margin="12,10">
+              <Grid.ColumnDefinitions><ColumnDefinition Width="64" /><ColumnDefinition /></Grid.ColumnDefinitions>
+              <Image Source="{Binding IconUrl}" Width="48" Height="48" Stretch="Uniform" VerticalAlignment="Top" />
+              <StackPanel Grid.Column="1">
+                <TextBlock Text="{Binding Title}" FontSize="16" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                <TextBlock Text="{Binding Description}" Margin="0,6" TextWrapping="Wrap" MaxHeight="40" />
+                <TextBlock Style="{StaticResource Caption}">
+                  <Run Text="{Binding Author}" /><Run Text="  ·  " /><Run Text="{Binding Downloads, StringFormat=N0}" /><Run Text=" 次下载" />
+                </TextBlock>
+                <TextBlock Text="{Binding Tags}" Style="{StaticResource Caption}" TextTrimming="CharacterEllipsis" Margin="0,4,0,0" />
+              </StackPanel>
+            </Grid>
           </DataTemplate>
         </ListBox.ItemTemplate>
       </ListBox>
-      <Border Grid.Column="2" Style="{StaticResource Card}" Padding="18">
-        <Grid>
-          <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-          </Grid.RowDefinitions>
-          <TextBlock Text="{Binding Selected.Title, TargetNullValue=资源详情}" FontSize="18" FontWeight="SemiBold" TextWrapping="Wrap" />
-          <TextBlock Grid.Row="1" Text="{Binding DetailStatus}" Margin="0,12" TextWrapping="Wrap" />
-          <ProgressBar Grid.Row="2" Height="3" IsIndeterminate="{Binding IsDetailBusy}" Margin="0,0,0,8" />
-          <ListBox Grid.Row="3" ItemsSource="{Binding Versions}" DisplayMemberPath="Label" BorderThickness="0" />
-        </Grid>
-      </Border>
     </Grid>
-    <DockPanel Grid.Row="3" Margin="0,12,0,0">
+    <DockPanel x:Name="PagingPanel" Grid.Row="3" Margin="0,12,0,0">
       <Button Content="取消读取" Click="CancelClick" DockPanel.Dock="Right" />
       <StackPanel Orientation="Horizontal">
         <Button Content="上一页" IsEnabled="{Binding CanPrevious}" Click="PreviousClick" />
         <Button Content="下一页" IsEnabled="{Binding CanNext}" Click="NextClick" />
       </StackPanel>
     </DockPanel>
+    <Border x:Name="DetailPanel" Grid.RowSpan="4" Style="{StaticResource Card}" Padding="18" Visibility="Collapsed">
+      <DockPanel>
+        <StackPanel DockPanel.Dock="Top">
+          <Button Content="← 返回搜索结果" HorizontalAlignment="Left" Click="BackClick" />
+          <DockPanel Margin="0,14">
+            <Image Source="{Binding Selected.IconUrl}" Width="56" Height="56" Margin="0,0,14,0" DockPanel.Dock="Left" />
+            <StackPanel>
+              <TextBlock Text="{Binding Selected.Title}" FontSize="22" FontWeight="SemiBold" TextWrapping="Wrap" />
+              <TextBlock Text="{Binding Selected.Author}" Style="{StaticResource Caption}" Margin="0,6,0,0" />
+            </StackPanel>
+          </DockPanel>
+        </StackPanel>
+        <TabControl Background="Transparent" BorderThickness="0">
+          <TabItem Header="介绍" Style="{StaticResource ResourceDetailTab}">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+              <StackPanel Margin="8,18">
+                <TextBlock Text="{Binding Selected.Description}" TextWrapping="Wrap" FontSize="14" />
+                <TextBlock Text="{Binding Selected.Tags}" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,16,0,0" />
+                <TextBlock Text="这里只展示资源服务返回的简介；选择“版本”读取兼容版本。" Style="{StaticResource Caption}" TextWrapping="Wrap" Margin="0,16,0,0" />
+              </StackPanel>
+            </ScrollViewer>
+          </TabItem>
+          <TabItem Header="版本" Style="{StaticResource ResourceDetailTab}">
+            <DockPanel Margin="8,14">
+              <StackPanel DockPanel.Dock="Top">
+                <TextBlock Text="{Binding DetailStatus}" TextWrapping="Wrap" />
+                <ProgressBar Height="3" IsIndeterminate="{Binding IsDetailBusy}" Margin="0,8" />
+                <Button Content="重新读取兼容版本" HorizontalAlignment="Left" Click="ReloadVersionsClick" />
+              </StackPanel>
+              <StackPanel DockPanel.Dock="Bottom">
+                <TextBox Text="{Binding Destination, UpdateSourceTrigger=PropertyChanged}" ToolTip="外部资源下载目录；留空使用默认目录" Margin="0,8" />
+                <Button Content="下载所选版本" IsEnabled="{Binding CanDownload}" Click="DownloadClick" HorizontalAlignment="Left" />
+                <TextBlock Text="{Binding DownloadStatus}" TextWrapping="Wrap" Margin="0,8" />
+              </StackPanel>
+              <ListBox ItemsSource="{Binding Versions}" SelectedItem="{Binding SelectedVersion}" DisplayMemberPath="Label" BorderThickness="0" Background="{DynamicResource ThemeSurfaceBrush}" />
+            </DockPanel>
+          </TabItem>
+        </TabControl>
+      </DockPanel>
+    </Border>
   </Grid>
 </UserControl>

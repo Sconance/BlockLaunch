@@ -26,6 +26,46 @@ internal static class BusinessServiceChecks
             }
 
             Check(preferences.Ram == 4096 && store.Load().Ram == 4096, "invalid settings do not mutate or persist preferences");
+            service.SaveNetwork(preferences, new() { ProxyMode = "直连", DownloadSource = "仅官方", LimitKibPerSecond = 128 });
+            Check(preferences.Network.ProxyMode == "直连" && store.Load().Network.LimitKibPerSecond == 128, "shared network settings persist before updating memory");
+            service.SaveAppearance(preferences, true, "青绿", "", 0.3, "完整显示", ["one", "one", "two"]);
+            Check(preferences.DarkMode && store.Load().Accent == "青绿" && preferences.BackgroundImages.Count == 2, "shared appearance settings persist and deduplicate history");
+            service.SaveBackupPolicy(preferences, false, 7);
+            Check(!preferences.ProtectSaves && store.Load().SaveBackupCount == 7, "shared backup policy persists without overwriting other settings");
+            var globalLaunch = new LaunchSettings { AutoMemory = false, RamMb = 3072, Width = 1024, Height = 768 };
+            service.SaveGlobalLaunch(preferences, globalLaunch);
+            globalLaunch.RamMb = 8192;
+            Check(preferences.Ram == 3072 && preferences.Launch.RamMb == 3072 && store.Load().Width == 1024,
+                "global launch settings detach input and synchronize legacy preference fields");
+            var settingsFile = Path.Combine(settingsDirectory, "settings.json");
+            var validBytes = File.ReadAllBytes(settingsFile);
+            foreach (var invalid in new Action[]
+            {
+                () => service.SaveAppearance(preferences, false, "青绿", "", double.NaN, "完整显示", []),
+                () => service.SaveAppearance(preferences, false, "unknown", "", 0.3, "完整显示", []),
+                () => service.SaveAppearance(preferences, false, "蓝色", "", 0.3, "invalid", []),
+                () => service.SaveBackupPolicy(preferences, true, 0),
+                () => service.SaveDownloadLimit(preferences, -1)
+            })
+            {
+                try { invalid(); throw new Exception("invalid advanced settings accepted"); }
+                catch (ArgumentException) { }
+            }
+            Check(validBytes.SequenceEqual(File.ReadAllBytes(settingsFile)) && preferences.DarkMode && preferences.SaveBackupCount == 7,
+                "invalid advanced settings leave file and memory unchanged");
+            var blocked = new LauncherSettingsService(store, () => true);
+            try { blocked.SaveBackupPolicy(preferences, true, 1); throw new Exception("busy settings save accepted"); }
+            catch (InvalidOperationException) { }
+            Check(validBytes.SequenceEqual(File.ReadAllBytes(settingsFile)), "busy advanced settings are rejected before disk writes");
+            var blockedPath = Path.Combine(settingsDirectory, "not-a-directory");
+            File.WriteAllText(blockedPath, "fixture");
+            try
+            {
+                new LauncherSettingsService(new SettingsStore(blockedPath)).SaveBackupPolicy(preferences, true, 1);
+                throw new Exception("failed persistence accepted");
+            }
+            catch (IOException) { }
+            Check(!preferences.ProtectSaves && preferences.SaveBackupCount == 7, "failed persistence does not update in-memory backup policy");
             var microsoft = new FakeMicrosoft();
             var accounts = new AccountSessionService(microsoft, new FakeMua());
             Check(accounts.Offline("Tester").IsOffline, "account service creates offline session");
@@ -57,6 +97,14 @@ internal static class BusinessServiceChecks
             var diagnosticDirectory = Path.Combine(settingsDirectory, "game");
             Directory.CreateDirectory(diagnosticDirectory);
             var context = new DiagnosticContext(diagnosticDirectory, "fixture");
+            Check(GameLogReader.ReadLatest(diagnosticDirectory).Contains("尚无"), "missing latest.log returns an explicit empty state");
+            var logDirectory = Path.Combine(diagnosticDirectory, "logs");
+            Directory.CreateDirectory(logDirectory);
+            File.WriteAllText(Path.Combine(logDirectory, "latest.log"), new string('x', 600 * 1024) + "\nfixture-log-tail\n");
+            var tail = GameLogReader.ReadLatest(diagnosticDirectory);
+            Check(tail.Contains("512 KiB") && tail.EndsWith("fixture-log-tail\n") && tail.Length < 512 * 1024,
+                "latest.log reader bounds large files and retains complete trailing lines");
+            File.Delete(Path.Combine(logDirectory, "latest.log"));
             var normal = await monitor.Observe(Task.FromResult(new GameExit(0, false)), context);
             Check(normal.Context.Exit?.Code == 0 && normal.Diagnostic == null, "normal exit does not generate crash diagnostics");
             var requested = await monitor.Observe(Task.FromResult(new GameExit(1, true)), context);

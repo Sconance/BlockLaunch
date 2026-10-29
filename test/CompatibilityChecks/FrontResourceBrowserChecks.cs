@@ -88,6 +88,57 @@ internal static class FrontResourceBrowserChecks
             await disposed;
             Check(model.Items.Count == 0, "closed Front does not render late search results");
         }
+
+        using (var handler = new Handler())
+        using (var http = new HttpClient(handler))
+        {
+            var downloads = new Downloads();
+            using var model = new ResourceBrowserViewModel(new FrontResourceBrowserAdapter(new ResourceManagementService(http)), downloads);
+            model.GameVersion = "1.21.1";
+            await model.Search();
+            await model.Select(model.Items.Single());
+            model.SelectedVersion = model.Versions.Single();
+            model.GameVersion = "edited-after-query";
+            model.Destination = "fixture-output";
+            Check(model.CanDownload, "download enabled only after a compatible version is selected");
+            await model.DownloadSelected();
+            Check(downloads.Calls == 1 && downloads.Query?.GameVersion == "1.21.1"
+                && downloads.Project == "fixture" && downloads.Version == "fixture-version" && downloads.Destination == "fixture-output",
+                "resource download passes displayed query snapshot and selected version to module");
+            downloads.Fail = true;
+            await model.DownloadSelected();
+            Check(model.DownloadStatus.Contains("fixture rejection") && model.CanDownload, "download rejection is visible and can retry");
+            await model.Select(null);
+            Check(!model.CanDownload, "deselection clears downloadable version");
+            model.Dispose();
+            await model.DownloadSelected();
+            Check(downloads.Calls == 2, "disposed resource page does not enqueue downloads");
+        }
+        Console.WriteLine("ALL_FRONT_RESOURCE_BROWSER_CHECKS_PASSED");
+    }
+
+    sealed class Downloads : IFrontResourceDownloads
+    {
+        public string DownloadDirectory => "fixture-output";
+        public int Calls;
+        public bool Fail;
+        public string Project = "";
+        public string Version = "";
+        public string Destination = "";
+        public FrontResourceQuery? Query;
+
+        public Task EnqueueResource(string project, string version, FrontResourceQuery query, string destination, CancellationToken token)
+        {
+            token.ThrowIfCancellationRequested();
+            Calls++;
+            if (Fail)
+                throw new IOException("fixture rejection");
+            Project = project;
+            Version = version;
+            Query = query;
+            Destination = destination;
+            return Task.CompletedTask;
+        }
     }
 
     static FrontResourceItem Item(string id) => new(id, id, "Fixture description", "Fixture author", 10);

@@ -51,8 +51,7 @@ internal sealed class NetworkSettingsController(MainWindow host)
                     LimitKibPerSecond = host.prefs.Network.LimitKibPerSecond
                 };
                 value.Validate();
-                host.prefs.Network = value;
-                host.settings.Save(host.prefs);
+                host.launcherSettings.SaveNetwork(host.prefs, value);
                 dialog.DialogResult = true;
             }
             catch (Exception ex)

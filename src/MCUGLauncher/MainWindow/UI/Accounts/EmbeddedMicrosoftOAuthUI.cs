@@ -10,7 +10,7 @@ namespace BlockLaunch;
 /// <summary>Uses the library's OAuth URL checker and token exchange; only the browser surface changes.</summary>
 public sealed class EmbeddedMicrosoftOAuthUI(MainWindow host, string profileDirectory) : IWebUI
 {
-    public static bool IsMicrosoftAuthorization(Uri uri) => uri.Scheme == "https" && uri.UserInfo.Length == 0 && uri.Host is "login.live.com" or "login.microsoftonline.com";
+    public static bool IsMicrosoftAuthorization(Uri uri) => MicrosoftAuthorizationPolicy.IsAuthorization(uri);
     public Task<CodeFlowAuthorizationResult> DisplayDialogAndInterceptUri(Uri uri, ICodeFlowUrlChecker checker, CancellationToken token) => host.Dispatcher.CheckAccess() ? Open(uri, checker, token) : host.Dispatcher.InvokeAsync(() => Open(uri, checker, token)).Task.Unwrap();
     public async Task DisplayDialogAndNavigateUri(Uri uri, CancellationToken token) => await DisplayDialogAndInterceptUri(uri, new NoCode(), token);
 

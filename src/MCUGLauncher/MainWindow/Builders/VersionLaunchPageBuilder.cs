@@ -51,8 +51,8 @@ internal sealed class VersionLaunchPageBuilder(VersionSettingsPageContext contex
                 host.RequireStopped();
                 var settings = form.Read();
                 settings.Validate();
+                host.versionManagement.SaveLaunch(context.Root, context.Key, settings);
                 descriptor.Launch = settings;
-                context.Catalog.Save(descriptor);
                 InlineMessageBox.Show(context.Window, "此版本设置已保存。");
                 context.Render("设置");
             }
@@ -68,8 +68,8 @@ internal sealed class VersionLaunchPageBuilder(VersionSettingsPageContext contex
                 if (host.busy)
                     return;
                 host.RequireStopped();
+                host.versionManagement.SaveLaunch(context.Root, context.Key, null);
                 descriptor.Launch = null;
-                context.Catalog.Save(descriptor);
                 context.Render("设置");
             }
             catch (Exception ex)
