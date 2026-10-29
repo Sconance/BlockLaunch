@@ -208,11 +208,11 @@ internal sealed partial class LauncherWorkspace
         }, (title, content) => InstancePagesController.FeatureDialog(title, content));
         PackController = new PackController(this);
         PackUpgradeController = new PackUpgradeController(this);
-        ResourceFavoritesController = new ResourceFavoritesController(this);
+        ResourceFavoritesController = CreateResourceFavorites();
         ResourceFiltersController = new ResourceFiltersController(this);
         ResourcePresentationController = new ResourcePresentationController(this);
-        ResourceSearchLayoutController = new ResourceSearchLayoutController(this);
         ResourceWorkspaceController = new ResourceWorkspaceController(this);
+        ResourceSearchLayoutController = CreateResourceSearchLayout();
         SketchController = new SketchController(this);
         StabilityController = new StabilityController(this);
         UninstallController = new UninstallController(this);

@@ -5,10 +5,10 @@ using System.Windows.Input;
 namespace BlockLaunch;
 internal sealed class ResourceSearchLayoutController
 {
-    readonly LauncherWorkspace workspace;
-    internal ResourceSearchLayoutController(LauncherWorkspace workspace)
+    readonly ResourceSearchLayoutContext context;
+    internal ResourceSearchLayoutController(ResourceSearchLayoutContext context)
     {
-        this.workspace = workspace;
+        this.context = context;
     }
 
     internal readonly TextBlock resourceWorkspaceSubtitle = new()
@@ -18,36 +18,53 @@ internal sealed class ResourceSearchLayoutController
     };
     internal void BuildResourceSearchLayout(StackPanel filters)
     {
-        var search = (Grid)workspace.Controls.SearchQuery.Parent;
+        var search = (Grid)context.Query.Parent;
         var row = filters.Children.OfType<WrapPanel>().First();
         var actions = row.Children.OfType<Button>().ToArray();
         row.Children.Clear();
         filters.Children.Clear();
-        workspace.ResourceFavoritesController.resourceFavoriteFilter.Click += async (_, _) => await workspace.ResourceFavoritesController.ToggleResourceFavoriteFilter();
+        context.Favorites.resourceFavoriteFilter.Click += async (_, _) => await context.Favorites.ToggleResourceFavoriteFilter();
         var clear = FeatureUiElements.ActionButton("清除筛选", async (_, _) =>
         {
-            if (workspace.ResourceFavoritesController.resourceFavoritesOnly)
-                await workspace.ResourceFavoritesController.ToggleResourceFavoriteFilter();
+            if (context.Favorites.resourceFavoritesOnly)
+                await context.Favorites.ToggleResourceFavoriteFilter();
         });
-        workspace.ResourceFavoritesController.resourceFavoriteClear = clear;
+        context.Favorites.resourceFavoriteClear = clear;
         clear.Visibility = Visibility.Collapsed;
-        var view = new ResourceSearchHeader(new(workspace.ResourceWorkspaceController.resourceWorkspaceTitle, resourceWorkspaceSubtitle, workspace.ResourceFavoritesController.resourceFavoriteNotice, workspace.ResourceFavoritesController.resourceFavoriteFilter, clear, search, workspace.Controls.SearchQuery, workspace.ResourceFiltersController.resourceSource, [new("游戏版本", workspace.ResourceFiltersController.resourceGame), new("加载器", workspace.ResourceFiltersController.resourceLoader), new("发布类型", workspace.ResourceFiltersController.releaseChannel), new("排序", workspace.ResourceFavoritesController.resourceSort)], actions, workspace.ResourceFavoritesController.resourceGridView, workspace.ResourceFavoritesController.resourceLinearView), (ControlTemplate)workspace.Window.FindResource("SearchInputTemplate"));
+        var fields = new ResourceFilterField[]
+        {
+            new("游戏版本", context.Filters.resourceGame),
+            new("加载器", context.Filters.resourceLoader),
+            new("发布类型", context.Filters.releaseChannel),
+            new("排序", context.Favorites.resourceSort)
+        };
+        var header = new ResourceSearchHeaderControls(
+            context.Title, resourceWorkspaceSubtitle, context.Favorites.resourceFavoriteNotice,
+            context.Favorites.resourceFavoriteFilter, clear, search, context.Query,
+            context.Filters.resourceSource, fields, actions,
+            context.Favorites.resourceGridView, context.Favorites.resourceLinearView);
+        var view = new ResourceSearchHeader(header, (ControlTemplate)context.Owner.FindResource("SearchInputTemplate"));
         var parent = (Grid)filters.Parent;
         parent.Children.Remove(filters);
         Grid.SetRow(view, 1);
         parent.Children.Add(view);
-        workspace.ResourceWorkspaceController.resourceFilterPanel = view;
-        workspace.ResourceFavoritesController.resourceSort.SelectionChanged += async (_, _) =>
+        context.SetFilterPanel(view);
+        context.Favorites.resourceSort.SelectionChanged += async (_, _) =>
         {
-            if (workspace.ResourceFavoritesController.updatingResourceFilters)
+            if (context.Favorites.updatingResourceFilters)
                 return;
-            workspace.ContentController.searchOffset = 0;
-            await workspace.ContentController.RunBrowse(workspace.ContentController.SearchContent);
+            context.ResetSearchOffset();
+            await context.Search();
         };
-        workspace.ResourceFavoritesController.resourceGridView.Click += (_, _) => workspace.ResourceFavoritesController.SetResourceView(false);
-        workspace.ResourceFavoritesController.resourceLinearView.Click += (_, _) => workspace.ResourceFavoritesController.SetResourceView(true);
-        workspace.Controls.SearchResults.ItemsPanel = new ItemsPanelTemplate(new FrameworkElementFactory(typeof(ResponsiveResourcePanel)));
-        ScrollViewer.SetCanContentScroll(workspace.Controls.SearchResults, false);
-        workspace.Controls.SearchResults.SetValue(KeyboardNavigation.DirectionalNavigationProperty, KeyboardNavigationMode.Contained);
+        context.Favorites.resourceGridView.Click += (_, _) => context.Favorites.SetResourceView(false);
+        context.Favorites.resourceLinearView.Click += (_, _) => context.Favorites.SetResourceView(true);
+        context.Results.ItemsPanel = new ItemsPanelTemplate(new FrameworkElementFactory(typeof(ResponsiveResourcePanel)));
+        ScrollViewer.SetCanContentScroll(context.Results, false);
+        context.Results.SetValue(KeyboardNavigation.DirectionalNavigationProperty, KeyboardNavigationMode.Contained);
     }
 }
+
+internal sealed record ResourceSearchLayoutContext(
+    Window Owner, TextBox Query, ListBox Results, TextBlock Title,
+    ResourceFavoritesController Favorites, ResourceFiltersController Filters,
+    Action<FrameworkElement> SetFilterPanel, Action ResetSearchOffset, Func<Task> Search);

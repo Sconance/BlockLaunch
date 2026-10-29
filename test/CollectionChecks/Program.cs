@@ -196,6 +196,49 @@ using (var cancel = new CancellationTokenSource())
 }
 
 Console.WriteLine("BATCH_CANCELLATION_OK");
+// Run the extracted query without a window or real network access.
+var queryStore = new ResourceBookmarkStore(Path.Combine(root, "query"));
+for (var i = 0; i < 19; i++)
+    queryStore.Save(new("q" + i, "q" + i, "Query " + i, "", "fixture", i), "mod", "");
+queryStore.Save(new("shader", "shader", "Shader", "", "fixture", 100), "shader", "");
+using var queryHandler = new FavoriteQueryHandler();
+using var queryHttp = new System.Net.Http.HttpClient(queryHandler);
+var queryRequest = new ResourceFavoriteQuery("", "mod", new("", "", ""), 0, 1, 0);
+var firstPage = await ResourceFavoriteSearch.Search(queryStore, queryHttp, queryRequest, CancellationToken.None);
+var lastPage = await ResourceFavoriteSearch.Search(queryStore, queryHttp, queryRequest with { Offset = 15 }, CancellationToken.None);
+Assert(firstPage.Total == 19 && firstPage.Items.Count == 15 && lastPage.Items.Count == 4 &&
+    firstPage.Items[0].Downloads == 18 && !firstPage.Items.Intersect(lastPage.Items).Any() && queryHandler.Calls == 0,
+    "FAVORITE_QUERY_SORT_KIND_AND_PAGINATION_WITHOUT_NETWORK");
+var filtered = await ResourceFavoriteSearch.Search(queryStore, queryHttp,
+    queryRequest with
+    {
+        Target = new("", "1.21.1", "fabric"),
+        Channel = 1
+    }, CancellationToken.None);
+Assert(filtered.Total == 19 && queryHandler.Calls == 19 && queryHandler.MaxActive <= 4,
+    "FAVORITE_QUERY_VERSION_CHANNEL_AND_BOUNDED_CONCURRENCY");
+var noBeta = await ResourceFavoriteSearch.Search(queryStore, queryHttp,
+    queryRequest with
+    {
+        Query = "Query 18",
+        Channel = 2
+    }, CancellationToken.None);
+Assert(noBeta.Total == 0, "FAVORITE_QUERY_EXCLUDES_WRONG_RELEASE_CHANNEL");
+using (var cancelled = new CancellationTokenSource())
+{
+    cancelled.Cancel();
+    try
+    {
+        await ResourceFavoriteSearch.Search(queryStore, queryHttp,
+            queryRequest with
+            {
+                Channel = 1
+            }, cancelled.Token);
+        throw new Exception("Favorite query cancellation ignored");
+    }
+    catch (OperationCanceledException) { }
+}
+Console.WriteLine("FAVORITE_QUERY_CANCELLATION_OK");
 Console.WriteLine("ALL_COLLECTION_CHECKS_PASSED");
 public sealed class BatchProvider : IResourceProvider
 {
@@ -211,4 +254,26 @@ public sealed class BatchProvider : IResourceProvider
 
     public Task<SearchPage> Search(string q, string game, string loader, string type, int offset = 0) => throw new NotSupportedException();
     public Task<InstallPlan> Resolve(ContentVersion version, string game, string loader) => throw new NotSupportedException();
+}
+
+public sealed class FavoriteQueryHandler : System.Net.Http.HttpMessageHandler
+{
+    int active;
+    public int Calls;
+    public int MaxActive;
+    protected override async Task<System.Net.Http.HttpResponseMessage> SendAsync(System.Net.Http.HttpRequestMessage request, CancellationToken token)
+    {
+        Interlocked.Increment(ref Calls);
+        var current = Interlocked.Increment(ref active);
+        MaxActive = Math.Max(MaxActive, current);
+        try
+        {
+            await Task.Delay(5, token);
+            return new(System.Net.HttpStatusCode.OK)
+            {
+                Content = new System.Net.Http.StringContent("[{\"id\":\"stable\",\"version_type\":\"release\",\"game_versions\":[\"1.21.1\"],\"loaders\":[\"fabric\"]}]", System.Text.Encoding.UTF8, "application/json")
+            };
+        }
+        finally { Interlocked.Decrement(ref active); }
+    }
 }

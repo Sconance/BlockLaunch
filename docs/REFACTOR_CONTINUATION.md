@@ -46,3 +46,16 @@
 运行全部无需真实游戏环境的检查；额外断言参考启动设置对话框可以保存并同步全局字段，参考整合包导出对话框保留五个选项且默认不包含存档。已有更新确认、目录切换、名称同步、Esc 路由、拖放与菜单扩展断言继续执行。
 
 `test` 的推送现已触发 Windows CI，并加入固定复用基线、UI 边界及适合 CI 的组件检查。真实授权、完整游戏启动矩阵、多显示器 DPI 与本轮原生桌面点击不能由这些检查代替。
+
+## 资源收藏与搜索布局的进一步解耦
+
+在上述基线上继续拆分资源页，不新增业务功能：
+
+- `ResourceFavoritesController` 不再持有 `LauncherWorkspace`，改为收藏相关控件和 `ResourceFavoriteActions`。收藏存储仍由原来的 `ResourceBookmarkStore` 读写，初始化后通过回调获取。
+- `ResourceFavoriteSearch` 独立负责收藏候选、兼容版本筛选、四路并发查询、排序和分页；输入是不可变的 `ResourceFavoriteQuery`，异步过程不再读取 WPF 控件。
+- `ResourceSearchLayoutController` 接收搜索页所需控件、收藏/筛选组件和刷新回调；布局继续复用现有 `ResourceSearchHeader`，不改变视觉结构。
+- `Composition/ResourceComposition.cs` 集中连接依赖。搜索布局需要的标题控件在资源工作区组件创建后传入；选择事件回调直接保留原方法委托，确保临时解除事件订阅仍然有效。
+
+这部分延续参考分支的资源收藏、搜索布局职责，保留 test 的独立视图组织，不属于新增的完整逐字复用文件。前面的 11 文件复用基线继续检查。
+
+`CollectionChecks` 现在直接编译独立查询组件，以本地收藏和 HTTP 替身检查分页无重复、类型和下载量排序、发布通道过滤、最多四路请求及取消传播；无需窗口或实际网络。UI 边界脚本同时禁止两个控制器重新引入整个工作区，也禁止查询组件依赖 WPF。

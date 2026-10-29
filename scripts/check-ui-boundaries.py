@@ -25,7 +25,8 @@ def main():
     # These adapters have explicit dependencies. Keep the composition root out of them.
     isolated = ('AvatarController', 'HomeAccountController', 'KeyboardNavigationController',
                 'LoaderOverviewController', 'NetworkController', 'WindowChromeController',
-                'GameWindowBehaviorController', 'InstanceSearchController', 'VersionIdentityEditor', 'UpdatesController')
+                'GameWindowBehaviorController', 'InstanceSearchController', 'VersionIdentityEditor', 'UpdatesController',
+                'ResourceFavoritesController', 'ResourceSearchLayoutController')
     for name in isolated:
         source = app / 'Components' / f'{name}.cs'
         if re.search(r'\bLauncherWorkspace\b', source.read_text(encoding='utf-8-sig')):
@@ -38,6 +39,9 @@ def main():
         source = app / 'Presentation' / f'{name}.cs'
         if re.search(r'\b(LauncherWorkspace|MainWindow)\b', source.read_text(encoding='utf-8-sig')):
             errors.append(f'{name} must receive scoped dependencies instead of a complete window/workspace')
+    query = (app / 'Presentation/ResourceFavoriteSearch.cs').read_text(encoding='utf-8-sig')
+    if re.search(r'\b(LauncherWorkspace|MainWindow|TextBox|ComboBox|ListBox)\b|System\.Windows', query):
+        errors.append('Resource favorite search must consume a value snapshot, not WPF or workspace state')
     version_pages = app / 'Views/VersionSettings'
     for name in ('VersionOverviewPage', 'VersionLaunchPage', 'VersionLoaderPage', 'VersionModPage', 'VersionExportPage'):
         source = version_pages / f'{name}.cs'

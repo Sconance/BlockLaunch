@@ -4,10 +4,14 @@ using System.Windows.Controls;
 namespace BlockLaunch;
 internal sealed class ResourceFavoritesController
 {
-    readonly LauncherWorkspace workspace;
-    internal ResourceFavoritesController(LauncherWorkspace workspace)
+    readonly Window owner;
+    readonly ResourceFavoriteControls controls;
+    readonly ResourceFavoriteActions actions;
+    internal ResourceFavoritesController(Window owner, ResourceFavoriteControls controls, ResourceFavoriteActions actions)
     {
-        this.workspace = workspace;
+        this.owner = owner;
+        this.controls = controls;
+        this.actions = actions;
     }
 
     internal bool resourceFavoritesOnly;
@@ -78,7 +82,8 @@ internal sealed class ResourceFavoritesController
 
     internal void ToggleResourceFavorite(ContentProject project)
     {
-        if (workspace.CollectionsController.bookmarks == null)
+        var bookmarks = actions.Bookmarks();
+        if (bookmarks == null)
         {
             InlineMessageBox.Show("收藏数据暂不可用，请查看运行日志。");
             return;
@@ -86,28 +91,28 @@ internal sealed class ResourceFavoritesController
 
         try
         {
-            if (workspace.CollectionsController.bookmarks.Read().Any(i => i.Project.Id == project.Id))
-                workspace.CollectionsController.bookmarks.Remove(project.Id);
+            if (bookmarks.Read().Any(i => i.Project.Id == project.Id))
+                bookmarks.Remove(project.Id);
             else
-                workspace.CollectionsController.bookmarks.Save(project, workspace.PackController.ContentKind, "");
-            workspace.CollectionsController.RefreshBookmarkDecoration();
+                bookmarks.Save(project, actions.ContentKind(), "");
+            actions.RefreshDecoration();
             UpdateResourceFavoriteState(project.Id);
             if (resourceFavoritesOnly)
             {
-                var items = workspace.Controls.SearchResults.Items.Cast<ContentProject>().Where(p => p.IsFavorite).ToList();
-                workspace.Controls.SearchResults.SelectionChanged -= workspace.ContentController.ProjectChanged;
+                var items = controls.Results.Items.Cast<ContentProject>().Where(p => p.IsFavorite).ToList();
+                controls.Results.SelectionChanged -= actions.ProjectChanged;
                 try
                 {
-                    workspace.Controls.SearchResults.ItemsSource = items;
+                    controls.Results.ItemsSource = items;
                 }
                 finally
                 {
-                    workspace.Controls.SearchResults.SelectionChanged += workspace.ContentController.ProjectChanged;
+                    controls.Results.SelectionChanged += actions.ProjectChanged;
                 }
 
-                workspace.Controls.SearchHint.Text = "没有符合条件的收藏，试试清除收藏筛选。";
-                workspace.Controls.SearchHint.Visibility = items.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
-                workspace.Controls.SearchSummary.Text = "收藏已更新，搜索可刷新匹配结果。";
+                controls.Hint.Text = "没有符合条件的收藏，试试清除收藏筛选。";
+                controls.Hint.Visibility = items.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+                controls.Summary.Text = "收藏已更新，搜索可刷新匹配结果。";
             }
         }
         catch (Exception ex)
@@ -124,58 +129,35 @@ internal sealed class ResourceFavoritesController
         if (resourceFavoriteClear != null)
             resourceFavoriteClear.Visibility = resourceFavoriteNotice.Visibility;
         if (projectId == null)
-            projectId = (workspace.Controls.SearchResults.SelectedItem as ContentProject)?.Id;
+            projectId = (controls.Results.SelectedItem as ContentProject)?.Id;
         bool saved;
         try
         {
-            saved = workspace.CollectionsController.bookmarks?.Read().Any(i => i.Project.Id == projectId) == true;
+            saved = actions.Bookmarks()?.Read().Any(i => i.Project.Id == projectId) == true;
         }
         catch (Exception ex)
         {
-            workspace.LaunchCoordinator.Log("无法读取收藏状态：" + ex.Message);
+            actions.Log("无法读取收藏状态：" + ex.Message);
             saved = false;
         }
 
         resourceDetailFavorite.Content = saved ? "♥ 已收藏" : "♡ 收藏";
-        resourceDetailFavorite.Foreground = saved ? System.Windows.Media.Brushes.Crimson : (System.Windows.Media.Brush)workspace.Window.FindResource("AccentBrush");
+        resourceDetailFavorite.Foreground = saved ? System.Windows.Media.Brushes.Crimson : (System.Windows.Media.Brush)owner.FindResource("AccentBrush");
     }
 
     internal async Task ToggleResourceFavoriteFilter()
     {
         resourceFavoritesOnly = !resourceFavoritesOnly;
-        workspace.ContentController.searchOffset = 0;
+        actions.ResetSearchOffset();
         UpdateResourceFavoriteState();
-        await workspace.ContentController.RunBrowse(workspace.ContentController.SearchContent);
+        await actions.Search();
     }
 
-    internal async Task<SearchPage> SearchFavoriteResources(CancellationToken token)
+    internal Task<SearchPage> SearchFavoriteResources(CancellationToken token)
     {
-        var kind = workspace.PackController.ContentKind;
-        var candidates = workspace.CollectionsController.bookmarks?.Query(workspace.Controls.SearchQuery.Text.Trim(), kind: kind).Select(i => i.Project).ToList() ?? [];
-        var target = workspace.ResourceFiltersController.SearchTarget();
-        if (target.GameVersion.Length > 0 || target.Loader.Length > 0 || workspace.ResourceFiltersController.releaseChannel.SelectedIndex > 0)
-        {
-            var channel = workspace.ResourceFiltersController.releaseChannel.SelectedIndex;
-            using var gate = new SemaphoreSlim(4);
-            var matches = await Task.WhenAll(candidates.Select(async project =>
-            {
-                await gate.WaitAsync(token);
-                try
-                {
-                    var versions = await new ContentService(workspace.LaunchCoordinator.http, token).Versions(project.Id, target.GameVersion, target.Loader, kind);
-                    return versions.Any(v => channel == 0 || v.VersionType == new[] { "", "release", "beta", "alpha" }[channel]) ? project : null;
-                }
-                finally
-                {
-                    gate.Release();
-                }
-            }));
-            candidates = matches.OfType<ContentProject>().ToList();
-        }
-
-        if (resourceSort.SelectedIndex == 1)
-            candidates = candidates.OrderByDescending(p => p.Downloads).ToList();
-        return new(candidates.Skip(workspace.ContentController.searchOffset).Take(15).ToList(), candidates.Count);
+        var request = new ResourceFavoriteQuery(controls.Query.Text.Trim(), actions.ContentKind(),
+            actions.SearchTarget(), actions.ReleaseChannel(), resourceSort.SelectedIndex, actions.SearchOffset());
+        return ResourceFavoriteSearch.Search(actions.Bookmarks(), actions.Http(), request, token);
     }
 
     internal void ToggleResourceView()
@@ -186,9 +168,25 @@ internal sealed class ResourceFavoritesController
     internal void SetResourceView(bool list)
     {
         resourceListView = list;
-        workspace.Controls.SearchResults.ItemsPanel = new ItemsPanelTemplate(new FrameworkElementFactory(resourceListView ? typeof(StackPanel) : typeof(ResponsiveResourcePanel)));
-        workspace.Controls.SearchResults.ItemTemplate = (DataTemplate)workspace.Window.FindResource(resourceListView ? "ResourceListItem" : "ResourceSearchItem");
+        controls.Results.ItemsPanel = new ItemsPanelTemplate(new FrameworkElementFactory(resourceListView ? typeof(StackPanel) : typeof(ResponsiveResourcePanel)));
+        controls.Results.ItemTemplate = (DataTemplate)owner.FindResource(resourceListView ? "ResourceListItem" : "ResourceSearchItem");
         resourceGridView.SetResourceReference(Control.BackgroundProperty, resourceListView ? "ThemeSurfaceBrush" : "ThemeSelectedBrush");
         resourceLinearView.SetResourceReference(Control.BackgroundProperty, resourceListView ? "ThemeSelectedBrush" : "ThemeSurfaceBrush");
     }
 }
+
+internal sealed record ResourceFavoriteControls(TextBox Query, ListBox Results, TextBlock Hint, TextBlock Summary);
+
+/// <summary>Only resource-favorite operations cross this component boundary.</summary>
+internal sealed record ResourceFavoriteActions(
+    Func<ResourceBookmarkStore?> Bookmarks,
+    Func<string> ContentKind,
+    Action RefreshDecoration,
+    SelectionChangedEventHandler ProjectChanged,
+    Action<string> Log,
+    Action ResetSearchOffset,
+    Func<Task> Search,
+    Func<InstanceTarget> SearchTarget,
+    Func<int> ReleaseChannel,
+    Func<int> SearchOffset,
+    Func<System.Net.Http.HttpClient> Http);

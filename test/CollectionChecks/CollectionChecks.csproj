@@ -8,4 +8,8 @@
   <ItemGroup>
     <ProjectReference Include="../../src/MCUGLauncher.Core/MCUGLauncher.Core.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="../../src/MCUGLauncher/Presentation/ResourceFavoriteSearch.cs" Link="Search/ResourceFavoriteSearch.cs" />
+    <Compile Include="../../src/MCUGLauncher/Models/InstanceTarget.cs" Link="Search/InstanceTarget.cs" />
+  </ItemGroup>
 </Project>
