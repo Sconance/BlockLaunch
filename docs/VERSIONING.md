@@ -27,6 +27,7 @@ python scripts/check-version.py --tag    # 发版前额外确认 HEAD 已打 v<�
 - `Brand.cs` 不保存版本常量，`ProductInfo.cs` 存在；
 - `src/`、`test/`、`tools/` 的 C# 与 XAML 不硬编码版本字面量；
 - 检查程序的程序集版本断言不写死（应与程序集元数据比较）；
+- `scripts/build.ps1` 的发版文件名从 `McugVersion` 读取，不再解析已删除的 csproj `<Version>`；
 - 使用 `--tag` 时，HEAD 上存在 `v<版本>` 标签。
 
 ## 发版顺序

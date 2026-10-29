@@ -76,6 +76,14 @@ def main():
     if inline.is_file() and re.search(r'Version!\.ToString\(\)\s*==\s*"\d+\.\d+\.\d+\.0"', read(inline)):
         errors.append('InlineUiChecks: assembly version assertion is hardcoded; compare with assembly metadata')
 
+    build = root / 'scripts/build.ps1'
+    if build.is_file():
+        text = read(build)
+        if 'McugVersion' not in text:
+            errors.append('scripts/build.ps1: release naming must read McugVersion from Directory.Build.props')
+        if re.search(r'Where-Object\s+Version\b', text):
+            errors.append('scripts/build.ps1: reads the removed csproj <Version>; use McugVersion')
+
     if arguments.tag:
         tags = subprocess.run(['git', 'tag', '--points-at', 'HEAD'], cwd=root, capture_output=True, text=True)
         names = tags.stdout.split() if tags.returncode == 0 else []
