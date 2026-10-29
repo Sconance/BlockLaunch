@@ -8,7 +8,7 @@
 - `Composition/LauncherControls.cs`：九个页面视图的命名控件绑定，不通过字符串查找控件。
 - `Composition/LauncherPageRouter.cs`：页面动作到具体模块的编译期可检查路由，不使用反射。
 - `Views/Pages/`：启动、下载、资源、内容管理、设置、日志、任务、导航和标题区九个 XAML 视图。
-- `Components/`：各功能控制器拥有各自字段、事件和操作。启动协调位于 `LaunchCoordinator`，版本设置位于 `VersionSettingsController`，实例管理位于 `InstancePagesController` 和 `SketchController`，资源和任务也各自独立。
+- `Components/`：各功能控制器拥有各自字段、事件和操作。启动协调位于 `LaunchCoordinator`，版本设置位于 `VersionSettingsController`，实例管理位于 `InstanceWorkspaceController` 和 `InstanceContentController`，资源和任务也各自独立。
 - `Views/`、`Presentation/`：第一批独立控件和加载器 Presenter 继续使用，不退回主窗口大类。
 
 每个顶层类型的职责、入口与源码位置见 [类文档目录](classes/README.md)；页面与模块调整后同步更新对应页面。
@@ -65,7 +65,7 @@
 
 ## 按 refactor 延续的第三轮组件整理
 
-原内容管理约 603 行的 `SketchController` 缩减为约 285 行，内容管理对话框迁入 `Presentation/SketchContentManagerDialog`。原约 553 行的 `InstancePagesController` 缩减为约 322 行，启动设置、整合包导出和公共对话框构造分别迁入同名参考组件。更新选择/预览、工具提示、工具窗口初始化及导航样式直接复用参考实现。
+原内容管理约 603 行的 `InstanceContentController` 缩减为约 285 行，内容管理对话框迁入 `Presentation/SketchContentManagerDialog`。原约 553 行的 `InstanceWorkspaceController` 缩减为约 322 行，启动设置、整合包导出和公共对话框构造分别迁入同名参考组件。更新选择/预览、工具提示、工具窗口初始化及导航样式直接复用参考实现。
 
 完整相同的文件、适配的文件及保留差异见 [refactor 延续记录](REFACTOR_CONTINUATION.md)。没有把整个 MainWindow 改名后交给新组件；独立对话框与更新模块不持有 LauncherWorkspace。
 

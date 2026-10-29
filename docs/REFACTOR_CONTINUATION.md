@@ -10,8 +10,8 @@
 | --- | --- |
 | Builders/LaunchScriptBuilder.cs | Builders/LaunchScriptBuilder.cs |
 | Builders/OfflineSkinPackBuilder.cs | Builders/OfflineSkinPackBuilder.cs |
-| Controllers/GameWindowBehaviorController.cs | Components/GameWindowBehaviorController.cs |
-| Controllers/InstanceSearchController.cs | Components/InstanceSearchController.cs |
+| Controllers/GameWindowBehaviorController.cs | Components/Launch/GameWindowBehaviorController.cs |
+| Controllers/InstanceSearchController.cs | Components/Instances/InstanceSearchController.cs |
 | Models/PlayerIdentityState.cs | Models/PlayerIdentityState.cs |
 | Builders/LaunchOptionsForm.cs | Views/Forms/LaunchOptionsForm.cs |
 | Presentation/ContentUpdateSelectionView.cs | Views/Updates/ContentUpdateSelectionView.cs |
@@ -28,7 +28,7 @@
 - `Presentation/InstancePackExportDialog.cs`：沿用同名参考组件，保留导出选项、保守的存档默认值、保存选择和任务执行顺序；接收与导出有关的少量回调。
 - `Presentation/FeatureDialogBuilder.cs`：沿用参考布局、尺寸、按钮分组和准备逻辑；接收普通 Window 所有者与主题配置回调。
 - `Presentation/SketchContentManagerDialog.cs`：按参考的同名类和 Open 入口提取内容管理；数据读取、管理命令、生命周期绑定分别传入，不接收整个 MainWindow 或 LauncherWorkspace。继续使用 test 的菜单扩展宿主和已验收的实例名称同步，而不是覆盖回旧实现。
-- `Components/UpdatesController.cs`：延续参考 `ContentUpdateController` 的检查、选择、预览、确认和入队流程，直接使用上表中的两个原始视图；保留 test 已有的事件入口名称，改用 `ContentUpdateActions`。
+- `Components/Resources/ContentUpdatesController.cs`：延续参考 `ContentUpdateController` 的检查、选择、预览、确认和入队流程，直接使用上表中的两个原始视图；保留 test 已有的事件入口名称，改用 `ContentUpdateActions`。
 - `Builders/ContentSearchFilterBuilder.cs`：沿用参考实现，仅将 MainWindow 的通用按钮工厂改为现有 `FeatureUiElements`。重置回调继续清除 test 的收藏展示条件。
 
 `Composition/InstanceDialogComposition.cs` 负责把既有服务连接到上述组件。适配代码属于组合层，不把新的业务字段重新塞回主窗口。上述文件有必要的依赖差异，不能宣称完整文件逐字相同。

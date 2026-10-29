@@ -39,55 +39,79 @@
 - [LaunchScriptBuilder](Builders/LaunchScriptBuilder.md) — 生成并转义启动参数，产出可安全引用的启动命令。
 - [OfflineSkinPackBuilder](Builders/OfflineSkinPackBuilder.md) — 为离线实例准备皮肤包文件。
 
-## `Components/`
+## `Components/Accounts/`
 
-- [AccountController](Components/AccountController.md) — 账号面板交互：登录、切换与管理入口协调。
-- [AppearanceController](Components/AppearanceController.md) — 应用背景、主题色与个性化设置。
-- [AvatarController](Components/AvatarController.md) — 头像与名称刷新，显式接收控件与状态回调。
-- [CollectionsController](Components/CollectionsController.md) — 收藏夹与本地内容集合的展示和操作。
-- [CompactShellController](Components/CompactShellController.md) — 紧凑窗口外壳、首页版本入口与导航布局。
-- [ContentController](Components/ContentController.md) — 资源搜索、详情、安装与内容更新入口。
-- [ContentUpdateActions](Components/ContentUpdateActions.md) — 内容更新检查所需的应用操作集合。
-- [DiagnosticsController](Components/DiagnosticsController.md) — 崩溃诊断快照、证据展示与反馈。
-- [DownloadNavigationController](Components/DownloadNavigationController.md) — 下载分类的图标与名称映射。
-- [DownloadPageController](Components/DownloadPageController.md) — 下载页布局、分类切换与加载器入口。
-- [DownloadQueueController](Components/DownloadQueueController.md) — 下载队列的入队、暂停、恢复与执行。
-- [DownloadTaskController](Components/DownloadTaskController.md) — 下载任务页、任务状态操作与任务栏进度。
-- [DropFeedbackController](Components/DropFeedbackController.md) — 拖入文件的提示与目标目录判断。
-- [ExperienceController](Components/ExperienceController.md) — 个性化、存档保护与服务端等体验功能。
-- [ExperienceThemeController](Components/ExperienceThemeController.md) — 把主题配置应用到工具窗口。
-- [GameWindowBehaviorController](Components/GameWindowBehaviorController.md) — 启动后调整游戏窗口的行为与焦点。
-- [HomeAccountController](Components/HomeAccountController.md) — 首页账号面板的构建与状态更新。
-- [InlineHostController](Components/InlineHostController.md) — 页内对话框栈、标题与显示切换。
-- [InstanceLibraryController](Components/InstanceLibraryController.md) — 实例库对话框与拖入文件导入。
-- [InstancePagesController](Components/InstancePagesController.md) — 实例页面、内容管理与启动设置入口。
-- [InstanceSearchController](Components/InstanceSearchController.md) — 按输入过滤实例列表并更新匹配摘要。
-- [JavaManagerController](Components/JavaManagerController.md) — Java 运行时的扫描、选择与管理。
-- [KeyboardNavigationController](Components/KeyboardNavigationController.md) — 键盘导航与工具提示初始化。
-- [LaunchCoordinator](Components/LaunchCoordinator.md) — 游戏启动流程、运行状态与设置/网络初始化。
-- [LoaderController](Components/LoaderController.md) — 加载器类型切换与自动选择。
-- [LoaderOverviewController](Components/LoaderOverviewController.md) — 加载器版本概览与入队，显式接收控件与回调。
-- [MiniDownloadController](Components/MiniDownloadController.md) — 顶部迷你下载条、速度与暂停状态。
-- [ModernController](Components/ModernController.md) — 现代窗口外壳、响应式布局与窗口拖动。
-- [MuaAccountController](Components/MuaAccountController.md) — MUA 账号面板交互与登录管理。
-- [NetworkController](Components/NetworkController.md) — 网络设置的编辑与页内保存，使用显式回调。
-- [PackController](Components/PackController.md) — 整合包导入、安装、导出与启动版本标签。
-- [PackUpgradeController](Components/PackUpgradeController.md) — 整合包升级流程与原版回退。
-- [ResourceFavoriteActions](Components/ResourceFavoriteActions.md) — 收藏操作与存储访问的显式回调。
-- [ResourceFavoriteControls](Components/ResourceFavoriteControls.md) — 收藏查询所需的控件集合。
-- [ResourceFavoritesController](Components/ResourceFavoritesController.md) — 收藏切换、仅收藏筛选与列表/卡片视图切换。
-- [ResourceFiltersController](Components/ResourceFiltersController.md) — 资源筛选条件与搜索目标的维护。
-- [ResourcePresentationController](Components/ResourcePresentationController.md) — 资源正文、截图与版本事实的展示。
-- [ResourceSearchLayoutContext](Components/ResourceSearchLayoutContext.md) — 搜索布局装配所需的控件与动作上下文。
-- [ResourceSearchLayoutController](Components/ResourceSearchLayoutController.md) — 资源搜索区布局的装配。
-- [ResourceWorkspaceController](Components/ResourceWorkspaceController.md) — 资源页内详情工作区与窄/宽布局切换。
-- [SketchController](Components/SketchController.md) — 首页版本选择与实例内容管理入口。
-- [StabilityController](Components/StabilityController.md) — 任务状态、运行日志与恢复操作。
-- [UninstallController](Components/UninstallController.md) — 实例卸载流程。
-- [UpdatesController](Components/UpdatesController.md) — 内容更新的检查、选择、预览与入队。
-- [VersionIdentityEditor](Components/VersionIdentityEditor.md) — 实例名称、描述等身份信息的编辑与保存。
-- [VersionSettingsController](Components/VersionSettingsController.md) — 版本设置页内窗口的生命周期与栏目导航。
-- [WindowChromeController](Components/WindowChromeController.md) — 自定义标题栏与窗口边框。
+- [AccountController](Components/Accounts/AccountController.md) — 账号面板交互：登录、切换与管理入口协调。
+- [AvatarController](Components/Accounts/AvatarController.md) — 头像与名称刷新，显式接收控件与状态回调。
+- [HomeAccountController](Components/Accounts/HomeAccountController.md) — 首页账号面板的构建与状态更新。
+- [MuaAccountController](Components/Accounts/MuaAccountController.md) — MUA 账号面板交互与登录管理。
+
+## `Components/Bookmarks/`
+
+- [BookmarkLibraryController](Components/Bookmarks/BookmarkLibraryController.md) — 收藏夹与本地内容集合的展示和操作。
+
+## `Components/Downloads/`
+
+- [DownloadMiniBarController](Components/Downloads/DownloadMiniBarController.md) — 顶部迷你下载条、速度与暂停状态。
+- [DownloadNavigationController](Components/Downloads/DownloadNavigationController.md) — 下载分类的图标与名称映射。
+- [DownloadPageController](Components/Downloads/DownloadPageController.md) — 下载页布局、分类切换与加载器入口。
+- [DownloadQueueController](Components/Downloads/DownloadQueueController.md) — 下载队列的入队、暂停、恢复与执行。
+- [DownloadTaskController](Components/Downloads/DownloadTaskController.md) — 下载任务页、任务状态操作与任务栏进度。
+- [LoaderOverviewController](Components/Downloads/LoaderOverviewController.md) — 加载器版本概览与入队，显式接收控件与回调。
+- [LoaderSelectionController](Components/Downloads/LoaderSelectionController.md) — 加载器类型切换与自动选择。
+
+## `Components/Experience/`
+
+- [AppearanceController](Components/Experience/AppearanceController.md) — 应用背景、主题色与个性化设置。
+- [ExperienceController](Components/Experience/ExperienceController.md) — 个性化、存档保护与服务端等体验功能。
+- [ExperienceThemeController](Components/Experience/ExperienceThemeController.md) — 把主题配置应用到工具窗口。
+
+## `Components/Instances/`
+
+- [DropFeedbackController](Components/Instances/DropFeedbackController.md) — 拖入文件的提示与目标目录判断。
+- [InstanceContentController](Components/Instances/InstanceContentController.md) — 首页版本选择与实例内容管理入口。
+- [InstanceLibraryController](Components/Instances/InstanceLibraryController.md) — 实例库对话框与拖入文件导入。
+- [InstanceSearchController](Components/Instances/InstanceSearchController.md) — 按输入过滤实例列表并更新匹配摘要。
+- [InstanceWorkspaceController](Components/Instances/InstanceWorkspaceController.md) — 实例页面、内容管理与启动设置入口。
+- [JavaManagerController](Components/Instances/JavaManagerController.md) — Java 运行时的扫描、选择与管理。
+- [UninstallController](Components/Instances/UninstallController.md) — 实例卸载流程。
+- [VersionIdentityEditor](Components/Instances/VersionIdentityEditor.md) — 实例名称、描述等身份信息的编辑与保存。
+- [VersionSettingsController](Components/Instances/VersionSettingsController.md) — 版本设置页内窗口的生命周期与栏目导航。
+
+## `Components/Launch/`
+
+- [GameWindowBehaviorController](Components/Launch/GameWindowBehaviorController.md) — 启动后调整游戏窗口的行为与焦点。
+- [LaunchCoordinator](Components/Launch/LaunchCoordinator.md) — 游戏启动流程、运行状态与设置/网络初始化。
+- [ModpackController](Components/Launch/ModpackController.md) — 整合包导入、安装、导出与启动版本标签。
+- [PackUpgradeController](Components/Launch/PackUpgradeController.md) — 整合包升级流程与原版回退。
+- [TaskRecoveryController](Components/Launch/TaskRecoveryController.md) — 任务状态、运行日志与恢复操作。
+
+## `Components/Resources/`
+
+- [ContentUpdateActions](Components/Resources/ContentUpdateActions.md) — 内容更新检查所需的应用操作集合。
+- [ContentUpdatesController](Components/Resources/ContentUpdatesController.md) — 内容更新的检查、选择、预览与入队。
+- [ResourceBrowserController](Components/Resources/ResourceBrowserController.md) — 资源搜索、详情、安装与内容更新入口。
+- [ResourceFavoriteActions](Components/Resources/ResourceFavoriteActions.md) — 收藏操作与存储访问的显式回调。
+- [ResourceFavoriteControls](Components/Resources/ResourceFavoriteControls.md) — 收藏查询所需的控件集合。
+- [ResourceFavoritesController](Components/Resources/ResourceFavoritesController.md) — 收藏切换、仅收藏筛选与列表/卡片视图切换。
+- [ResourceFiltersController](Components/Resources/ResourceFiltersController.md) — 资源筛选条件与搜索目标的维护。
+- [ResourcePresentationController](Components/Resources/ResourcePresentationController.md) — 资源正文、截图与版本事实的展示。
+- [ResourceSearchLayoutContext](Components/Resources/ResourceSearchLayoutContext.md) — 搜索布局装配所需的控件与动作上下文。
+- [ResourceSearchLayoutController](Components/Resources/ResourceSearchLayoutController.md) — 资源搜索区布局的装配。
+- [ResourceWorkspaceController](Components/Resources/ResourceWorkspaceController.md) — 资源页内详情工作区与窄/宽布局切换。
+
+## `Components/Shell/`
+
+- [CompactShellController](Components/Shell/CompactShellController.md) — 紧凑窗口外壳、首页版本入口与导航布局。
+- [InlineHostController](Components/Shell/InlineHostController.md) — 页内对话框栈、标题与显示切换。
+- [KeyboardNavigationController](Components/Shell/KeyboardNavigationController.md) — 键盘导航与工具提示初始化。
+- [ModernShellController](Components/Shell/ModernShellController.md) — 现代窗口外壳、响应式布局与窗口拖动。
+- [NetworkController](Components/Shell/NetworkController.md) — 网络设置的编辑与页内保存，使用显式回调。
+- [WindowChromeController](Components/Shell/WindowChromeController.md) — 自定义标题栏与窗口边框。
+
+## `Components/Support/`
+
+- [DiagnosticsController](Components/Support/DiagnosticsController.md) — 崩溃诊断快照、证据展示与反馈。
 
 ## `Composition/`
 

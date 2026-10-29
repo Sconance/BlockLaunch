@@ -14,7 +14,7 @@
 ## 待办
 
 - [ ] 收窄仍通过 `LauncherWorkspace` 协作的模块：实例概览、资源工作区、任务协调、启动协调。
-- [ ] 拆分 `Components/` 中超过 400 行的模块：`LaunchCoordinator`（约 540 行）、`CollectionsController`（约 510 行）、`ContentController`（约 480 行）、`ExperienceController`（约 407 行）。
+- [ ] 拆分 `Components/` 中超过 400 行的模块：`LaunchCoordinator`（约 540 行）、`BookmarkLibraryController`（约 510 行）、`ResourceBrowserController`（约 480 行）、`ExperienceController`（约 407 行）。
 - [ ] 前后端分离：Core 只暴露明确操作与数据，UI 不直接读取窗口或工作区状态。
 - [ ] 补齐 `IntegrationChecks`、真实微软 / MUA 授权与完整游戏启动矩阵的验收环境。
 - [ ] 为新增的版本校验补充发版演练记录（打标签、从标签构建）。

@@ -19,20 +19,38 @@ MCUG Launcher 是 .NET 8 / WPF 应用。先从本文件定位功能，再阅读�
 
 每个顶层类型的职责、主要入口与源码位置见 [类文档目录](classes/README.md)；新增或拆分类型时同步补页，`python scripts/check-class-docs.py` 校验覆盖与索引。
 
+## 功能域与命名
+
+`Components/` 按功能域分组，类名使用“功能域 + 角色”的形式（`Controller`、`View`、`Presenter`、`Builder`、`Registry` 等），保证同类职责在同一目录、名字能直接说明用途：
+
+| 目录 | 职责 |
+| --- | --- |
+| `Components/Accounts/` | 账号面板、头像与登录入口 |
+| `Components/Shell/` | 窗口外壳、导航、键盘、菜单扩展与网络设置 |
+| `Components/Downloads/` | 下载页、队列、任务、迷你下载条与加载器版本 |
+| `Components/Resources/` | 资源浏览、详情工作区、收藏与内容更新 |
+| `Components/Instances/` | 实例列表、内容管理、版本设置与卸载 |
+| `Components/Launch/` | 启动协调、游戏窗口行为、任务恢复与整合包 |
+| `Components/Experience/` | 个性化与外观 |
+| `Components/Bookmarks/` | 收藏夹与书签库 |
+| `Components/Support/` | 诊断与反馈 |
+
+本次整理的代表性改名：`SketchController` → `InstanceContentController`、`InstancePagesController` → `InstanceWorkspaceController`、`ContentController` → `ResourceBrowserController`、`CollectionsController` → `BookmarkLibraryController`、`UpdatesController` → `ContentUpdatesController`、`LoaderController` → `LoaderSelectionController`、`PackController` → `ModpackController`、`StabilityController` → `TaskRecoveryController`、`MiniDownloadController` → `DownloadMiniBarController`、`ModernController` → `ModernShellController`。`scripts/refactor-reuse.json` 固定的 11 个逐字复用文件保留 refactor 中的类名，只调整目录；其余类名可按功能调整，调整后必须同步 [类文档目录](classes/README.md)。
+
 ## 功能定位
 
 | 想修改的内容 | 界面入口 | 服务或数据 |
 | --- | --- | --- |
-| 账号面板、登录方式 | `Components/HomeAccountController.cs` | `Authentication/` |
-| 主导航、窗口拖动、大小适配 | `Components/ModernController.cs`、`Components/CompactShellController.cs`、`Components/WindowChromeController.cs` | 窗口自身 |
-| 主页版本选择、版本内容管理 | `Components/SketchController.cs`、`Components/VersionSettingsController.cs` | Core `Domain/Instances.cs`、`Application/InstanceManagement.cs` |
-| 版本和资源下载 | `Components/DownloadPageController.cs`、`Components/ContentController.cs` | Core `GameInstaller.cs`、`ContentService.cs` |
-| 下载队列与任务操作 | `Components/DownloadQueueController.cs`、`Components/DownloadTaskController.cs`、`Components/MiniDownloadController.cs` | Core `Application/OperationCoordinator.cs` |
-| 文件拖入、资源导入 | `Components/DropFeedbackController.cs`、`Components/InstanceLibraryController.cs` | Core `Application/LocalImportClassifier.cs`、`WorldArchives.cs` |
-| 整合包导入、导出、升级 | `Components/PackController.cs`、`Components/PackUpgradeController.cs` | Core `PackService.cs`、`Application/PackUpgrade.cs` |
-| Java 与游戏启动 | `Components/JavaManagerController.cs`、`MainWindow.xaml.cs` | Core `Application/Java*.cs`、`LaunchService.cs` |
-| 主题、背景 | `Components/AppearanceController.cs`、`Components/ExperienceThemeController.cs`、`App.xaml` | Core `Domain/Preferences.cs` |
-| 崩溃分析与反馈 | `Components/DiagnosticsController.cs` | Core `Application/Diagnostics.cs` |
+| 账号面板、登录方式 | `Components/Accounts/HomeAccountController.cs` | `Authentication/` |
+| 主导航、窗口拖动、大小适配 | `Components/Shell/ModernShellController.cs`、`Components/Shell/CompactShellController.cs`、`Components/Shell/WindowChromeController.cs` | 窗口自身 |
+| 主页版本选择、版本内容管理 | `Components/Instances/InstanceContentController.cs`、`Components/Instances/VersionSettingsController.cs` | Core `Domain/Instances.cs`、`Application/InstanceManagement.cs` |
+| 版本和资源下载 | `Components/Downloads/DownloadPageController.cs`、`Components/Resources/ResourceBrowserController.cs` | Core `GameInstaller.cs`、`ContentService.cs` |
+| 下载队列与任务操作 | `Components/Downloads/DownloadQueueController.cs`、`Components/Downloads/DownloadTaskController.cs`、`Components/Downloads/DownloadMiniBarController.cs` | Core `Application/OperationCoordinator.cs` |
+| 文件拖入、资源导入 | `Components/Instances/DropFeedbackController.cs`、`Components/Instances/InstanceLibraryController.cs` | Core `Application/LocalImportClassifier.cs`、`WorldArchives.cs` |
+| 整合包导入、导出、升级 | `Components/Launch/ModpackController.cs`、`Components/Launch/PackUpgradeController.cs` | Core `PackService.cs`、`Application/PackUpgrade.cs` |
+| Java 与游戏启动 | `Components/Instances/JavaManagerController.cs`、`MainWindow.xaml.cs` | Core `Application/Java*.cs`、`LaunchService.cs` |
+| 主题、背景 | `Components/Experience/AppearanceController.cs`、`Components/Experience/ExperienceThemeController.cs`、`App.xaml` | Core `Domain/Preferences.cs` |
+| 崩溃分析与反馈 | `Components/Support/DiagnosticsController.cs` | Core `Application/Diagnostics.cs` |
 
 表中的 Core 路径相对于 `src/MCUGLauncher.Core/`；界面路径相对于 `src/MCUGLauncher/`。
 
@@ -80,19 +98,19 @@ dotnet run --project tools/SourceFormatter
 
 ## 0.20.1 下载界面扩展
 
-- `Components/DownloadNavigationController.cs`：分类名称与 `DownloadCategoryIcon` 映射。为条目的 `Image` 传入 `ImageSource` 即显示图片；留空时回退到字形，不影响分类键或下载逻辑。图片建议以 WPF Resource 加入项目，并使用 pack URI 加载。
-- `Components/ResourceWorkspaceController.cs`：列表与页内详情切换、兼容信息与依赖数量展示、窄窗口布局。复用既有命名控件及事件，资源独立下载和整合包导入行为保持原样。
-- `Components/LoaderOverviewController.cs`：横向加载器配置行，从官方目录读取兼容版本；选择后调用既有 EnqueueDownload，不实现第二套安装器。
+- `Components/Downloads/DownloadNavigationController.cs`：分类名称与 `DownloadCategoryIcon` 映射。为条目的 `Image` 传入 `ImageSource` 即显示图片；留空时回退到字形，不影响分类键或下载逻辑。图片建议以 WPF Resource 加入项目，并使用 pack URI 加载。
+- `Components/Resources/ResourceWorkspaceController.cs`：列表与页内详情切换、兼容信息与依赖数量展示、窄窗口布局。复用既有命名控件及事件，资源独立下载和整合包导入行为保持原样。
+- `Components/Downloads/LoaderOverviewController.cs`：横向加载器配置行，从官方目录读取兼容版本；选择后调用既有 EnqueueDownload，不实现第二套安装器。
 - 列表模板 `ResourceSearchItem` 位于 `App.xaml`。不展示服务端未提供的评价、点赞或截图。
 
-- `ResponsiveResourcePanel.cs`：分页结果的自适应卡片排列；`Components/ResourceSearchLayoutController.cs`：搜索及带标签筛选布局。
-- `Components/ResourcePresentationController.cs`：可选的项目介绍与截图展示。请求失败不影响版本选择和下载；截图限 Modrinth CDN，正文仅显示有长度上限的纯文本预览。
+- `ResponsiveResourcePanel.cs`：分页结果的自适应卡片排列；`Components/Resources/ResourceSearchLayoutController.cs`：搜索及带标签筛选布局。
+- `Components/Resources/ResourcePresentationController.cs`：可选的项目介绍与截图展示。请求失败不影响版本选择和下载；截图限 Modrinth CDN，正文仅显示有长度上限的纯文本预览。
 
 
 ## 0.20.2 菜单与资源交互
 
-- 新增栏目从 `MenuExtensions.cs` 注册，入口定义在 `Navigation/LauncherMenuRegistry.cs`，宿主适配在 `Components/MenuExtensionsController.cs`。具体区域、上下文和图片图标示例见 [菜单扩展说明](MENU_EXTENSIONS.md)。
-- `Components/ResourceFavoritesController.cs` 负责收藏筛选、心形状态及视图切换，持久化复用 `ResourceBookmarkStore`，不创建第二份收藏文档。
+- 新增栏目从 `MenuExtensions.cs` 注册，入口定义在 `Navigation/LauncherMenuRegistry.cs`，宿主适配在 `Components/Shell/MenuExtensionsController.cs`。具体区域、上下文和图片图标示例见 [菜单扩展说明](MENU_EXTENSIONS.md)。
+- `Components/Resources/ResourceFavoritesController.cs` 负责收藏筛选、心形状态及视图切换，持久化复用 `ResourceBookmarkStore`，不创建第二份收藏文档。
 - 收藏兼容性检查最多并发四个请求，并跟随浏览取消；资源服务保留原始 Search 签名，通过新增重载接收受限的排序值。
 
 ## test 分支的组件依赖细化
