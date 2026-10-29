@@ -1,6 +1,6 @@
 # 重构路线图
 
-当前版本 **0.22.0**，准备从 `test` 合并到 `main`，合并说明见 [合并到主分支前的说明](docs/MERGE_TO_MAIN.md)。`refactor` 分支已废弃，仅保留 git 历史与 [历史归档](docs/archive/README.md) 中的记录。
+当前版本 **0.22.0**，准备从 `test` 合并到 `main`，合并说明见 [合并到主分支前的说明](docs/MERGE_TO_MAIN.md)。`refactor` 分支已废弃，仅保留 git 历史与 [历史归档](docs/archive/branch_refactor/README.md) 中的记录。
 
 ## 已完成
 
@@ -32,7 +32,7 @@
 
 - [ ] 补齐 `IntegrationChecks`、真实微软 / MUA 授权与完整游戏启动矩阵的验收环境。
 - [ ] 合并到 `main` 后按 [版本号控制](docs/VERSIONING.md) 打 `v0.22.0` 标签，从标签构建完整版与 Lite 版并记录哈希。
-- [ ] 在 GitHub Releases 上传 0.22.0 附件与发布说明（可参考 `artifacts/release/RELEASE-0.21.0.md` 的格式）。
+- [ ] 在 GitHub Releases 上传 0.22.0 附件与发布说明（可参考 [docs/releases/0.22.0.md](docs/releases/0.22.0.md)）。
 
 ## 整合与拆分检查要点
 

@@ -11,12 +11,12 @@
 | 版本 | **0.22.0**，唯一来源 `Directory.Build.props` 的 `<McugVersion>` |
 | 来源分支 | `test`（合并时以其最新提交为准） |
 | 目标分支 | `main`（当前为 `a056733`，即 v0.20.2） |
-| `refactor` | 已废弃，不再合并或发版；历史记录见 [历史归档](archive/README.md)，源码保留在 `db0ab6a` |
+| `refactor` | 已废弃，不再合并或发版；历史记录见 [历史归档](archive/branch_refactor/README.md)，源码保留在 `db0ab6a` |
 
 ## 相对 main 的变化
 
 1. **0.21.0**：`refactor` 全量并入（结构以 `test` 为准，86 个 `partial MainWindow` 与 51 篇逐类文档退役）；版本号改为单一来源，新增 `scripts/check-version.py` 与 CI 校验；修复诊断信息与界面中的旧版本号。
-2. **0.22.0**：`Components/` 按九个功能域重组，10 个控制器按职责改名；142 篇类文档归档到 `docs/classes/`，新增 `scripts/check-class-docs.py`；refactor 时代的四篇文档移入 `docs/archive/`；补本说明与路线图。
+2. **0.22.0**：`Components/` 按九个功能域重组，10 个控制器按职责改名；142 篇类文档归档到 `docs/classes/`，新增 `scripts/check-class-docs.py`；refactor 时代的四篇文档移入 `docs/archive/branch_refactor/`；补本说明与路线图。
 3. **基础设施**：`scripts/build.ps1` 从 `McugVersion` 读取发版文件名；CI 在布局检查后依次执行版本元数据、类文档、UI 边界、复用基线、源码格式、构建与回归检查。
 
 ## 兼容性
@@ -64,7 +64,7 @@ git push origin main v0.22.0
 
 ## 合并后
 
-- 上传 Release 附件（完整版与 Lite 版 EXE）并记录 SHA-256，发布说明可参考 `artifacts/release/RELEASE-0.21.0.md` 的格式；
+- 上传 Release 附件（完整版与 Lite 版 EXE）并记录 SHA-256，发布说明可参考 [docs/releases/0.22.0.md](releases/0.22.0.md)；
 - 在 `main` 上优先推进 TODO 第 1 组，先落地“前后端边界检查”再迁移认证与文案；
 - `test` 分支可保留为集成分支，`refactor` 不再恢复。
 

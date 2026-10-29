@@ -61,7 +61,7 @@ dotnet publish src/MCUGLauncher/MCUGLauncher.csproj -c Release -o artifacts/publ
 
 详见 [构建与目录说明](docs/BUILD.md)。历史版本源码仍保留在各 Release 的手动 Source.zip 附件中；旧标签未移动，旧版自动生成的 Source code 归档可能仅含原仓库文件。
 
-版本号只有一个来源（`Directory.Build.props` 的 `McugVersion`），发版、标签与检查规则见 [版本号控制](docs/VERSIONING.md)。0.22.0 在 `test` 分支准备合并到 `main`：`Components/` 已按九个功能域重组，`MainWindow` 拆成窗口 shell、九个独立 XAML 页面与功能模块；合并步骤、验证结果与风险见 [合并到主分支前的说明](docs/MERGE_TO_MAIN.md)，后续计划见 [重构路线图](TODO.md)，历史材料在 [历史归档](docs/archive/README.md)，类型说明在 [类文档目录](docs/classes/README.md)。
+版本号只有一个来源（`Directory.Build.props` 的 `McugVersion`），发版、标签与检查规则见 [版本号控制](docs/VERSIONING.md)。0.22.0 在 `test` 分支准备合并到 `main`：`Components/` 已按九个功能域重组，`MainWindow` 拆成窗口 shell、九个独立 XAML 页面与功能模块；合并步骤、验证结果与风险见 [合并到主分支前的说明](docs/MERGE_TO_MAIN.md)，发布说明与文件哈希见 [发布说明](docs/releases/README.md)，后续计划见 [重构路线图](TODO.md)，历史材料在 [历史归档](docs/archive/branch_refactor/README.md)，类型说明在 [类文档目录](docs/classes/README.md)。
 
 ```text
 src/       主程序与核心逻辑（2 个项目）
