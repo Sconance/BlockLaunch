@@ -36,6 +36,12 @@ def main():
             continue
         if re.search(r'\bLauncherWorkspace\b', source.read_text(encoding='utf-8-sig')):
             errors.append(f'{name} must receive its controls, state or callbacks explicitly')
+    session_controller = (app / 'Components/Launch/RunningGamesController.cs').read_text(encoding='utf-8-sig')
+    if re.search(r'System\.Windows|\b(Button|UIElement|StackPanel|TextBox|ScrollViewer|FeatureUiElements|SharedLogs|Dispatcher)\b', session_controller):
+        errors.append('RunningGamesController must use the presentation port, not WPF or file readers')
+    session_view = (app / 'Views/RunningGamesView.cs').read_text(encoding='utf-8-sig')
+    if re.search(r'\b(RunningGameRegistry|GameSession|SharedLogs|Process|Diagnostics)\b', session_view):
+        errors.append('RunningGamesView must render value rows and raise commands, not control processes or read files')
     for folder in ('Builders', 'Models', 'Views/Forms', 'Views/Shared'):
         for source in (app / folder).glob('*.cs'):
             if re.search(r'\bLauncherWorkspace\b', source.read_text(encoding='utf-8-sig')):

@@ -135,3 +135,7 @@ dotnet run --project tools/SourceFormatter
 - `Components/Downloads/VersionCatalogController` 独立负责在线列表的按需请求、同目录请求合并、12 秒超时和旧目录响应抑制。组合层连接现有 CmlLib 版本服务。
 - `StartupRecovery` 只完成本地事务恢复和实例列表刷新。首页刷新也只读取本地，进入原版/加载器下载页才请求在线元数据。在线等待不占用 OperationCoordinator 或禁用首页控件。
 - 为保护共享 libraries/assets 和实例内容，安装队列及破坏性内容变更仍在有游戏运行时暂停；不同独立实例可继续启动，同一个共享游戏目录不能多开。切换到已有运行会话的根目录时不对其执行恢复/迁移。
+
+### 运行会话的展示端口
+
+`RunningGamesController` 不再构造页面或引用 WPF。它把注册表映射成 `RunningGameRow` 快照，经 `IRunningGamesView` 更新展示，再按 ID 接收关闭/日志命令。`Views/RunningGamesView` 负责 WPF 控件构造，不接收进程会话、文件读取器或注册表。日志读取和诊断捕获由组合层注入 `RunningGameActions`。窗口关闭时控制器解除视图事件订阅。`SessionControllerChecks` 不启用 WPF，直接编译控制器与接口；`RuntimeChecks` 保留真实 WPF 视图和双测试进程的交互检查。

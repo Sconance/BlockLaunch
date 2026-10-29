@@ -142,3 +142,7 @@ WorkflowUiChecks 的截图保存方法自行创建输出目录，不依赖其他
 本轮不使用真实账号或生产存档。进程与组件检查不等同于真实 Minecraft 多开、显卡兼容和联机验收；这些结果需在实际游戏环境补验。
 
 验证结果：本轮全部 22 项无需真实游戏环境的检查通过（含新增 RuntimeChecks）；Release 构建、格式、版本、类文档、目录与 UI 边界检查通过。完整 Minecraft 多开/真实授权矩阵仍以上述验收边界为准。
+
+### 运行会话的展示端口回归
+
+控制器与 WPF 视图通过 IRunningGamesView/RunningGameRow 分离，日志读取和诊断捕获通过 RunningGameActions 注入。SessionControllerChecks 不启用 UseWPF，其 runtimeconfig 只依赖 Microsoft.NETCore.App，直接验证控制器的快照、日志命令、会话退出和事件退订。RuntimeChecks 保留真实视图与双进程检查；测试窗口必须先报告 Loaded，再发送关闭命令，避免把窗口创建句柄误当作界面准备完成。

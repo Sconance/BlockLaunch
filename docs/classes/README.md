@@ -221,3 +221,8 @@
 
 - [RunningGamesController](Components/Launch/RunningGamesController.md) — 多实例运行会话的展示和观察。
 - [VersionCatalogController](Components/Downloads/VersionCatalogController.md) — 在线版本按需读取与超时隔离。
+
+- [IRunningGamesView](Presentation/IRunningGamesView.md) — 框架无关的展示端口。
+- [RunningGameRow](Presentation/RunningGameRow.md) — 纯数据会话行。
+- [RunningGameActions](Components/Launch/RunningGameActions.md) — 注入的日志与诊断能力。
+- [RunningGamesView](Views/RunningGamesView.md) — WPF 视图适配器。

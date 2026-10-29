@@ -11,6 +11,9 @@
     <Compile Include="../../src/MCUGLauncher/Components/Downloads/VersionCatalogController.cs" Link="Catalog/VersionCatalogController.cs" />
     <Compile Include="../../src/MCUGLauncher/Presentation/VersionRow.cs" Link="Catalog/VersionRow.cs" />
     <Compile Include="../../src/MCUGLauncher/Components/Launch/RunningGamesController.cs" Link="Sessions/RunningGamesController.cs" />
+    <Compile Include="../../src/MCUGLauncher/Components/Launch/RunningGameActions.cs" Link="Sessions/RunningGameActions.cs" />
+    <Compile Include="../../src/MCUGLauncher/Presentation/IRunningGamesView.cs" Link="Sessions/IRunningGamesView.cs" />
+    <Compile Include="../../src/MCUGLauncher/Views/RunningGamesView.cs" Link="Sessions/RunningGamesView.cs" />
     <Compile Include="../../src/MCUGLauncher/Views/Shared/FeatureUiElements.cs" Link="Sessions/FeatureUiElements.cs" />
   </ItemGroup>
 </Project>

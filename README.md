@@ -66,7 +66,7 @@ dotnet publish src/MCUGLauncher/MCUGLauncher.csproj -c Release -o artifacts/publ
 
 ```text
 src/       主程序与核心逻辑（2 个项目）
-test/      功能、界面与集成检查（23 个项目）
+test/      功能、界面与集成检查（24 个项目）
 tools/     隔离界面预览（4 个）和源码格式工具
 scripts/   构建与检查脚本
 docs/      使用、构建、类文档（classes/）、历史归档（archive/）与截图

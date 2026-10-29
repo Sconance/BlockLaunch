@@ -15,6 +15,7 @@ internal static class Program
             var app = new Application();
             var window = new Window { Title = args[1], Width = 320, Height = 180 };
             window.Content = new System.Windows.Controls.TextBlock { Text = "Isolated game-process fixture", Margin = new Thickness(20) };
+            window.Loaded += (_, _) => Console.WriteLine("fixture-window-ready");
             app.Run(window);
             Console.WriteLine(args[1] + " closed");
             return;
@@ -65,15 +66,22 @@ internal static class Program
         var root = Path.Combine(Path.GetTempPath(), "MCUG-runtime-" + Guid.NewGuid().ToString("N"));
         var entry = new System.Windows.Controls.Button();
         UIElement? displayed = null;
-        var controller = new RunningGamesController(entry, () => false, _ => { },
-            (_, page) => displayed = page, _ => { }, _ => { });
+        var view = new RunningGamesView(entry, (_, page) => displayed = page);
+        using var controller = new RunningGamesController(new RunningGameRegistry(), view,
+            new(() => false, _ => { }, _ => { }, context => Task.FromResult(Diagnostics.Capture(context)),
+                _ => { }, path => Task.FromResult(SharedLogs.ReadTail(path))));
         var registry = controller.Registry;
         using var first = Child("fixture-A");
         using var second = Child("fixture-B");
         try
         {
-            var a = registry.Start(root, Path.Combine(root, "A"), "version-A", Path.Combine(root, "logs"), first, _ => { }, ["runtime-fixture-secret"]);
-            var b = registry.Start(root, Path.Combine(root, "B"), "version-B", Path.Combine(root, "logs"), second, _ => { }, ["runtime-fixture-secret"]);
+            var readyA = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var readyB = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var a = registry.Start(root, Path.Combine(root, "A"), "version-A", Path.Combine(root, "logs"), first,
+                line => { if (line == "fixture-window-ready") readyA.TrySetResult(); }, ["runtime-fixture-secret"]);
+            var b = registry.Start(root, Path.Combine(root, "B"), "version-B", Path.Combine(root, "logs"), second,
+                line => { if (line == "fixture-window-ready") readyB.TrySetResult(); }, ["runtime-fixture-secret"]);
+            await Task.WhenAll(readyA.Task, readyB.Task).WaitAsync(TimeSpan.FromSeconds(15));
             var observeA = controller.ObserveGame(a, new(a.Directory, a.Version, a.LogFile));
             var observeB = controller.ObserveGame(b, new(b.Directory, b.Version, b.LogFile));
             controller.ShowRunningGames();
@@ -105,7 +113,7 @@ internal static class Program
             }
             catch (TimeoutException)
             {
-                throw new Exception($"First session did not complete: first exited={first.HasExited}, second exited={second.HasExited}, log={File.ReadAllText(a.LogFile)}");
+                throw new Exception($"First session did not complete: first exited={first.HasExited}, second exited={second.HasExited}, log={SharedLogs.ReadTail(a.LogFile)}");
             }
             await observeA;
             Check(entry.Content!.ToString()!.Contains("1"), "running-game entry updates after first exit");

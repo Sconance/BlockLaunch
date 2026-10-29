@@ -230,15 +230,20 @@ internal sealed partial class LauncherWorkspace
             (action, name) => LaunchCoordinator.Run(action, name), ResourceBrowserController.RequireStopped,
             InstanceWorkspaceController.FeatureDialog, DownloadQueueController.EnqueueDownload,
             ResourceBrowserController.Target, ResourceBrowserController.ManagedDirectory, ResourceBrowserController.RefreshLocalContent, LaunchCoordinator.Log));
-        RunningGamesController = new RunningGamesController(Controls.StopGameButton, () => window.Dispatcher.HasShutdownStarted || !window.IsLoaded, LaunchCoordinator.Log,
-            (title, content) =>
-            {
-                var body = new System.Windows.Controls.StackPanel();
-                body.Children.Add(content);
-                InstanceWorkspaceController.FeatureDialog(title, body);
-            },
+        var runningView = new RunningGamesView(Controls.StopGameButton, (title, content) =>
+        {
+            var body = new System.Windows.Controls.StackPanel();
+            body.Children.Add(content);
+            InstanceWorkspaceController.FeatureDialog(title, body);
+        });
+        RunningGamesController = new RunningGamesController(new RunningGameRegistry(), runningView, new(
+            () => window.Dispatcher.HasShutdownStarted || !window.IsLoaded,
+            LaunchCoordinator.Log,
             context => DiagnosticsController.recentDiagnosticContext = context,
-            DiagnosticsController.ShowDiagnosticSnapshot);
+            context => Task.Run(() => Diagnostics.Capture(context)),
+            DiagnosticsController.ShowDiagnosticSnapshot,
+            path => Task.Run(() => SharedLogs.ReadTail(path))));
+        window.Closed += (_, _) => RunningGamesController.Dispose();
         VersionCatalogController = new VersionCatalogController(() => LaunchCoordinator.prefs.Root,
             LaunchCoordinator.FetchOnlineVersions, LaunchCoordinator.ApplyVersionRows,
             DownloadPageController.RenderVanillaDownloads, LaunchCoordinator.Log);
