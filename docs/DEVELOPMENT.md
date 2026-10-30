@@ -160,3 +160,13 @@ dotnet run --project tools/SourceFormatter
 - `Views/Settings` 的外观、Java、服务器、存档页面仿照 `main` 的 `VersionSettings` 页面，接收明确的状态/操作回调；不依赖 `LauncherWorkspace`、`MainWindow` 或 `InlineDialog`。网络复用原独立 `NetworkSettingsForm`。
 - 各工厂直接返回 `SettingsPageContent`。设置页面不再通过 `FromDialog`、`PrepareContent` 或 `ForceClose` 拆卸对话框。仅旧工具入口使用 `SettingsDialogPresenter` 包装同一页面，并在关闭时释放。
 - 代码边界检查限制上述依赖方向；交互检查覆盖独立表单持久化、工具释放、旧 Java 入口和调整标签顺序后的导航。
+
+### 0.22.2 下载与内容交互
+
+- 游戏版本由可编辑 ComboBox 展示，合并本地真实版本和按需在线目录；加载器筛选按资源类型显示。
+- ResourceDestinationView 只维护互斥目标选项。ResourceInstallPlanner 位于 Core，校验兼容性并生成既有 content 下载任务；目标目录、Minecraft 版本、加载器与资源版本在入队时固定。
+- InstanceModManagementPage 为唯一 Mod 管理界面；组合层绑定实例目录和动作，旧 VersionModPage 只跳转，禁止重新加入业务或重复列表。
+- HomeLaunchButtonView 只呈现启动状态，Launch 的 try/finally 保证恢复；仅已知百分比显示确定进度，其余显示不定动画。
+- OperationCoordinator.DeleteHistory 只删除合法 ID 的已结束 JSON 记录，保留活动、排队、暂停任务及所有资源文件；UI 清空只针对已结束下载任务。
+
+ResourceInstallationController 通过值快照、目录选择、队列与错误端口协调资源安装；在 ResourceInstallChecks 中不启用 WPF 直接编译，依赖组装位于 ResourceComposition。

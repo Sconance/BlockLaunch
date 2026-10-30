@@ -12,6 +12,7 @@ internal sealed class ResourceWorkspaceController
         this.workspace = workspace;
     }
 
+    internal ResourceDestinationView? downloadDestination;
     internal Grid? resourceResultsLayout;
     internal Border? resourceDetailSurface;
     internal Grid? resourceDetailColumns;
@@ -103,7 +104,7 @@ internal sealed class ResourceWorkspaceController
             if (workspace.ResourceFavoritesController.resourceDetailProject != null)
                 workspace.ResourceFavoritesController.ToggleResourceFavorite(workspace.ResourceFavoritesController.resourceDetailProject);
         };
-        body.Children.Add(workspace.ResourceFavoritesController.resourceDetailFavorite);
+
         resourceDetailColumns = new Grid
         {
             Margin = new Thickness(0, 10, 0, 0)
@@ -119,6 +120,16 @@ internal sealed class ResourceWorkspaceController
         {
             Margin = new Thickness(0, 0, 16, 0)
         };
+        var identityActions = new WrapPanel { HorizontalAlignment = HorizontalAlignment.Right };
+        identityActions.Children.Add(workspace.ResourceFavoritesController.resourceDetailFavorite);
+        var more = new Button { Content = "⋮", ToolTip = "更多操作" };
+        var menu = new ContextMenu();
+        var website = new MenuItem { Header = "打开项目网页" };
+        website.Click += workspace.ResourceBrowserController.ProjectPageClick;
+        menu.Items.Add(website);
+        more.Click += (_, _) => { menu.PlacementTarget = more; menu.IsOpen = true; };
+        identityActions.Children.Add(more);
+        introduction.Children.Add(identityActions);
         var identity = new DockPanel();
         DockPanel.SetDock(resourceProjectIcon, Dock.Left);
         identity.Children.Add(resourceProjectIcon);
@@ -172,6 +183,10 @@ internal sealed class ResourceWorkspaceController
         resourceDetailColumns.Children.Add(new ScrollViewer { Content = introduction, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
         var options = new StackPanel();
         options.Children.Add(FeatureUiElements.Heading("下载选项"));
+        downloadDestination = new ResourceDestinationView(workspace.CompactShellController.SelectResourceDownloadDirectory,
+            workspace.CompactShellController.OpenResourceDownloadDirectory);
+        downloadDestination.DestinationChanged += workspace.ResourceBrowserController.ReloadResourceDetail;
+        options.Children.Add(downloadDestination);
         options.Children.Add(FeatureUiElements.Hint("资源版本"));
         workspace.Controls.ProjectVersions.Width = double.NaN;
         options.Children.Add(workspace.Controls.ProjectVersions);
@@ -180,7 +195,7 @@ internal sealed class ResourceWorkspaceController
         options.Children.Add(workspace.Controls.InstallContentButton);
         options.Children.Add(FeatureUiElements.Hint("依赖信息"));
         options.Children.Add(resourceDependencies);
-        options.Children.Add(FeatureUiElements.Hint("资源文件保存到上方独立下载目录；整合包按现有流程导入独立实例。"));
+        options.Children.Add(FeatureUiElements.Hint("自定义下载只保存文件；安装到实例会解析必需依赖。整合包下载后通过整合包导入创建实例。"));
         var optionCard = workspace.InstanceWorkspaceController.FeatureCard(options);
         optionCard.Padding = new Thickness(14);
         optionCard.VerticalAlignment = VerticalAlignment.Top;
@@ -212,13 +227,18 @@ internal sealed class ResourceWorkspaceController
         style.Setters.Add(new Setter(Control.PaddingProperty, new Thickness(12)));
         style.Setters.Add(new Setter(FrameworkElement.MarginProperty, new Thickness(0, 0, 8, 8)));
         workspace.Controls.SearchResults.ItemContainerStyle = style;
-        workspace.Controls.SearchResults.AddHandler(Button.ClickEvent, new RoutedEventHandler(workspace.ResourceFavoritesController.CardFavoriteClick));
+        workspace.Controls.SearchResults.AddHandler(Button.ClickEvent, new RoutedEventHandler(workspace.ResourceFavoritesController.CardFavoriteClick), true);
+        workspace.Controls.SearchResults.PreviewMouseLeftButtonDown += workspace.ResourceFavoritesController.CardFavoritePointerDown;
+        workspace.Controls.SearchResults.PreviewMouseLeftButtonUp += workspace.ResourceFavoritesController.CardFavoritePointerUp;
     }
 
     internal void ShowResourceResults()
     {
         if (resourceResultsLayout == null || resourceDetailSurface == null)
             return;
+        if (workspace.CompactShellController.resourceDirectoryBar is { } directoryBar)
+            directoryBar.Visibility = Visibility.Visible;
+        workspace.ResourceFiltersController.UpdateResourceFilterVisibility();
         resourceResultsLayout.Visibility = Visibility.Visible;
         resourceDetailSurface.Visibility = Visibility.Collapsed;
         resourceFilterPanel!.Visibility = Visibility.Visible;
@@ -232,6 +252,11 @@ internal sealed class ResourceWorkspaceController
 
     internal void ShowResourceDetail(ContentProject project)
     {
+        if (workspace.CompactShellController.resourceDirectoryBar is { } directoryBar)
+            directoryBar.Visibility = Visibility.Collapsed;
+        var values = (workspace.InstanceWorkspaceController.instanceList.ItemsSource as System.ComponentModel.ICollectionView)?
+            .SourceCollection.Cast<InstanceView>().ToList() ?? [];
+        downloadDestination!.Configure(values, workspace.ModpackController.ContentKind != "modpack", workspace.LaunchCoordinator.prefs.ResourceDownloadDirectory);
         workspace.ResourceFavoritesController.resourceDetailProject = project;
         workspace.ResourceFavoritesController.UpdateResourceFavoriteState(project.Id);
         workspace.MenuExtensionsController.resourceDetailTabs!.SelectedIndex = 0;

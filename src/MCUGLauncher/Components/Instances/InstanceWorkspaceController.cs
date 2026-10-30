@@ -224,7 +224,8 @@ internal sealed class InstanceWorkspaceController
                 var d = catalog.GetOrCreate(key);
                 var requirements = RequirementsFor(d.LaunchProfileId);
                 var group = d.Favorite ? "★ 收藏夹" : d.Category != "自动" ? d.Category : requirements.Loader == "vanilla" ? "原版游戏" : requirements.Loader.ToUpperInvariant() + " 版本";
-                result.Add(new(key, d.DisplayName, group, requirements.Minecraft + " · " + requirements.Loader + " " + requirements.LoaderVersion, File.Exists(d.IconPath) ? d.IconPath : "", JavaDiscovery.RequiredMajor(workspace.LaunchCoordinator.prefs.Root, d.LaunchProfileId)));
+                var knownOfficial = workspace.LaunchCoordinator.rows.Any(row => row.Id == requirements.Minecraft && row.Type != "local");
+                result.Add(new(key, d.DisplayName, group, InstanceView.VersionSummary(d.LaunchProfileId, requirements, knownOfficial), File.Exists(d.IconPath) ? d.IconPath : "", JavaDiscovery.RequiredMajor(workspace.LaunchCoordinator.prefs.Root, d.LaunchProfileId)));
             }
             catch (Exception ex)
             {

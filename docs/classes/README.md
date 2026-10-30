@@ -211,7 +211,6 @@
 - [VersionLaunchPage](Views/VersionSettings/VersionLaunchPage.md) — 版本启动设置页面。
 - [VersionLoaderActions](Views/VersionSettings/VersionLoaderActions.md) — 版本加载器页面所需的操作。
 - [VersionLoaderPage](Views/VersionSettings/VersionLoaderPage.md) — 版本加载器修改页面。
-- [VersionModActions](Views/VersionSettings/VersionModActions.md) — 版本 Mod 页面所需的操作。
 - [VersionModPage](Views/VersionSettings/VersionModPage.md) — 版本 Mod 管理页面。
 - [VersionOverviewActions](Views/VersionSettings/VersionOverviewActions.md) — 版本概览页面所需的操作。
 - [VersionOverviewPage](Views/VersionSettings/VersionOverviewPage.md) — 版本概览与身份编辑页面。
@@ -248,3 +247,14 @@
 - [ServerSettingsPage](Views/Settings/ServerSettingsPage.md)
 - [ServerSettingsActions](Views/Settings/ServerSettingsActions.md)
 - [SettingsDialogPresenter](Presentation/SettingsDialogPresenter.md)
+
+### 资源与内容交互优化
+
+- [InstanceModManagementPage](Views/InstanceContent/InstanceModManagementPage.md)
+- [InstanceModActions](Views/InstanceContent/InstanceModActions.md)
+- [HomeLaunchButtonView](Views/HomeLaunchButtonView.md)
+- [ResourceDestinationView](Views/ResourceDestinationView.md)
+- [InstanceGroupExpanderStyle](Views/Shared/InstanceGroupExpanderStyle.md)
+- [ResourceInstallationController](Components/Resources/ResourceInstallationController.md)
+- [ResourceInstallSelection](Models/ResourceInstallSelection.md)
+- [ResourceVersionSelector](Views/Shared/ResourceVersionSelector.md)

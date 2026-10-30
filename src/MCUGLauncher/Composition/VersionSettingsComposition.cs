@@ -24,18 +24,7 @@ internal sealed partial class LauncherWorkspace
             select => JavaManagerController.OpenJavaManager(context.Root, context.Descriptor.LaunchProfileId, select, window)));
         var loader = new VersionLoaderPage(context, tasks, new(
             DownloadQueueController.EnqueueDownload, () => BookmarkLibraryController.CloneInstanceDialog(key)));
-        var mods = new VersionModPage(context, tasks, new(
-            directory => ExperienceController.ShowModScan(key, directory, window),
-            directory => ContentUpdatesController.OpenContentUpdates(directory, key, context.Requirements.Minecraft, context.Requirements.Loader, owner: window),
-            ContentUpdatesController.RestoreContent,
-            () => LaunchCoordinator.LocalVersions().Contains(key),
-            () =>
-            {
-                Controls.Versions.SelectedValue = key;
-                Controls.ContentType.SelectedIndex = 0;
-                window.Close();
-                Controls.DiscoverNav.IsChecked = true;
-            }));
+        var mods = new VersionModPage(context, () => InstanceContentController.OpenSketchManagerCategory(key, "模组"));
         var export = new VersionExportPage(context, tasks, () => InstanceWorkspaceController.ExportScript(key));
         return new Dictionary<string, Action>
         {

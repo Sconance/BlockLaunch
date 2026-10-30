@@ -14,6 +14,11 @@ internal sealed class VersionSettingsController
     internal string versionInitialPage = "概览";
     internal void OpenVersionSection(string key, string section)
     {
+        if (section == "Mod 管理")
+        {
+            workspace.InstanceContentController.OpenSketchManagerCategory(key, "模组");
+            return;
+        }
         versionInitialPage = section;
         try
         {

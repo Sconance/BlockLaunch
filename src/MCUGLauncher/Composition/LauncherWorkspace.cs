@@ -220,6 +220,7 @@ internal sealed partial class LauncherWorkspace
         PackUpgradeController = new PackUpgradeController(this);
         ResourceFavoritesController = CreateResourceFavorites();
         ResourceFiltersController = new ResourceFiltersController(this);
+        ResourceInstallationController = CreateResourceInstallation();
         ResourcePresentationController = new ResourcePresentationController(this);
         ResourceWorkspaceController = new ResourceWorkspaceController(this);
         ResourceSearchLayoutController = CreateResourceSearchLayout();

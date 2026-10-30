@@ -165,6 +165,7 @@ internal sealed class LaunchCoordinator
         foreach (var id in ProfileKeys().Where(id => !rows.Any(r => r.Id == id)))
             rows.Insert(0, new(id, workspace.ModpackController.VersionLabel(id, local), "local"));
         Filter();
+        workspace.ResourceFiltersController.RefreshGameVersionChoices();
         workspace.DownloadPageController.RenderVanillaDownloads();
         workspace.ResourceBrowserController.UpdateTargets();
         if (workspace.DownloadPageController.downloadCategory == "模组加载器")
@@ -256,6 +257,17 @@ internal sealed class LaunchCoordinator
 
     internal async Task Launch()
     {
+        var feedback = workspace.CompactShellController.launchFeedback;
+        feedback?.Begin();
+        try
+        {
+            await LaunchCore();
+        }
+        finally { feedback?.End(); }
+    }
+
+    async Task LaunchCore()
+    {
         var rootBefore = prefs.Root;
         SavePreferences();
         if (!string.Equals(rootBefore, prefs.Root, StringComparison.OrdinalIgnoreCase))
@@ -318,6 +330,7 @@ internal sealed class LaunchCoordinator
             external = new(jar, metadata.Json);
         }
 
+        workspace.CompactShellController.launchFeedback?.Launching();
         var process = await LaunchService.Build(new(prefs.Root, directory, workspace.ModpackController.SelectedLaunchVersion(), launchSettings.Java, launchSettings.AutoMemory ? MemoryPolicy.Recommend() : launchSettings.RamMb, launchSettings.Width, launchSettings.Height, session, launchSettings, external), CurrentToken, http);
         CurrentToken.ThrowIfCancellationRequested();
         var access = typeof(MSession).GetProperty("AccessToken")?.GetValue(session)?.ToString() ?? "";

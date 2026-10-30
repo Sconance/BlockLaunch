@@ -340,7 +340,6 @@ static class Program
                     ("概览", "修改版本名"),
                     ("设置", "保存版本设置"),
                     ("修改", "获取兼容加载器版本"),
-                    ("Mod 管理", "搜索下载 Mod"),
                     ("导出", "选择位置并导出")
                 })
                 {
@@ -362,6 +361,24 @@ static class Program
                 page.Close();
                 return true;
             });
+            Drive(() => Call("OpenVersionSection", "1.21.1", "Mod 管理"), page =>
+            {
+                Check(page.Title == "版本内容管理", "legacy Mod management routes directly to unified content manager");
+                Check(Buttons(page).Any(button => Equals(button.Content, "启用 / 禁用"))
+                    && Buttons(page).Any(button => Equals(button.Content, "更新选中 Mod"))
+                    && Buttons(page).Any(button => Equals(button.Content, "批量检查更新"))
+                    && Buttons(page).Any(button => Equals(button.Content, "移除选中 Mod"))
+                    && Buttons(page).Any(button => Equals(button.Content, "导入 Mod")), "unified Mod page retains import, toggle, update and removal actions");
+                var modList = Walk(page).OfType<ListBox>().Single(list => list.DisplayMemberPath == "Detail");
+                Check(double.IsPositiveInfinity(modList.MaxHeight) && modList.Parent is Grid grid
+                    && grid.RowDefinitions[1].Height.IsStar, "unified Mod list fills remaining space without fixed maximum height");
+                Capture("v0222-mod-manager.png");
+                page.Close();
+                return true;
+            });
+            ((RadioButton)Field("HomeNav")).IsChecked = true;
+            if ((bool)Field("sketchExpanded"))
+                Call("ToggleSketchVersions");
             Check(!(bool)Field("sketchExpanded"), "version chooser is collapsed by default");
             Capture("v0181-home-collapsed.png");
             Call("ToggleSketchVersions");

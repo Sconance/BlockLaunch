@@ -250,7 +250,7 @@ internal sealed class InstanceContentController
                     entries.Children.Add(line);
                 }
 
-                var groupCard = workspace.InstanceWorkspaceController.FeatureCard(new Expander { Header = group.Key + "（" + group.Count() + "）", IsExpanded = true, Content = entries, Padding = new Thickness(2), FontSize = 12 });
+                var groupCard = workspace.InstanceWorkspaceController.FeatureCard(new Expander { Style = InstanceGroupExpanderStyle.Create(), Header = group.Key + "（" + group.Count() + "）", IsExpanded = true, Content = entries, Padding = new Thickness(2), FontSize = 12 });
                 groupCard.SetResourceReference(Border.BorderBrushProperty, "ThemeBorderBrush");
                 groupCard.Padding = new Thickness(12);
                 groupCard.CornerRadius = new CornerRadius(10);
@@ -280,6 +280,9 @@ internal sealed class InstanceContentController
     }
 
     internal void OpenSketchManager(string initialKey) => workspace.CreateSketchContentManagerDialog(ShowSketchVersions).Open(initialKey);
+
+    internal void OpenSketchManagerCategory(string key, string category) =>
+        workspace.CreateSketchContentManagerDialog(ShowSketchVersions).Open(key, category);
 
     internal static Style CompactVersionScrollStyle() => InstanceListScrollStyle.Create();
 }

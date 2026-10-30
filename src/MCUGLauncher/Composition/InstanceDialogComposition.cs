@@ -44,7 +44,7 @@ internal sealed partial class LauncherWorkspace
             key => InstanceLibraryController.OpenInstanceLibrary(key),
             InstanceWorkspaceController.SwitchRoot,
             (panel, page, getKey) => MenuExtensionsController.AttachExtensionButtons(LauncherMenuArea.InstanceContent,
-                panel, lifetime: page, instanceIdProvider: getKey)),
+                panel, lifetime: page, instanceIdProvider: getKey), CreateInstanceModsPage),
         new(key => DropFeedbackController.sketchManagerKey = key,
             refresh => DropFeedbackController.refreshSketchManager = refresh,
             refresh => InstanceWorkspaceController.InstanceViewsChanged += refresh,

@@ -1,7 +1,7 @@
 name: Windows build
 on:
   push:
-    branches: [main, test, "0.22.1"]
+    branches: [main, test, "0.22.1", "0.22.2"]
   pull_request:
   workflow_dispatch:
 permissions:
@@ -30,6 +30,6 @@ jobs:
         run: ./scripts/build.ps1
 
       - name: Run isolated regression checks
-        run: ./scripts/run-checks.ps1 -Name AuthChecks,MuaChecks,DownloadChecks,QueueChecks,CompatibilityChecks
+        run: ./scripts/run-checks.ps1 -Name AuthChecks,MuaChecks,DownloadChecks,QueueChecks,CompatibilityChecks,ResourceInstallChecks
       - name: Run isolated UI and collection checks
         run: ./scripts/run-checks.ps1 -Name VersionUiChecks,WorkflowUiChecks,CollectionChecks,RuntimeChecks,SessionControllerChecks

@@ -226,6 +226,30 @@ public sealed class OperationCoordinator
         }
     }
 
+    public static bool CanDeleteHistory(OperationRecord record) => !record.Committing &&
+        record.State is OperationState.Completed or OperationState.Cancelled or OperationState.Failed or OperationState.Interrupted;
+
+    public bool DeleteHistory(string id)
+    {
+        lock (Gate)
+        {
+            if (!Guid.TryParseExact(id, "N", out _) || Current?.Record.Id == id)
+                return false;
+            var record = History().FirstOrDefault(item => item.Id == id);
+            if (record == null || !CanDeleteHistory(record))
+                return false;
+            File.Delete(Path.Combine(directory, id + ".json"));
+            return true;
+        }
+    }
+
+    public int ClearFinishedDownloads()
+    {
+        lock (Gate)
+            return History().Where(record => record.Download != null && CanDeleteHistory(record))
+                .Count(record => DeleteHistory(record.Id));
+    }
+
     public List<OperationRecord> History()
     {
         lock (Gate)

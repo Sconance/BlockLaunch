@@ -5,14 +5,18 @@ namespace BlockLaunch;
 
 internal sealed class ContentSearchFilterBuilder
 {
-    public TextBox GameVersion
+    public ComboBox GameVersion
     {
         get;
-    } = new()
+    } = new ResourceVersionSelector()
     {
         Width = 130,
-        Text = "跟随实例",
-        ToolTip = "游戏版本：跟随实例 / 全部 / 自行输入版本号"
+        IsEditable = true,
+        IsTextSearchEnabled = true,
+        Text = "全部",
+        ItemsSource = new[] { "全部" },
+        SelectedIndex = 0,
+        ToolTip = "选择或搜索 Minecraft 版本"
     };
 
     public ComboBox Loader

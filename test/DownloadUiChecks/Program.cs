@@ -107,6 +107,55 @@ public static class Program
             ((ListBox)Field("SearchResults")).ItemsSource = new[] { example, example with { Title = "Fabric API · 布局验证样例" }, example with { Title = "Iris Shaders · 布局验证样例" } };
             ((TextBlock)Field("SearchHint")).Visibility = Visibility.Collapsed;
             Capture("work/verify/v0201-resource-list.png", 1220, 820);
+            IEnumerable<DependencyObject> Visuals(DependencyObject node)
+            {
+                for (var i = 0; i < VisualTreeHelper.GetChildrenCount(node); i++)
+                {
+                    var child = VisualTreeHelper.GetChild(node, i);
+                    yield return child;
+                    foreach (var nested in Visuals(child))
+                        yield return nested;
+                }
+            }
+            var results = (ListBox)Field("SearchResults");
+            Button Heart() => Visuals(results).OfType<Button>().First(button => Equals(button.Tag, "FavoriteResource"));
+            Heart().RaiseEvent(new RoutedEventArgs(Button.ClickEvent, Heart()) { Handled = true });
+            Assert(results.Items.Cast<ContentProject>().All(project => project.IsFavorite) && results.SelectedIndex == -1
+                && detailSurface.Visibility == Visibility.Collapsed, "handled card heart click favorites without navigating to details");
+            Capture("work/verify/v0222-favorite-card.png", 1220, 820);
+            Heart().RaiseEvent(new RoutedEventArgs(Button.ClickEvent, Heart()));
+            Assert(results.Items.Cast<ContentProject>().All(project => !project.IsFavorite), "card heart cancels favorite and refreshes card decoration");
+            Capture("work/verify/v0222-card-unfavorited.png", 1220, 820);
+            var heart = Heart();
+            results.RaiseEvent(new System.Windows.Input.MouseButtonEventArgs(System.Windows.Input.Mouse.PrimaryDevice, Environment.TickCount, System.Windows.Input.MouseButton.Left)
+            {
+                RoutedEvent = UIElement.PreviewMouseLeftButtonDownEvent,
+                Source = heart
+            });
+            results.RaiseEvent(new System.Windows.Input.MouseButtonEventArgs(System.Windows.Input.Mouse.PrimaryDevice, Environment.TickCount, System.Windows.Input.MouseButton.Left)
+            {
+                RoutedEvent = UIElement.PreviewMouseLeftButtonUpEvent,
+                Source = heart
+            });
+            Assert(results.Items.Cast<ContentProject>().All(project => project.IsFavorite) && results.SelectedIndex == -1
+                && detailSurface.Visibility == Visibility.Collapsed, "mouse press/release favorites once without selecting a resource row");
+            Capture("work/verify/v0222-card-pointer.png", 1220, 820);
+            Heart().RaiseEvent(new RoutedEventArgs(Button.ClickEvent, Heart()));
+            Assert(((ComboBox)Field("resourceGame")).Text == "全部", "game version selector defaults to all versions");
+            var gamePicker = (ComboBox)Field("resourceGame");
+            gamePicker.ApplyTemplate();
+            var gameEditor = (TextBox?)gamePicker.Template.FindName("PART_EditableTextBox", gamePicker);
+            Assert(gameEditor != null && !gameEditor.IsReadOnly, "version picker has an actual editable text surface");
+            gameEditor!.Text = "1.20.1";
+            Assert(gamePicker.Text == "1.20.1", "typing into the version editor updates search criteria");
+            gamePicker.Text = "全部";
+            Assert(((ComboBox)Field("resourceGame")).IsEditable, "game version selector supports searchable dropdown and manual entry");
+            categories["资源包"].IsChecked = true;
+            Assert(((ComboBox)Field("resourceLoader")).Visibility == Visibility.Collapsed, "resource pack search hides loader filter");
+            categories["光影包"].IsChecked = true;
+            Assert(((ComboBox)Field("resourceLoader")).Visibility == Visibility.Collapsed, "shader search hides loader filter");
+            categories["Mod"].IsChecked = true;
+            Assert(((ComboBox)Field("resourceLoader")).Visibility == Visibility.Visible, "mod search retains loader filter");
             Call("RestoreResourcePage");
             Assert(((TabItem)tabs.Items[2]).Content == Field("resourcePage"), "standalone content center restores same resource page");
             Call("SelectDownloadCategory", "本地整合包");
@@ -133,7 +182,7 @@ public static class Program
             using (var output = File.Create("work/verify/v0151-download-page.png"))
                 encoder.Save(output);
             Call("SelectDownloadCategory", "Mod");
-            ((TextBox)Field("resourceGame")).Text = "全部";
+            ((ComboBox)Field("resourceGame")).Text = "全部";
             ((ComboBox)Field("resourceLoader")).SelectedIndex = 1;
             Call("ToggleResourceFavorite", example);
             var store = (ResourceBookmarkStore)Field("bookmarks");

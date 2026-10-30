@@ -160,3 +160,7 @@ MiniDownloadChecks 检查右上角锚定及跨页面可见；InlineUiChecks 继�
 WorkflowUiChecks 逐项进入 11 个内置分类，重复进入关于页、验证 Java 应用后的返回、下载快捷入口和离开页面清理；动态注册 Settings 与 More 扩展，确认页面可见且注册不会劫持当前主页；旧日志/任务路由转入设置对应栏目。SessionControllerChecks 在无 WPF 项目中验证栏目选择、未知 ID、扩展刷新保留状态与事件退订。ExperienceChecks 和 InlineUiChecks 的工具入口、下载暂停/继续/取消断言改为检查真实设置宿主。
 
 设置页面独立化：WorkflowUiChecks 新增外观应用、服务器收藏、备份策略的持久化、旧 Java 入口复用及主标签重排后的路由；check-ui-boundaries.py 约束 Views/Settings 与弹窗/工作区解耦，以及设置组装不再通过索引和控件树提取页面。
+
+0.22.2：ResourceInstallChecks 校验实例安装快照、版本/加载器拒绝、改名与 OptiFine 元数据、下载历史安全清理；InlineUiChecks 检查旧 Mod 入口跳转到唯一管理页与伸展列表。
+
+版本选择器检查实际 PART_EditableTextBox 和输入同步；资源卡片检查已处理点击事件及鼠标按下/松开路径。截图验证详情目标名称、模组列表高度。原生预览工具未暴露目标窗口，本轮未完成原生鼠标验收。

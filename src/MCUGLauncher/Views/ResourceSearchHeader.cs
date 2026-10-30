@@ -63,6 +63,7 @@ public sealed class ResourceSearchHeader : StackPanel
             filter.Editor.Width = double.NaN;
             filter.Editor.Margin = new Thickness(0);
             field.Children.Add(filter.Editor);
+            field.SetBinding(VisibilityProperty, new Binding("Visibility") { Source = filter.Editor });
             options.Children.Add(field);
         }
         foreach (var action in controls.Actions)

@@ -48,6 +48,7 @@ internal sealed class TaskRecoveryController
             return;
         if (record.Download != null)
             workspace.Window.TaskStatusBar.Visibility = Visibility.Collapsed;
+        workspace.CompactShellController.launchFeedback?.Report(record.Percent);
         workspace.Window.Status.Text = record.Committing ? "正在提交安装结果，此阶段暂不可取消…" : $"{record.Name} · {record.Message}";
         workspace.Window.Progress.IsIndeterminate = record.Percent == null && record.State is OperationState.Running or OperationState.Cancelling or OperationState.Pausing;
         if (record.Percent is { } percent)

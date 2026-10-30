@@ -157,6 +157,7 @@ internal sealed class ResourceBrowserController
         }
 
         workspace.Controls.ContentTarget.Text = "下载目录：" + workspace.LaunchCoordinator.prefs.ResourceDownloadDirectory;
+        workspace.ResourceWorkspaceController.downloadDestination?.SetDirectory(workspace.LaunchCoordinator.prefs.ResourceDownloadDirectory);
         RefreshLocalContent();
     }
 
@@ -166,6 +167,7 @@ internal sealed class ResourceBrowserController
             return;
         ResetSearch();
         UpdateTargets();
+        workspace.ResourceFiltersController.UpdateResourceFilterVisibility();
         workspace.Controls.InstallContentButton.Content = "↓  下载所选文件";
     }
 
@@ -250,27 +252,48 @@ internal sealed class ResourceBrowserController
         if (workspace.Controls.SearchResults.SelectedItem is not ContentProject project)
             return;
         workspace.ResourceWorkspaceController.ShowResourceDetail(project);
-        await RunBrowse(async () =>
-        {
-            var token = browseCancellation?.Token ?? CancellationToken.None;
-            var target = workspace.ResourceFiltersController.SearchTarget();
-            workspace.Controls.ProjectTitle.Text = project.Title;
-            workspace.Controls.ProjectDescription.Text = project.Description;
-            workspace.Controls.ProjectVersions.ItemsSource = null;
-            workspace.Controls.InstallContentButton.IsEnabled = false;
-            var type = workspace.ModpackController.ContentKind;
-            workspace.Window.Status.Text = "读取兼容版本…";
-            var list = await new ContentService(workspace.LaunchCoordinator.http, token).Versions(project.Id, target.GameVersion, target.Loader, type);
-            token.ThrowIfCancellationRequested();
-            if (workspace.ResourceFiltersController.releaseChannel.SelectedIndex > 0)
-                list = list.Where(v => v.VersionType == new[] { "", "release", "beta", "alpha" }[workspace.ResourceFiltersController.releaseChannel.SelectedIndex]).ToList();
-            workspace.Controls.ProjectVersions.ItemsSource = list;
-            workspace.Controls.ProjectVersions.SelectedIndex = list.Count > 0 ? 0 : -1;
-            workspace.Controls.InstallContentButton.IsEnabled = list.Count > 0;
-            if (list.Count == 0)
-                workspace.Controls.ProjectDescription.Text += "\n\n没有符合筛选条件的可下载版本。";
-            await workspace.ResourcePresentationController.LoadResourcePresentation(project, token);
-        });
+        await RunBrowse(() => LoadResourceVersions(project));
+    }
+
+    internal void ReloadResourceDetail()
+    {
+        if (workspace.ResourceFavoritesController.resourceDetailProject is { } project)
+            _ = RunBrowse(() => LoadResourceVersions(project));
+    }
+
+    internal InstanceTarget ResourceDownloadTarget()
+    {
+        var destination = workspace.ResourceWorkspaceController.downloadDestination;
+        if (destination?.InstallToInstance != true)
+            return workspace.ResourceFiltersController.SearchTarget();
+        var key = destination.SelectedInstanceKey ?? throw new IOException("请选择安装目标实例。");
+        var descriptor = new InstanceCatalog(workspace.LaunchCoordinator.prefs.Root).GetOrCreate(key);
+        var info = workspace.InstanceWorkspaceController.RequirementsFor(descriptor.LaunchProfileId);
+        return new(key, info.Minecraft, info.Loader);
+    }
+
+    async Task LoadResourceVersions(ContentProject project)
+    {
+        var token = browseCancellation?.Token ?? CancellationToken.None;
+        var target = ResourceDownloadTarget();
+        workspace.Controls.ProjectTitle.Text = project.Title;
+        workspace.Controls.ProjectDescription.Text = project.Description;
+        workspace.Controls.ProjectVersions.ItemsSource = null;
+        workspace.Controls.InstallContentButton.IsEnabled = false;
+        var type = workspace.ModpackController.ContentKind;
+        workspace.Window.Status.Text = "读取兼容版本…";
+        var list = await new ContentService(workspace.LaunchCoordinator.http, token).Versions(project.Id, target.GameVersion, target.Loader, type);
+        token.ThrowIfCancellationRequested();
+        if (workspace.ResourceFiltersController.releaseChannel.SelectedIndex > 0)
+            list = list.Where(v => v.VersionType == new[] { "", "release", "beta", "alpha" }[workspace.ResourceFiltersController.releaseChannel.SelectedIndex]).ToList();
+        workspace.Controls.ProjectVersions.ItemsSource = list;
+        workspace.Controls.ProjectVersions.SelectedIndex = list.Count > 0 ? 0 : -1;
+        workspace.Controls.InstallContentButton.IsEnabled = list.Count > 0;
+        if (list.Count == 0)
+            workspace.Controls.ProjectDescription.Text += "\n\n没有符合筛选条件的可下载版本。";
+        await workspace.ResourcePresentationController.LoadResourcePresentation(project, token);
+        workspace.Controls.InstallContentButton.Content = workspace.ResourceWorkspaceController.downloadDestination?.InstallToInstance == true
+            ? "↓ 安装到所选实例" : "↓ 下载所选文件";
     }
 
     internal void RequireStopped()
@@ -311,11 +334,10 @@ internal sealed class ResourceBrowserController
         InlineMessageBox.Show($"已安装 {count} 项内容（含必需依赖）。\n手动导入的模组无法自动识别重复项目，请在内容管理中检查。", "安装完成");
     }
 
-    internal async void InstallContentClick(object s, RoutedEventArgs e)
+    internal void InstallContentClick(object s, RoutedEventArgs e)
     {
         if (workspace.Controls.ProjectVersions.SelectedItem is ContentVersion version)
-            workspace.DownloadQueueController.QueueContent(version);
-        await Task.CompletedTask;
+            workspace.ResourceInstallationController.Install(version);
     }
 
     internal void ProjectPageClick(object s, RoutedEventArgs e)

@@ -407,6 +407,52 @@ public static class Program
                 Save(settingsRoot, "v0221-settings-navigation.png");
                 settingsRoot.Background = previousBackground;
                 Console.WriteLine("PASS settings categories, utility lifetimes, legacy routes and Settings/More extensions");
+                // Destination changes use the same async version loader; enqueue must freeze its target.
+                var fabricDirectory = Path.Combine(game, "versions", "fabric-target");
+                Directory.CreateDirectory(fabricDirectory);
+                File.WriteAllText(Path.Combine(fabricDirectory, "fabric-target.json"), """{"id":"fabric-target","clientVersion":"1.21.1","libraries":[{"name":"net.fabricmc:fabric-loader:0.16.0"}]}""");
+                LauncherTestAccess.Invoke(window, "ApplyVersionRows", [new List<VersionRow> { new("1.21.1", "1.21.1", "release") }]);
+                LauncherTestAccess.Invoke(window, "NavigateDownloads", ["Mod"]);
+                LauncherTestAccess.Invoke(window, "ShowResourceDetail", [new ContentProject("test", "test", "Destination fixture", "fixture", "fixture", 1)]);
+                var destinationView = (FrameworkElement)LauncherTestAccess.Get(window, "downloadDestination");
+                var targetPicker = Descendants(destinationView).OfType<ComboBox>().Single();
+                targetPicker.SelectedItem = targetPicker.Items.Cast<InstanceView>().Single(item => item.Key == "fabric-target");
+                Descendants(destinationView).OfType<RadioButton>().Single(button => Equals(button.Content, "安装到实例")).IsChecked = true;
+                await Task.Delay(30);
+                if (((ComboBox)LauncherTestAccess.Get(window, "ProjectVersions")).Items.Count != 1 ||
+                    Descendants(destinationView).OfType<RadioButton>().Count(button => button.IsChecked == true) != 1 ||
+                    ((FrameworkElement)targetPicker.Parent).Visibility != Visibility.Visible)
+                    throw new Exception("Instance mode did not expose one target with compatible versions");
+                settingsRoot.Background = window.Background;
+                Save((Grid)window.Content, "v0222-instance-resource-options.png");
+                settingsRoot.Background = previousBackground;
+                ((Button)LauncherTestAccess.Get(window, "InstallContentButton")).RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                var operationStore = (OperationCoordinator)LauncherTestAccess.Get(window, "operations");
+                var installation = operationStore.History().Single(record => record.Download?.Kind == "content" && record.Target == "fabric-target");
+                targetPicker.SelectedItem = targetPicker.Items.Cast<InstanceView>().Single(item => item.Key == "1.21.1");
+                await Task.Delay(20);
+                var frozen = operationStore.History().Single(record => record.Id == installation.Id);
+                if (frozen.Download?.GameVersion != "1.21.1" || frozen.Download.Loader != "fabric" ||
+                    !frozen.Download.Destination.EndsWith("fabric-target", StringComparison.OrdinalIgnoreCase))
+                    throw new Exception("Changing the UI target redirected an existing install task");
+                Descendants(destinationView).OfType<RadioButton>().Single(button => Equals(button.Content, "自定义下载")).IsChecked = true;
+                await Task.Delay(20);
+                if (((FrameworkElement)targetPicker.Parent).Visibility != Visibility.Collapsed)
+                    throw new Exception("Custom mode still exposed instance options");
+                Console.WriteLine("PASS resource destination modes load compatible versions and freeze queued instance targets");
+                var ended = operationStore.Enqueue("History deletion fixture", game, "fixture", new()
+                {
+                    Kind = "resource"
+                });
+                operationStore.ChangePending(ended.Id, OperationState.Cancelled);
+                LauncherTestAccess.Invoke(window, "OpenDownloadTasks");
+                var delete = Descendants(settingsView).OfType<Button>().Single(button => Equals(button.Content, "删除记录") &&
+                    button.Parent is FrameworkElement actions && actions.Parent is StackPanel card &&
+                    card.Children.OfType<TextBlock>().Any(text => text.Text == ended.Name));
+                delete.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                if (operationStore.History().Any(record => record.Id == ended.Id) || !operationStore.History().Any(record => record.Id == installation.Id))
+                    throw new Exception("Download record delete changed another queued task");
+                Console.WriteLine("PASS download record UI deletes the selected ended record and preserves queued installation");
                 Console.WriteLine("ALL_WORKFLOW_UI_COMPONENT_CHECKS_PASSED (not native input acceptance)");
             }
             catch (Exception ex)

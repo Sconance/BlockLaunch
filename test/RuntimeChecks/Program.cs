@@ -31,6 +31,7 @@ internal static class Program
         }
         try
         {
+            CheckLaunchAndGroupViews();
             Wait(CheckSessions());
             Wait(CheckCatalog());
         }
@@ -43,6 +44,46 @@ internal static class Program
         if (!condition)
             throw new Exception(name);
         Console.WriteLine("PASS " + name);
+    }
+
+    static void CheckLaunchAndGroupViews()
+    {
+        var button = new System.Windows.Controls.Button();
+        var view = new HomeLaunchButtonView(button, new System.Windows.Controls.TextBlock { Text = "fixture" });
+        var body = (System.Windows.Controls.StackPanel)button.Content;
+        var progress = body.Children.OfType<System.Windows.Controls.ProgressBar>().Single();
+        view.Begin();
+        Check(view.IsLaunching && progress.Visibility == Visibility.Visible && progress.IsIndeterminate,
+            "launch feedback begins inside the existing button without a global loading page");
+        view.Report(42);
+        Check(!progress.IsIndeterminate && progress.Value == 42, "button shows known progress without inventing percentages");
+        view.End();
+        Check(!view.IsLaunching && progress.Visibility == Visibility.Collapsed && !progress.IsIndeterminate,
+            "launch feedback clears animation and restores the button");
+        var group = new System.Windows.Controls.Expander
+        {
+            Style = InstanceGroupExpanderStyle.Create(),
+            Header = "实例分类",
+            IsExpanded = true,
+            Content = new System.Windows.Controls.TextBlock { Text = "fixture" }
+        };
+        group.Measure(new Size(400, 100));
+        group.Arrange(new Rect(0, 0, 400, 100));
+        group.UpdateLayout();
+        IEnumerable<DependencyObject> Visuals(DependencyObject node)
+        {
+            for (var i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(node); i++)
+            {
+                var child = System.Windows.Media.VisualTreeHelper.GetChild(node, i);
+                yield return child;
+                foreach (var nested in Visuals(child))
+                    yield return nested;
+            }
+        }
+        var toggle = Visuals(group).OfType<System.Windows.Controls.Primitives.ToggleButton>().Single();
+        Check(toggle.ActualWidth >= 390, "instance group header hit area spans the complete row");
+        toggle.IsChecked = false;
+        Check(!group.IsExpanded, "full-row group toggle updates expansion state");
     }
 
     static Process Child(string label)

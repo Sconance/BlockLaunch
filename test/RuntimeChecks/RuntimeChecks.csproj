@@ -15,5 +15,7 @@
     <Compile Include="../../src/MCUGLauncher/Presentation/IRunningGamesView.cs" Link="Sessions/IRunningGamesView.cs" />
     <Compile Include="../../src/MCUGLauncher/Views/RunningGamesView.cs" Link="Sessions/RunningGamesView.cs" />
     <Compile Include="../../src/MCUGLauncher/Views/Shared/FeatureUiElements.cs" Link="Sessions/FeatureUiElements.cs" />
+    <Compile Include="../../src/MCUGLauncher/Views/HomeLaunchButtonView.cs" Link="Views/HomeLaunchButtonView.cs" />
+    <Compile Include="../../src/MCUGLauncher/Views/Shared/InstanceGroupExpanderStyle.cs" Link="Views/InstanceGroupExpanderStyle.cs" />
   </ItemGroup>
 </Project>

@@ -11,7 +11,7 @@ internal sealed class ResourceFiltersController
     }
 
     readonly ContentSearchFilterBuilder searchFilters = new();
-    internal TextBox resourceGame => searchFilters.GameVersion;
+    internal ComboBox resourceGame => searchFilters.GameVersion;
     internal ComboBox resourceLoader => searchFilters.Loader;
     internal ComboBox resourceSource => searchFilters.Source;
     internal ComboBox releaseChannel => searchFilters.ReleaseChannel;
@@ -24,6 +24,7 @@ internal sealed class ResourceFiltersController
                 workspace.ResourceFavoritesController.ResetResourceDisplayFilters();
                 workspace.ResourceBrowserController.ResetSearch();
             });
+        resourceGame.DropDownOpened += async (_, _) => await workspace.VersionCatalogController.EnsureVersionCatalog();
         var manage = (Grid)workspace.Controls.InstalledContent.Parent;
         var toolbar = manage.Children.OfType<WrapPanel>().First(p => Grid.GetRow(p) == 1);
         toolbar.Children.Add(FeatureUiElements.ActionButton("导入光影", async (_, _) => await workspace.LaunchCoordinator.Import("shaderpacks", "光影包|*.zip")));
@@ -64,12 +65,36 @@ internal sealed class ResourceFiltersController
         filters.Children.Add(hint);
     }
 
+    internal void RefreshGameVersionChoices()
+    {
+        var selected = string.IsNullOrWhiteSpace(resourceGame.Text) ? "全部" : resourceGame.Text;
+        var local = workspace.LaunchCoordinator.LocalVersions().Select(key =>
+        {
+            try
+            {
+                return workspace.InstanceWorkspaceController.RequirementsFor(key).Minecraft;
+            }
+            catch { return ""; }
+        });
+        resourceGame.ItemsSource = new[] { "全部" }.Concat(workspace.LaunchCoordinator.rows
+            .Where(row => row.Type != "local").Select(row => row.Id)).Concat(local)
+            .Where(value => value.Length > 0).Distinct().ToList();
+        resourceGame.Text = selected;
+    }
+
+    internal void UpdateResourceFilterVisibility()
+    {
+        var usesLoader = workspace.ModpackController.ContentKind is "mod" or "modpack";
+        resourceLoader.Visibility = usesLoader ? Visibility.Visible : Visibility.Collapsed;
+        RefreshGameVersionChoices();
+    }
+
     internal InstanceTarget SearchTarget()
     {
         var game = resourceGame.Text.Trim();
         if (game is "" or "全部" or "跟随实例")
             game = "";
-        var loader = resourceLoader.SelectedIndex < 2 ? "" : resourceLoader.SelectedItem?.ToString() ?? "";
+        var loader = workspace.ModpackController.ContentKind is not ("mod" or "modpack") || resourceLoader.SelectedIndex < 2 ? "" : resourceLoader.SelectedItem?.ToString() ?? "";
         return new("", game, workspace.ModpackController.ContentKind == "datapack" ? "datapack" : loader);
     }
 }

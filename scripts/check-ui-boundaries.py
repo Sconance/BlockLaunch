@@ -27,7 +27,7 @@ def main():
                 'LoaderOverviewController', 'NetworkController', 'WindowChromeController',
                 'GameWindowBehaviorController', 'InstanceSearchController', 'VersionIdentityEditor', 'ContentUpdatesController',
                 'ResourceFavoritesController', 'ResourceSearchLayoutController',
-                'RunningGamesController', 'VersionCatalogController', 'SettingsNavigationController')
+                'RunningGamesController', 'VersionCatalogController', 'SettingsNavigationController', 'ResourceInstallationController')
     components = {path.stem: path for path in (app / 'Components').rglob('*.cs')}
     for name in isolated:
         source = components.get(name)
@@ -48,6 +48,9 @@ def main():
     page_content = (app / 'Presentation/SettingsPageContent.cs').read_text(encoding='utf-8-sig')
     if re.search(r'\bInlineDialog\b|FromDialog|PrepareContent|ForceClose', page_content):
         errors.append('SettingsPageContent must own a page independently of any dialog')
+    resource_installation = (app / 'Components/Resources/ResourceInstallationController.cs').read_text(encoding='utf-8-sig')
+    if re.search(r'System\.Windows|\b(UIElement|MainWindow|InlineDialog|ComboBox|OpenFolderDialog)\b', resource_installation):
+        errors.append('ResourceInstallationController must use selection and command ports, not WPF dialogs or controls')
     session_controller = (app / 'Components/Launch/RunningGamesController.cs').read_text(encoding='utf-8-sig')
     if re.search(r'System\.Windows|\b(Button|UIElement|StackPanel|TextBox|ScrollViewer|FeatureUiElements|SharedLogs|Dispatcher)\b', session_controller):
         errors.append('RunningGamesController must use the presentation port, not WPF or file readers')
@@ -66,7 +69,13 @@ def main():
     if re.search(r'\b(LauncherWorkspace|MainWindow|TextBox|ComboBox|ListBox)\b|System\.Windows', query):
         errors.append('Resource favorite search must consume a value snapshot, not WPF or workspace state')
     version_pages = app / 'Views/VersionSettings'
-    for name in ('VersionOverviewPage', 'VersionLaunchPage', 'VersionLoaderPage', 'VersionModPage', 'VersionExportPage'):
+    for relative in ('Views/InstanceContent/InstanceModManagementPage.cs', 'Views/ResourceDestinationView.cs', 'Views/HomeLaunchButtonView.cs'):
+        if re.search(r'\b(LauncherWorkspace|MainWindow)\b', (app / relative).read_text(encoding='utf-8-sig')):
+            errors.append(f'{relative} must use scoped state and operations')
+    mod_redirect = (app / 'Views/VersionSettings/VersionModPage.cs').read_text(encoding='utf-8-sig')
+    if re.search(r'ContentService|new ListBox|ImportFiles|MoveToBackup', mod_redirect):
+        errors.append('VersionModPage must redirect, not duplicate unified mod management')
+    for name in ('VersionOverviewPage' , 'VersionLaunchPage', 'VersionLoaderPage', 'VersionModPage', 'VersionExportPage'):
         source = version_pages / f'{name}.cs'
         if not source.is_file():
             errors.append(f'Missing independent version page: {name}')

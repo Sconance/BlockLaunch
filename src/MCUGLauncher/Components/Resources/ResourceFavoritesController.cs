@@ -1,5 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;
 
 namespace BlockLaunch;
 internal sealed class ResourceFavoritesController
@@ -71,9 +73,42 @@ internal sealed class ResourceFavoritesController
         }
     }
 
+    Button? pressedFavorite;
+    static Button? FavoriteButton(object? source)
+    {
+        var node = source as DependencyObject;
+        while (node != null)
+        {
+            if (node is Button { Tag: "FavoriteResource" } button)
+                return button;
+            node = node is Visual ? VisualTreeHelper.GetParent(node) : LogicalTreeHelper.GetParent(node);
+        }
+        return null;
+    }
+
+    internal void CardFavoritePointerDown(object sender, MouseButtonEventArgs e)
+    {
+        pressedFavorite = FavoriteButton(e.OriginalSource);
+        if (pressedFavorite == null)
+            return;
+        e.Handled = true; // Prevent ListBoxItem from navigating before the heart is released.
+    }
+
+    internal void CardFavoritePointerUp(object sender, MouseButtonEventArgs e)
+    {
+        var button = FavoriteButton(e.OriginalSource);
+        var pressed = pressedFavorite;
+        pressedFavorite = null;
+        if (pressed == null)
+            return;
+        e.Handled = true;
+        if (ReferenceEquals(button, pressed) && button?.DataContext is ContentProject project)
+            ToggleResourceFavorite(project);
+    }
+
     internal void CardFavoriteClick(object sender, RoutedEventArgs e)
     {
-        if (e.Source is Button { Tag: "FavoriteResource", DataContext: ContentProject project })
+        if (FavoriteButton(e.OriginalSource) is Button { DataContext: ContentProject project })
         {
             e.Handled = true;
             ToggleResourceFavorite(project);

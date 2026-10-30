@@ -28,6 +28,14 @@ internal sealed class DownloadTaskController
         DockPanel.SetDock(heading, Dock.Top);
         heading.Children.Add(FeatureUiElements.Hint("任务保存各自的安装目录。暂停保留进度；取消停止任务并保留已校验缓存。提交安装结果时请等待完成。"));
         heading.Children.Add(FeatureUiElements.ActionButton("刷新任务", (_, _) => RefreshDownloadTasks(true)));
+        heading.Children.Add(FeatureUiElements.ActionButton("清空已结束记录", (_, _) =>
+        {
+            if (InlineMessageBox.Show(workspace.Window, "清空已结束的下载记录？已下载文件会保留。", "清空下载记录", MessageBoxButton.OKCancel) != MessageBoxResult.OK)
+                return;
+            workspace.LaunchCoordinator.operations.ClearFinishedDownloads();
+            workspace.TaskRecoveryController.RefreshOperations();
+            RefreshDownloadTasks(true);
+        }));
         body.Children.Add(heading);
         downloadTaskRows = new StackPanel();
         downloadTaskScroll = new ScrollViewer
@@ -80,9 +88,19 @@ internal sealed class DownloadTaskController
             actions.Children.Add(b);
         }
 
-        Add("暂停", OperationState.Paused, record.State is OperationState.Running or OperationState.Queued);
-        Add(record.State == OperationState.Failed ? "重试" : "继续", OperationState.Queued, record.State is OperationState.Paused or OperationState.Failed or OperationState.Interrupted || record.State == OperationState.Queued && workspace.LaunchCoordinator.prefs.DownloadsPaused);
-        Add("取消", OperationState.Cancelled, record.State is OperationState.Running or OperationState.Queued or OperationState.Paused or OperationState.Failed or OperationState.Interrupted);
+        if (record.State is not (OperationState.Completed or OperationState.Cancelled))
+        {
+            Add("暂停", OperationState.Paused, record.State is OperationState.Running or OperationState.Queued);
+            Add(record.State == OperationState.Failed ? "重试" : "继续", OperationState.Queued, record.State is OperationState.Paused or OperationState.Failed or OperationState.Interrupted || record.State == OperationState.Queued && workspace.LaunchCoordinator.prefs.DownloadsPaused);
+            Add("取消", OperationState.Cancelled, record.State is OperationState.Running or OperationState.Queued or OperationState.Paused or OperationState.Failed or OperationState.Interrupted);
+        }
+        if (OperationCoordinator.CanDeleteHistory(record))
+            actions.Children.Add(FeatureUiElements.ActionButton("删除记录", (_, _) =>
+            {
+                workspace.LaunchCoordinator.operations.DeleteHistory(record.Id);
+                workspace.TaskRecoveryController.RefreshOperations();
+                RefreshDownloadTasks(true);
+            }));
         panel.Children.Add(actions);
         var card = workspace.InstanceWorkspaceController.FeatureCard(panel);
         card.Padding = new Thickness(12);

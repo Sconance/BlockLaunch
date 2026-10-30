@@ -24,7 +24,8 @@ internal sealed record InstanceManagerCommands(
     Action OpenServers,
     Action<string> OpenInstanceLibrary,
     Func<string, Task> SwitchRoot,
-    Action<Panel, InlineDialog, Func<string>> AttachExtensions);
+    Action<Panel, InlineDialog, Func<string>> AttachExtensions,
+    Func<string, InlineDialog, UIElement> CreateMods);
 
 internal sealed record InstanceManagerBindings(
     Action<string?> SetCurrentKey,
@@ -36,7 +37,7 @@ internal sealed record InstanceManagerBindings(
 internal sealed class SketchContentManagerDialog(Window owner, InstanceManagerData data,
     InstanceManagerCommands commands, InstanceManagerBindings bindings, Action showSketchVersions)
 {
-    public void Open(string initialKey)
+    public void Open(string initialKey, string initialCategory = "存档")
     {
         if (!commands.CanBrowse())
             return;
@@ -130,10 +131,23 @@ internal sealed class SketchContentManagerDialog(Window owner, InstanceManagerDa
         layout.Children.Add(categories);
         var right = new DockPanel();
         Grid.SetColumn(right, 2);
-        layout.Children.Add(right);
+        var contentHost = new Grid();
+        Grid.SetColumn(contentHost, 2);
+        layout.Children.Add(contentHost);
+        contentHost.RowDefinitions.Add(new()
+        {
+            Height = GridLength.Auto
+        });
+        contentHost.RowDefinitions.Add(new());
+        Grid.SetColumn(right, 0);
+        Grid.SetRow(right, 1);
+        contentHost.Children.Add(right);
+        var modsHost = new ContentControl { HorizontalContentAlignment = HorizontalAlignment.Stretch, VerticalContentAlignment = VerticalAlignment.Stretch, Visibility = Visibility.Collapsed };
+        Grid.SetRow(modsHost, 1);
+        contentHost.Children.Add(modsHost);
         var bar = new StackPanel();
         DockPanel.SetDock(bar, Dock.Top);
-        right.Children.Add(bar);
+        contentHost.Children.Add(bar);
         var files = new ListBox
         {
             DisplayMemberPath = "Name"
@@ -152,7 +166,7 @@ internal sealed class SketchContentManagerDialog(Window owner, InstanceManagerDa
         right.Children.Add(detail);
         right.Children.Add(files);
         var current = initialKey;
-        var category = "存档";
+        var category = initialCategory;
         string directory = "";
         string DataRoot()
         {
@@ -164,6 +178,9 @@ internal sealed class SketchContentManagerDialog(Window owner, InstanceManagerDa
         void Render()
         {
             bar.Children.Clear();
+            modsHost.Content = null;
+            modsHost.Visibility = category == "模组" ? Visibility.Visible : Visibility.Collapsed;
+            right.Visibility = category == "模组" ? Visibility.Collapsed : Visibility.Visible;
             files.ItemsSource = null;
             preview.Source = null;
             info.Text = "选择内容查看详情。";
@@ -181,6 +198,11 @@ internal sealed class SketchContentManagerDialog(Window owner, InstanceManagerDa
             }));
             bar.Children.Add(FeatureUiElements.Heading(selected.Name));
             bar.Children.Add(actions);
+            if (category == "模组")
+            {
+                modsHost.Content = commands.CreateMods(current, page);
+                return;
+            }
             directory = Path.Combine(DataRoot(), category switch
             {
                 "存档" => "saves",
@@ -216,8 +238,7 @@ internal sealed class SketchContentManagerDialog(Window owner, InstanceManagerDa
                 info.Text = "此分类暂无内容。";
             if (category == "存档" || category == "截图")
                 bar.Children.Add(FeatureUiElements.ActionButton("备份、导入与预览", (_, _) => commands.OpenInstanceLibrary(current)));
-            if (category == "模组")
-                bar.Children.Add(FeatureUiElements.ActionButton("启用、禁用与更新", (_, _) => commands.OpenVersionSection(current, "Mod 管理")));
+
         }
 
         void SafeRender()
@@ -306,7 +327,7 @@ internal sealed class SketchContentManagerDialog(Window owner, InstanceManagerDa
         };
         list.SelectionChanged += (_, _) => SafeRender();
         list.SelectedItem = list.Items.Cast<InstanceView>().FirstOrDefault(i => i.Key == initialKey);
-        ((RadioButton)categories.Children[0]).IsChecked = true;
+        (categories.Children.OfType<RadioButton>().FirstOrDefault(button => Equals(button.Content, initialCategory)) ?? (RadioButton)categories.Children[0]).IsChecked = true;
         directories.SelectionChanged += async (_, _) =>
         {
             if (commands.IsBusy() || directories.SelectedItem is not string root || root.Equals(data.GetRoot(), StringComparison.OrdinalIgnoreCase))

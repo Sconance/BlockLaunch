@@ -19,6 +19,8 @@ internal sealed class CompactShellController
         Foreground = Brushes.White,
         HorizontalAlignment = HorizontalAlignment.Center
     };
+    internal HomeLaunchButtonView? launchFeedback;
+    internal Border? resourceDirectoryBar;
     internal bool compactShellReady;
     internal RadioButton downloadNav = null!;
     internal static IEnumerable<DependencyObject> Elements(DependencyObject parent)
@@ -185,11 +187,7 @@ internal sealed class CompactShellController
         launch.Children.Add(buttons);
         workspace.Controls.Versions.Visibility = Visibility.Collapsed;
         launch.Children.Insert(0, workspace.Controls.Versions);
-        var launchTitle = new StackPanel();
-        launchTitle.Children.Add(new TextBlock { Text = "▷  启动游戏", FontSize = 17, FontWeight = FontWeights.SemiBold, Foreground = Brushes.White, HorizontalAlignment = HorizontalAlignment.Center });
-        launchTitle.Children.Add(homeSelectedLabel);
-        workspace.Controls.LaunchGameButton.ContentTemplate = null;
-        workspace.Controls.LaunchGameButton.Content = launchTitle;
+        launchFeedback = new(workspace.Controls.LaunchGameButton, homeSelectedLabel);
         UpdateHomeLaunchLabel();
         left.Children.Add(launch);
         Grid.SetColumn(accountCard, 0);
@@ -301,31 +299,11 @@ internal sealed class CompactShellController
         }
 
         var directoryButtons = new WrapPanel();
-        directoryButtons.Children.Add(FeatureUiElements.ActionButton("选择下载目录", (_, _) =>
-        {
-            var picker = new OpenFolderDialog
-            {
-                Title = "选择独立资源下载目录"
-            };
-            if (picker.ShowDialog(workspace.Window) != true)
-                return;
-            if (InstanceUninstaller.Inside(picker.FolderName, workspace.LaunchCoordinator.prefs.Root))
-            {
-                InlineMessageBox.Show(workspace.Window, "请选择游戏目录之外的独立下载目录。");
-                return;
-            }
-
-            workspace.LaunchCoordinator.prefs.ResourceDownloadDirectory = Path.GetFullPath(picker.FolderName);
-            workspace.LaunchCoordinator.settings.Save(workspace.LaunchCoordinator.prefs);
-            workspace.ResourceBrowserController.UpdateTargets();
-        }));
-        directoryButtons.Children.Add(FeatureUiElements.ActionButton("打开下载目录", (_, _) =>
-        {
-            Directory.CreateDirectory(workspace.LaunchCoordinator.prefs.ResourceDownloadDirectory);
-            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(workspace.LaunchCoordinator.prefs.ResourceDownloadDirectory) { UseShellExecute = true });
-        }));
+        directoryButtons.Children.Add(FeatureUiElements.ActionButton("选择下载目录", (_, _) => SelectResourceDownloadDirectory()));
+        directoryButtons.Children.Add(FeatureUiElements.ActionButton("打开下载目录", (_, _) => OpenResourceDownloadDirectory()));
         var directoryBar = (Border)workspace.Controls.ContentTarget.Parent;
         var directoryLayout = new DockPanel();
+        resourceDirectoryBar = directoryBar;
         directoryBar.Child = null;
         DockPanel.SetDock(directoryButtons, Dock.Right);
         directoryLayout.Children.Add(directoryButtons);
@@ -354,4 +332,28 @@ internal sealed class CompactShellController
         if (workspace.Controls.LaunchGameButton != null)
             workspace.Controls.LaunchGameButton.ToolTip = homeSelectedLabel.Text;
     }
+    internal void SelectResourceDownloadDirectory()
+    {
+        var picker = new OpenFolderDialog
+        {
+            Title = "选择独立资源下载目录"
+        };
+        if (picker.ShowDialog(workspace.Window) != true)
+            return;
+        if (InstanceUninstaller.Inside(picker.FolderName, workspace.LaunchCoordinator.prefs.Root))
+        {
+            InlineMessageBox.Show(workspace.Window, "请选择游戏目录之外的独立下载目录。");
+            return;
+        }
+
+        workspace.LaunchCoordinator.prefs.ResourceDownloadDirectory = Path.GetFullPath(picker.FolderName);
+        workspace.LaunchCoordinator.settings.Save(workspace.LaunchCoordinator.prefs);
+        workspace.ResourceBrowserController.UpdateTargets();
+    }
+    internal void OpenResourceDownloadDirectory()
+    {
+        Directory.CreateDirectory(workspace.LaunchCoordinator.prefs.ResourceDownloadDirectory);
+        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(workspace.LaunchCoordinator.prefs.ResourceDownloadDirectory) { UseShellExecute = true });
+    }
+
 }
