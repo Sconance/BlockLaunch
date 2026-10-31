@@ -1,7 +1,7 @@
 name: Windows build
 on:
   push:
-    branches: [main, test, "0.22.1", "0.22.2"]
+    branches: [main, test, "0.22.1", "0.22.2", "0.22.3", "0.22.3-fix"]
   pull_request:
   workflow_dispatch:
 permissions:
