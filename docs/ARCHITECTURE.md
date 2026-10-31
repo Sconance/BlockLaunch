@@ -30,6 +30,8 @@ MainWindow (WPF 窗口 + WebView2 宿主 + 消息分发)
 | `CommunityFeed` | `Ui/CommunityFeed.cs` | 社区数据聚合：本地公告/推荐 + 配置数据源拉取 |
 | `LaunchCoordinator` | `Ui/LaunchCoordinator.cs` | 启动流程：会话准备、MUA 外置登录、启动参数与进程启动 |
 | `ServerCommands` | `Commands/ServerCommands.cs` | 打开实例目录、服务器 SLP 查询、收藏服务器增删 |
+| `ContentCommands` | `Commands/ContentCommands.cs` | 原版版本列表/安装、Modrinth 搜索与下载、本地模组启停/删除、版本删除 |
+| `AppLog` | `Commands/AppLog.cs` | 命令类共用的 launcher.log 写入 |
 | `ConfigStore` | `Services/ConfigStore.cs` | `%LOCALAPPDATA%\MCUGLauncher\config.json` 读写与旧配置导入 |
 | `VersionCatalog` | `Services/VersionCatalog.cs` | 版本目录扫描、实例列表与选中项 |
 | `ModService` | `Services/ModService.cs` | Modrinth 项目下载到实例 |
@@ -56,3 +58,4 @@ MainWindow (WPF 窗口 + WebView2 宿主 + 消息分发)
 | 第 7 步 | `CommunityFeed`（本地 + 远程社区数据聚合） | 1126 |
 | 第 8 步 | `LaunchCoordinator`（启动流程与离线 UUID） | 1030 |
 | 第 9 步 | `ServerCommands`（目录、服务器查询与收藏） | 969 |
+| 第 10 步 | `ContentCommands`（原版/Modrinth/本地模组/版本删除） | 611 |
