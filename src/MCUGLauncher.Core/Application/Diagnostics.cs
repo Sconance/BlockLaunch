@@ -35,7 +35,12 @@ public record FeedbackOptions(bool Logs = true, bool Mods = true, bool Environme
 /// </summary>
 public record FeedbackDocument(string Name, string Text);
 
-/// <summary>Reads a bounded, explicit allow-list. No account/config/save files are inspected.</summary>
+/// <summary>
+/// 诊断快照与反馈包。
+/// </summary>
+/// <remarks>
+/// 依赖进程日志、实例 mods 列表、环境信息与可选密钥脱敏；输出结构化 DiagnosticSnapshot 与可附带的反馈文档。
+/// </remarks>
 public static class Diagnostics
 {
     const int MaxLogBytes = 1024 * 1024;

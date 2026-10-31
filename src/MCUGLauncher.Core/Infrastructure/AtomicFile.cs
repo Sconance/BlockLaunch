@@ -3,8 +3,11 @@ using System.Text.Json;
 namespace BlockLaunch;
 
 /// <summary>
-/// 提供 Atomic文件 相关功能。
+/// 原子文件写入。
 /// </summary>
+/// <remarks>
+/// 通过同目录临时文件 + 替换避免写入中断留下半个文件；不负责跨卷移动。
+/// </remarks>
 public static class AtomicFile
 {
     public static void WriteJson<T>(string file, T value)

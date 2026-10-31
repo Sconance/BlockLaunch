@@ -16,13 +16,20 @@ public record LaunchRequest(string Root, string InstanceDirectory, string Profil
 public record GameExit(int Code, bool Requested);
 
 /// <summary>
-/// 提供 启动Service 相关功能。
+/// 构建游戏启动参数与进程。
 /// </summary>
+/// <remarks>
+/// 依赖 CmlLib.Core、JavaDiscovery、AuthlibLaunch、LaunchSettings 与 LaunchRequest 中的账号/内存/窗口信息；只负责构建 Process，实际启动由 GameSession.Start 完成。
+/// </remarks>
 public static class LaunchService
 {
     /// <summary>
     /// 构建。
     /// </summary>
+    /// <param name="request">启动请求：根目录、实例目录、Java、内存、窗口、会话等</param>
+    /// <param name="token">取消令牌</param>
+    /// <param name="http">可选 HttpClient，用于加载器/资源请求</param>
+    /// <returns>已配置好 StartInfo 的 Process 实例</returns>
     public static async Task<Process> Build(LaunchRequest request, CancellationToken token, HttpClient? http = null)
     {
         var shared = new MinecraftPath(request.Root);
