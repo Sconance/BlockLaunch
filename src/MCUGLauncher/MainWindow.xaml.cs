@@ -28,6 +28,7 @@ public partial class MainWindow : Window
     readonly WindowChromeController _chrome;
     readonly UiBridge _bridge;
     readonly AccountSession _accounts;
+    readonly UiCommandRouter _router;
     AppConfig _config;
     bool _ready;
     string _uiDirectory = "";
@@ -40,6 +41,8 @@ public partial class MainWindow : Window
         _config = _store.Load();
         _accounts = new AccountSession(_store, _config, _bridge, _http);
         _accounts.Changed += SendState;
+        _router = new UiCommandRouter();
+        ConfigureCommands();
         Loaded += OnLoaded;
     }
 
@@ -102,125 +105,7 @@ public partial class MainWindow : Window
         try
         {
             using var doc = JsonDocument.Parse(e.WebMessageAsJson);
-            var root = doc.RootElement;
-            var type = UiBridge.ReadString(root, "type");
-            switch (type)
-            {
-                case "ready":
-                    _ready = true;
-                    SendState();
-                    _ = SendCommunityAsync();
-                    _ = _accounts.RestoreMicrosoftAsync();
-                    break;
-                case "requestState":
-                    SendState();
-                    break;
-                case "launch":
-                    await LaunchAsync(UiBridge.ReadString(root, "version"));
-                    break;
-                case "window":
-                    HandleWindow(UiBridge.ReadString(root, "action"));
-                    break;
-                case "drag":
-                    BeginWindowDrag();
-                    break;
-                case "selectVersion":
-                    _config.LastVersion = UiBridge.ReadString(root, "version");
-                    _config.LastInstance = _config.LastVersion;
-                    _store.Save(_config);
-                    SendState();
-                    break;
-                case "selectInstance":
-                    _config.LastInstance = UiBridge.ReadString(root, "instance");
-                    _store.Save(_config);
-                    SendState();
-                    break;
-                case "openFolder":
-                    OpenFolder(UiBridge.ReadString(root, "kind"));
-                    break;
-                case "pingServer":
-                    await PingAsync(UiBridge.ReadString(root, "address"), UiBridge.ReadString(root, "id"));
-                    break;
-                case "saveServer":
-                    SaveServer(root);
-                    break;
-                case "deleteServer":
-                    DeleteServer(UiBridge.ReadString(root, "address"));
-                    break;
-                case "toggleMod":
-                    ToggleMod(UiBridge.ReadString(root, "file"), root.TryGetProperty("enabled", out var enabled) && enabled.GetBoolean());
-                    break;
-                case "deleteMod":
-                    DeleteMod(UiBridge.ReadString(root, "file"));
-                    break;
-                case "deleteVersion":
-                    DeleteVersion(UiBridge.ReadString(root, "version"));
-                    break;
-                case "searchContent":
-                    Log("searchContent " + UiBridge.ReadString(root, "category") + " " + UiBridge.ReadString(root, "query"));
-                    await SearchContentAsync(root);
-                    break;
-                case "installContent":
-                    await InstallContentAsync(root);
-                    break;
-                case "vanillaVersions":
-                    await SendVanillaVersionsAsync();
-                    break;
-                case "installVanilla":
-                    await InstallVanillaAsync(UiBridge.ReadString(root, "version"));
-                    break;
-                case "installMod":
-                    await InstallModAsync(root);
-                    break;
-                case "saveSettings":
-                    SaveSettings(root);
-                    break;
-                case "pickFolder":
-                    PickFolder(UiBridge.ReadString(root, "target"));
-                    break;
-                case "pickFile":
-                    PickFile(UiBridge.ReadString(root, "target"));
-                    break;
-                case "scanJava":
-                    await ScanJavaAsync();
-                    break;
-                case "backupSaves":
-                    BackupSaves();
-                    break;
-                case "readLog":
-                    ReadLog();
-                    break;
-                case "systemInfo":
-                    SendSystemInfo();
-                    break;
-                case "resetWindow":
-                    ResetWindow();
-                    break;
-                case "loginMicrosoft":
-                    await _accounts.LoginMicrosoftAsync();
-                    break;
-                case "loginMua":
-                    await _accounts.LoginMuaAsync(UiBridge.ReadString(root, "account"), UiBridge.ReadString(root, "password"));
-                    break;
-                case "logoutAccount":
-                    _accounts.Logout();
-                    break;
-                case "testSource":
-                    await TestSourceAsync(UiBridge.ReadString(root, "name"), UiBridge.ReadString(root, "url"));
-                    break;
-                case "verifyKey":
-                    VerifyKey(UiBridge.ReadString(root, "role"), UiBridge.ReadString(root, "key"));
-                    break;
-                case "publish":
-                    await PublishAsync(root);
-                    break;
-                case "saveAnnouncements":
-                    SaveCommunityLocal("announcements.local.json", root, "items");
-                    break;
-                case "saveRecommendations":
-                    SaveCommunityLocal("recommendations.local.json", root, "items");
-                    break;
-            }
+            await _router.DispatchAsync(doc.RootElement);
         }
         catch (Exception ex)
         {
@@ -230,6 +115,68 @@ public partial class MainWindow : Window
                 message = ex.Message
             });
         }
+    }
+
+    void ConfigureCommands()
+    {
+        _router.Register("ready", ignored =>
+        {
+            _ready = true;
+            SendState();
+            _ = SendCommunityAsync();
+            _ = _accounts.RestoreMicrosoftAsync();
+        });
+        _router.Register("requestState", _ => SendState());
+        _router.Register("launch", root => LaunchAsync(UiBridge.ReadString(root, "version")));
+        _router.Register("window", root => HandleWindow(UiBridge.ReadString(root, "action")));
+        _router.Register("drag", _ => BeginWindowDrag());
+        _router.Register("selectVersion", root =>
+        {
+            _config.LastVersion = UiBridge.ReadString(root, "version");
+            _config.LastInstance = _config.LastVersion;
+            _store.Save(_config);
+            SendState();
+        });
+        _router.Register("selectInstance", root =>
+        {
+            _config.LastInstance = UiBridge.ReadString(root, "instance");
+            _store.Save(_config);
+            SendState();
+        });
+        _router.Register("openFolder", root => OpenFolder(UiBridge.ReadString(root, "kind")));
+        _router.Register("pingServer", root => PingAsync(UiBridge.ReadString(root, "address"), UiBridge.ReadString(root, "id")));
+        _router.Register("saveServer", root => SaveServer(root));
+        _router.Register("deleteServer", root => DeleteServer(UiBridge.ReadString(root, "address")));
+        _router.Register("toggleMod", root => ToggleMod(UiBridge.ReadString(root, "file"),
+            root.TryGetProperty("enabled", out var enabled) && enabled.GetBoolean()));
+        _router.Register("deleteMod", root => DeleteMod(UiBridge.ReadString(root, "file")));
+        _router.Register("deleteVersion", root => DeleteVersion(UiBridge.ReadString(root, "version")));
+        _router.Register("searchContent", async root =>
+        {
+            Log("searchContent " + UiBridge.ReadString(root, "category") + " " + UiBridge.ReadString(root, "query"));
+            await SearchContentAsync(root);
+        });
+        _router.Register("installContent", root => InstallContentAsync(root));
+        _router.Register("vanillaVersions", _ => SendVanillaVersionsAsync());
+        _router.Register("installVanilla", root => InstallVanillaAsync(UiBridge.ReadString(root, "version")));
+        _router.Register("installMod", root => InstallModAsync(root));
+        _router.Register("saveSettings", root => SaveSettings(root));
+        _router.Register("pickFolder", root => PickFolder(UiBridge.ReadString(root, "target")));
+        _router.Register("pickFile", root => PickFile(UiBridge.ReadString(root, "target")));
+        _router.Register("scanJava", _ => ScanJavaAsync());
+        _router.Register("backupSaves", _ => BackupSaves());
+        _router.Register("readLog", _ => ReadLog());
+        _router.Register("systemInfo", _ => SendSystemInfo());
+        _router.Register("resetWindow", _ => ResetWindow());
+        _router.Register("loginMicrosoft", _ => _accounts.LoginMicrosoftAsync());
+        _router.Register("loginMua", root => _accounts.LoginMuaAsync(
+            UiBridge.ReadString(root, "account"), UiBridge.ReadString(root, "password")));
+        _router.Register("logoutAccount", _ => _accounts.Logout());
+        _router.Register("testSource", root => TestSourceAsync(UiBridge.ReadString(root, "name"), UiBridge.ReadString(root, "url")));
+        _router.Register("verifyKey", root => VerifyKey(UiBridge.ReadString(root, "role"), UiBridge.ReadString(root, "key")));
+        _router.Register("publish", root => PublishAsync(root));
+        _router.Register("saveAnnouncements", root => SaveCommunityLocal("announcements.local.json", root, "items"));
+        _router.Register("saveRecommendations", root => SaveCommunityLocal("recommendations.local.json", root, "items"));
     }
 
     void SendState()
