@@ -22,8 +22,11 @@ using Microsoft.Win32;
 namespace MCUGLauncher;
 
 /// <summary>
-/// 提供 Main窗口 相关功能。
+/// 主窗口与 WebView2 宿主。
 /// </summary>
+/// <remarks>
+/// 依赖各 Ui/Commands/Authentication/Services 模块；窗口生命周期内保持单实例，消息处理在 UI 线程执行，WebView2 初始化失败时关闭窗口并提示。
+/// </remarks>
 public partial class MainWindow : Window
 {
     readonly ConfigStore _store = new();
