@@ -1,7 +1,7 @@
 name: Windows build
 on:
   push:
-    branches: [main, test, "0.22.1", "0.22.2", "0.22.3", "0.22.3-fix"]
+    branches: [main, test, "0.22.1", "0.22.2", "0.22.3", "0.22.3-fix", "0.22.3-codex"]
   pull_request:
   workflow_dispatch:
 permissions:
@@ -16,6 +16,8 @@ jobs:
           global-json-file: global.json
       - name: Validate repository layout
         run: python scripts/check-layout.py
+      - name: Check WebView boundaries
+        run: python scripts/check-web-boundaries.py
       - name: Check version metadata
         run: python scripts/check-version.py
       - name: Check source formatting
@@ -24,4 +26,4 @@ jobs:
         run: ./scripts/build.ps1
 
       - name: Run isolated regression checks
-        run: ./scripts/run-checks.ps1 -Name AuthChecks,MuaChecks,DownloadChecks,QueueChecks,CompatibilityChecks
+        run: ./scripts/run-checks.ps1 -Name AuthChecks,MuaChecks,DownloadChecks,QueueChecks,CompatibilityChecks,WebBridgeChecks
