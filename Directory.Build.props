@@ -15,4 +15,21 @@
     <Version>$(McugVersion)</Version>
   </PropertyGroup>
 
+  <!--
+    VS Code（C# Dev Kit）的设计时构建不会设置 BuildingInsideVisualStudio，
+    而 WPF 的目标只在该属性为 true 时执行 DesignTimeMarkupCompilation：
+
+      Microsoft.WinFX.targets:
+        <CoreCompileDependsOn Condition="'$(BuildingInsideVisualStudio)' == 'true'">
+          DesignTimeMarkupCompilation; $(CoreCompileDependsOn)
+        </CoreCompileDependsOn>
+
+    缺少该标志时设计时编译拿不到 XAML 生成的 *.g.cs，x:Name 字段与
+    InitializeComponent 全部缺失，语言服务器会报大量 CS1061 / CS0103。
+    Visual Studio 自身以 BuildingInsideVisualStudio=true 运行，因此没有该问题。
+    这里只在设计时构建中补上该标志，普通 build/publish 不受影响。
+  -->
+  <PropertyGroup Condition="'$(DesignTimeBuild)' == 'true'">
+    <BuildingInsideVisualStudio>true</BuildingInsideVisualStudio>
+  </PropertyGroup>
 </Project>

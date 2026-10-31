@@ -11,6 +11,7 @@ publish/
 .env.*
 accounts.bin
 settings.json
+!.vscode/settings.json
 token.json
 .minecraft/
 runtime/
