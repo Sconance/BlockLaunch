@@ -5,8 +5,11 @@ using MCUGLauncher.Models;
 namespace MCUGLauncher.Services;
 
 /// <summary>
-/// 提供 版本Catalog 相关功能。
+/// 本地版本目录扫描。
 /// </summary>
+/// <remarks>
+/// 只读 versions 目录与实例 JSON，不访问网络；供界面状态、启动与内容安装共用。
+/// </remarks>
 public sealed class VersionCatalog
 {
     /// <summary>
@@ -27,8 +30,14 @@ public sealed class VersionCatalog
     public string Root { get; init; } = "";
 
     /// <summary>
-    /// 加载。
+    /// 扫描版本并返回目录快照。
     /// </summary>
+    /// <param name="root">游戏根目录</param>
+    /// <param name="selected">上次选中的实例名</param>
+    /// <returns>版本分组、实例列表与最终选中项</returns>
+    /// <remarks>
+    /// 选中实例不存在时回退到扫描到的第一个实例。
+    /// </remarks>
     public static VersionCatalog Load(string root, string selected)
     {
         var groups = new List<VersionGroup>();
@@ -80,8 +89,11 @@ public sealed class VersionCatalog
     }
 
     /// <summary>
-    /// 读取Details。
+    /// 读取实例的版本详情。
     /// </summary>
+    /// <remarks>
+    /// 包含 Minecraft 版本、加载器与加载器版本。
+    /// </remarks>
     public static VersionDetails ReadDetails(string root, string name)
     {
         var file = Path.Combine(root, "versions", name, name + ".json");
@@ -129,8 +141,11 @@ public sealed class VersionCatalog
     }
 
     /// <summary>
-    /// 读取Mods。
+    /// 读取实例 mods 目录。
     /// </summary>
+    /// <remarks>
+    /// 返回文件名、大小、启用状态与版本信息。
+    /// </remarks>
     public static IReadOnlyList<ModInfo> ReadMods(string root, string instance)
     {
         var dir = Path.Combine(root, "versions", instance, "mods");

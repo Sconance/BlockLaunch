@@ -4,8 +4,11 @@ using MCUGLauncher.Models;
 namespace MCUGLauncher.Services;
 
 /// <summary>
-/// 提供 配置Store 相关功能。
+/// 启动器配置存储。
 /// </summary>
+/// <remarks>
+/// 依赖 %LOCALAPPDATA%/MCUGLauncher/config.json；Load 会导入旧 BlockLaunch 配置并修正无效路径，Save 直接覆盖写入。
+/// </remarks>
 public sealed class ConfigStore
 {
     readonly string _file;
@@ -25,8 +28,12 @@ public sealed class ConfigStore
     }
 
     /// <summary>
-    /// 加载。
+    /// 读取配置。
     /// </summary>
+    /// <returns>补全默认值后的配置对象</returns>
+    /// <remarks>
+    /// JSON 损坏时把原文件改名为 .broken-时间戳 后返回默认值；Root/Player/LastVersion 缺失时自动补全。
+    /// </remarks>
     public AppConfig Load()
     {
         AppConfig config;
@@ -59,8 +66,12 @@ public sealed class ConfigStore
     }
 
     /// <summary>
-    /// 保存。
+    /// 保存配置。
     /// </summary>
+    /// <param name="config">要写入的配置对象</param>
+    /// <remarks>
+    /// 不校验字段，调用方负责保证 Root 等路径有效。
+    /// </remarks>
     public void Save(AppConfig config)
     {
         var temp = _file + ".tmp";

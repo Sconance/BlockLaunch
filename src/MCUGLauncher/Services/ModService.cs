@@ -4,15 +4,26 @@ using System.Text.Json;
 namespace MCUGLauncher.Services;
 
 /// <summary>
-/// 提供 模组Service 相关功能。
+/// Modrinth 模组下载。
 /// </summary>
+/// <remarks>
+/// 依赖 <see cref="System.Net.Http.HttpClient"/>；按项目 id 与游戏版本选择文件并写入目标目录。
+/// </remarks>
 public sealed class ModService
 {
     static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(60) };
 
     /// <summary>
-    /// 执行 下载。
+    /// 下载模组文件。
     /// </summary>
+    /// <param name="projectId">Modrinth 项目 id</param>
+    /// <param name="gameVersion">目标 Minecraft 版本</param>
+    /// <param name="targetDirectory">保存目录</param>
+    /// <param name="token">取消令牌</param>
+    /// <returns>下载文件的完整路径</returns>
+    /// <remarks>
+    /// 返回写入后的完整路径；网络或文件错误以异常抛出。
+    /// </remarks>
     public async Task<string> DownloadAsync(string projectId, string gameVersion, string targetDirectory, CancellationToken token)
     {
         if (string.IsNullOrWhiteSpace(projectId))
