@@ -79,7 +79,7 @@ public partial class MainWindow : Window
         Log("Launcher started");
         try
         {
-            _uiDirectory = PrepareUi();
+            _uiDirectory = EmbeddedUiCache.Extract();
             var dataFolder = Path.Combine(_store.DataDirectory, "WebView2");
             var environment = await CoreWebView2Environment.CreateAsync(null, dataFolder);
             await Browser.EnsureCoreWebView2Async(environment);
@@ -98,32 +98,6 @@ public partial class MainWindow : Window
             MessageBox.Show("界面初始化失败。\n\n" + ex.Message, "MCUG Launcher", MessageBoxButton.OK, MessageBoxImage.Error);
             Close();
         }
-    }
-
-    static string PrepareUi()
-    {
-        var target = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "MCUGLauncher",
-            "ui-0.22.3");
-        Directory.CreateDirectory(target);
-        var assembly = Assembly.GetExecutingAssembly();
-        foreach (var name in assembly.GetManifestResourceNames().Where(name => name.StartsWith("MCUGLauncher.Ui.")))
-        {
-            var file = Path.Combine(target, name["MCUGLauncher.Ui.".Length..]);
-            // Embedded resource names flatten folder separators to dots.
-            if (file.EndsWith("assets.logo.png", StringComparison.OrdinalIgnoreCase))
-                file = Path.Combine(target, "assets", "logo.png");
-            var folder = Path.GetDirectoryName(file);
-            if (!string.IsNullOrEmpty(folder))
-                Directory.CreateDirectory(folder);
-            using var source = assembly.GetManifestResourceStream(name);
-            if (source == null)
-                continue;
-            using var destination = File.Create(file);
-            source.CopyTo(destination);
-        }
-        return target;
     }
 
     void OnNavigationCompleted(object? sender, CoreWebView2NavigationCompletedEventArgs e)

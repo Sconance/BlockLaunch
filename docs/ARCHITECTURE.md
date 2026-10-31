@@ -22,6 +22,7 @@ MainWindow (WPF 窗口 + WebView2 宿主 + 消息分发)
 | --- | --- | --- |
 | `MainWindow` | `MainWindow.xaml.cs` | 窗口宿主、WebView2 初始化、消息分发、业务编排 |
 | `WindowChromeController` | `Ui/WindowChromeController.cs` | DWM 圆角、拖动、最小化/最大化/关闭、窗口复位 |
+| `EmbeddedUiCache` | `Ui/EmbeddedUiCache.cs` | 把内嵌 Ui 资源解压到 `ui-<版本>` 缓存目录，供 WebView2 映射 |
 | `ConfigStore` | `Services/ConfigStore.cs` | `%LOCALAPPDATA%\MCUGLauncher\config.json` 读写与旧配置导入 |
 | `VersionCatalog` | `Services/VersionCatalog.cs` | 版本目录扫描、实例列表与选中项 |
 | `ModService` | `Services/ModService.cs` | Modrinth 项目下载到实例 |
@@ -39,4 +40,5 @@ MainWindow (WPF 窗口 + WebView2 宿主 + 消息分发)
 
 | 提交 | 抽离模块 | MainWindow 行数 |
 | --- | --- | --- |
-| 本次 | `WindowChromeController`（窗口行为、P/Invoke、拖动定时器） | 1460 |
+| 第 1 步 | `WindowChromeController`（窗口行为、P/Invoke、拖动定时器） | 1460 |
+| 第 2 步 | `EmbeddedUiCache`（内嵌 Ui 解压，缓存目录改用 `ProductInfo.Version`） | 1434 |
