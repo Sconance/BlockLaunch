@@ -21,6 +21,9 @@ using Microsoft.Win32;
 
 namespace MCUGLauncher;
 
+/// <summary>
+/// 提供 Main窗口 相关功能。
+/// </summary>
 public partial class MainWindow : Window
 {
     readonly ConfigStore _store = new();
@@ -57,6 +60,9 @@ public partial class MainWindow : Window
         Loaded += OnLoaded;
     }
 
+    /// <summary>
+    /// 执行 OnSourceInitialized。
+    /// </summary>
     protected override void OnSourceInitialized(EventArgs e)
     {
         base.OnSourceInitialized(e);
