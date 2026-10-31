@@ -30,6 +30,7 @@ public partial class MainWindow : Window
     readonly AccountSession _accounts;
     readonly UiCommandRouter _router;
     readonly CommunityFeed _feed;
+    readonly LaunchCoordinator _launch;
     AppConfig _config;
     bool _ready;
     string _uiDirectory = "";
@@ -43,6 +44,7 @@ public partial class MainWindow : Window
         _accounts = new AccountSession(_store, _config, _bridge, _http);
         _accounts.Changed += SendState;
         _feed = new CommunityFeed(_community, _store, _config, _bridge);
+        _launch = new LaunchCoordinator(_store, _config, _bridge, _accounts, _http);
         _router = new UiCommandRouter();
         ConfigureCommands();
         Loaded += OnLoaded;
@@ -185,98 +187,7 @@ public partial class MainWindow : Window
 
     async Task SendCommunityAsync() => await _feed.SendAsync();
 
-    async Task LaunchAsync(string version)
-    {
-        if (string.IsNullOrWhiteSpace(version))
-            version = _config.LastVersion;
-        if (string.IsNullOrWhiteSpace(version))
-        {
-            _bridge.Send(new
-            {
-                type = "launchResult",
-                ok = false,
-                message = "还没有可启动的版本。"
-            });
-            return;
-        }
-
-        var instanceDir = Path.Combine(_config.Root, "versions", version);
-        if (!Directory.Exists(instanceDir))
-        {
-            _bridge.Send(new
-            {
-                type = "launchResult",
-                ok = false,
-                message = "版本目录不存在：" + version
-            });
-            return;
-        }
-
-        try
-        {
-            var session = _accounts.Session ?? new MSession
-            {
-                Username = _config.Player,
-                UUID = OfflineUuid(_config.Player),
-                AccessToken = "0",
-                ClientToken = Guid.NewGuid().ToString("N"),
-                UserType = "legacy"
-            };
-            BlockLaunch.AuthlibLaunch? external = null;
-            if (_config.AccountType == "mua" && _accounts.Session != null && _accounts.Mua != null)
-            {
-                var metadata = await _accounts.Mua.Metadata(CancellationToken.None);
-                var jar = await BlockLaunch.AuthlibLaunch.Prepare(
-                    Path.Combine(_store.DataDirectory, "authlib-injector"), _http, CancellationToken.None);
-                external = new BlockLaunch.AuthlibLaunch(jar, metadata.Json);
-            }
-            var defaults = new BlockLaunch.LaunchSettings();
-            var settings = new BlockLaunch.LaunchSettings
-            {
-                AutoMemory = false,
-                RamMb = _config.Ram,
-                Java = _config.Java,
-                Width = _config.Width,
-                Height = _config.Height,
-                Isolation = defaults.Isolation,
-                Visibility = defaults.Visibility,
-                Priority = defaults.Priority,
-                VersionInfo = "MCUGLauncher"
-            };
-            var process = await BlockLaunch.LaunchService.Build(
-                new BlockLaunch.LaunchRequest(
-                    _config.Root,
-                    instanceDir,
-                    version,
-                    _config.Java,
-                    _config.Ram,
-                    _config.Width,
-                    _config.Height,
-                    session,
-                    settings,
-                    external),
-                CancellationToken.None);
-            process.Start();
-            _config.LastVersion = version;
-            _config.LastInstance = version;
-            _store.Save(_config);
-            _bridge.Send(new
-            {
-                type = "launchResult",
-                ok = true,
-                message = "已启动 " + version
-            });
-        }
-        catch (Exception ex)
-        {
-            _bridge.Send(new
-            {
-                type = "launchResult",
-                ok = false,
-                message = ex.Message
-            });
-        }
-    }
+    async Task LaunchAsync(string version) => await _launch.LaunchAsync(version);
 
     void HandleWindow(string action) => _chrome.Handle(action);
 
@@ -1115,12 +1026,5 @@ public partial class MainWindow : Window
         return match.Success ? match.Value : "";
     }
 
-    static string OfflineUuid(string player)
-    {
-        var hash = MD5.HashData(Encoding.UTF8.GetBytes("OfflinePlayer:" + player));
-        hash[6] = (byte)((hash[6] & 0x0F) | 0x30);
-        hash[8] = (byte)((hash[8] & 0x3F) | 0x80);
-        return new Guid(hash).ToString("N");
-    }
 
 }

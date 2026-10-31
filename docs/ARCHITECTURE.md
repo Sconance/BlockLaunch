@@ -28,6 +28,7 @@ MainWindow (WPF 窗口 + WebView2 宿主 + 消息分发)
 | `UiCommandRouter` | `Ui/UiCommandRouter.cs` | 把 WebView2 消息的 `type` 分发到注册的命令处理器 |
 | `LauncherStateBuilder` | `Ui/LauncherStateBuilder.cs` | 组装 `state` 快照（版本目录、实例、本地模组、数据源） |
 | `CommunityFeed` | `Ui/CommunityFeed.cs` | 社区数据聚合：本地公告/推荐 + 配置数据源拉取 |
+| `LaunchCoordinator` | `Ui/LaunchCoordinator.cs` | 启动流程：会话准备、MUA 外置登录、启动参数与进程启动 |
 | `ConfigStore` | `Services/ConfigStore.cs` | `%LOCALAPPDATA%\MCUGLauncher\config.json` 读写与旧配置导入 |
 | `VersionCatalog` | `Services/VersionCatalog.cs` | 版本目录扫描、实例列表与选中项 |
 | `ModService` | `Services/ModService.cs` | Modrinth 项目下载到实例 |
@@ -52,3 +53,4 @@ MainWindow (WPF 窗口 + WebView2 宿主 + 消息分发)
 | 第 5 步 | `UiCommandRouter`（消息 type 分发；主窗口只做命令注册） | 1223 |
 | 第 6 步 | `LauncherStateBuilder`（`state` 快照组装与体积格式化） | 1153 |
 | 第 7 步 | `CommunityFeed`（本地 + 远程社区数据聚合） | 1126 |
+| 第 8 步 | `LaunchCoordinator`（启动流程与离线 UUID） | 1030 |
