@@ -18,3 +18,5 @@
 - 版本号只改 `Directory.Build.props` 的 `McugVersion`，运行期读取 `ProductInfo.Version`；发版前运行 `python scripts/check-version.py`（需要标签时加 `--tag`），规则见 [版本号控制](docs/VERSIONING.md)。
 - 界面由 `src/MCUGLauncher/Ui` 下的 HTML/CSS/JS 与 WebView2 宿主组成，C# 只保留服务与消息桥接；不要重新引入旧的 WPF 页面/控制器结构。
 - 提交前运行 `python scripts/check-layout.py`、`dotnet run --project tools/SourceFormatter`，并按改动范围运行 `test/*Checks`。旧 WPF 时期的检查项目已退役，相关历史见 [WPF 归档](docs/archive/legacy-wpf/)。
+
+`0.22.3-codex` 在 WebView2 迁移上继续整理：业务放入 `UseCases`，窗口仅保留原生职责。新增命令须补 `WebBridgeChecks`，并运行 `python scripts/check-web-boundaries.py`；详见 [开发说明](docs/WEBVIEW_UI.md)。
