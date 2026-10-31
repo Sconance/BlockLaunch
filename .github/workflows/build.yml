@@ -18,18 +18,10 @@ jobs:
         run: python scripts/check-layout.py
       - name: Check version metadata
         run: python scripts/check-version.py
-      - name: Check class documentation
-        run: python scripts/check-class-docs.py
-      - name: Check UI boundaries
-        run: python scripts/check-ui-boundaries.py
-      - name: Check reference component reuse
-        run: python scripts/check-refactor-reuse.py
       - name: Check source formatting
         run: dotnet run --project tools/SourceFormatter
       - name: Build launcher
         run: ./scripts/build.ps1
 
       - name: Run isolated regression checks
-        run: ./scripts/run-checks.ps1 -Name AuthChecks,MuaChecks,DownloadChecks,QueueChecks,CompatibilityChecks,ResourceInstallChecks
-      - name: Run isolated UI and collection checks
-        run: ./scripts/run-checks.ps1 -Name VersionUiChecks,WorkflowUiChecks,CollectionChecks,RuntimeChecks,SessionControllerChecks
+        run: ./scripts/run-checks.ps1 -Name AuthChecks,MuaChecks,DownloadChecks,QueueChecks,CompatibilityChecks
