@@ -10,12 +10,11 @@
 
 项目整体许可证尚未指定，复用或再分发前请与维护者确认。第三方组件遵循各自许可证。
 
-开发入口、功能定位与编码约定见 [开发导览](docs/DEVELOPMENT.md)。提交前执行源码格式检查，并按改动范围运行行为检查。
+开发与构建说明见 [构建与目录说明](docs/BUILD.md)，架构与数据存储见 [README](README.md)。提交前执行源码格式检查，并按改动范围运行行为检查。
 
 ## 分支与版本
 
-- `test` 是当前重构主干；`refactor` 已全量并入（结构以 `test` 为准），不再单独递增版本号。
-- 合并或迁移其他分支时按功能与责任组件迁移，不使用旧版整文件替换实现，不重新引入 `partial MainWindow`；检查要点见 [重构路线图](TODO.md)。
-- 版本号只改 `Directory.Build.props` 的 `McugVersion`，源码和界面读取 `ProductInfo.Version`；发版前运行 `python scripts/check-version.py`（需要标签时加 `--tag`），规则见 [版本号控制](docs/VERSIONING.md)。
-- 新增页面与栏目沿用 [菜单扩展说明](docs/MENU_EXTENSIONS.md) 与 `LauncherPage` 动作边界；源码格式、布局检查、UI 边界检查与相关 `test/*Checks` 必须通过。
-- `src/MCUGLauncher/` 的每个顶层类型在 [类文档目录](docs/classes/README.md) 有一页说明；新增、重命名或拆分类型时同步补页与索引，`python scripts/check-class-docs.py` 会校验覆盖。
+- `main` 是发布分支；功能开发在版本分支（如 `0.22.3`）进行，修复分支如 `0.22.3-fix`。
+- 版本号只改 `Directory.Build.props` 的 `McugVersion`，运行期读取 `ProductInfo.Version`；发版前运行 `python scripts/check-version.py`（需要标签时加 `--tag`），规则见 [版本号控制](docs/VERSIONING.md)。
+- 界面由 `src/MCUGLauncher/Ui` 下的 HTML/CSS/JS 与 WebView2 宿主组成，C# 只保留服务与消息桥接；不要重新引入旧的 WPF 页面/控制器结构。
+- 提交前运行 `python scripts/check-layout.py`、`dotnet run --project tools/SourceFormatter`，并按改动范围运行 `test/*Checks`。旧 WPF 时期的检查项目已退役，相关历史见 [WPF 归档](docs/archive/legacy-wpf/)。

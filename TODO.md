@@ -1,53 +1,34 @@
-# 重构路线图
+# 路线图（0.22.3 及之后）
 
-开发版本 **0.22.1** 位于同名分支；0.22.0 已合并到 `main`，合并说明见 [合并到主分支前的说明](docs/MERGE_TO_MAIN.md)。`refactor` 分支已废弃，仅保留 git 历史与 [历史归档](docs/archive/branch_refactor/README.md) 中的记录。
+0.22.3 把界面迁移到 **WebView2 + HTML/CSS/JS**，C# 只保留服务与消息桥接。`0.22.3-fix` 分支修复了原分支的编译失败、SDK 固定、CI 覆盖与 VS Code 配置问题，审查说明见 [0.22.3-fix 审查指南](docs/REVIEW_0.22.3-fix.md)。
 
-## 已完成
+## 已完成（0.22.3-fix）
 
-- [x] 原生窗口 shell 化：`MainWindow.xaml.cs` 只保留 35 行，九个页面与标题区拆成独立 XAML。
-- [x] `Composition/LauncherWorkspace` 组合根、`LauncherControls` 强类型绑定、`LauncherPageRouter` 编译期页面路由。
-- [x] 41 个功能模块从窗口迁出；12 个组件改为接收控件、状态与回调。
-- [x] 版本设置拆分为概览、启动、加载器、Mod、导出五个独立页面。
-- [x] 0.20.1 / 0.20.2 功能整合：资源工作区、心形收藏与筛选、八个菜单扩展区、加载器概览、品牌资源。
-- [x] `refactor` 全量并入；`Components/` 按九个功能域重组、10 个控制器按职责改名（0.22.0）。
-- [x] 142 篇类文档归档到 `docs/classes/`，版本号改为单一来源并接入 CI 检查。
-- [x] 完成前后端分界评估，结论转化为下方第 1 组待办。
-
-## 0.22.1 本地开发
-
-- [x] 不同独立实例可并行运行，按会话管理日志、关闭与退出诊断；同目录允许不同离线 ID，多开时按身份去重。
-- [x] 启动恢复改为本地优先，在线版本列表在下载页按需读取，超时和错误不占用全局任务。
-- [ ] 在真实 Minecraft、账号和不同显卡环境补验多开；不以组件/测试进程检查代替完整游戏验收。
-- 本分支只更新本地完整版与 Lite，不发布 GitHub Release。
+- 移除旧 WPF 界面（`Components/`、`Views/`、`Presentation/`、`Composition/`、`Navigation/`、`Builders/`、`Styling/`、`Initialization/` 与旧 Models），`MainWindow` 只保留 WebView2 宿主。
+- 保留并继续使用 `Authentication/`、`Services/`、`Models/AppConfig`、`Ui/` 资源；消息协议位于 `Ui/host.js` 与 `MainWindow.xaml.cs`。
+- 恢复 0.22.2 的 .NET SDK 固定版本，修复 `SourceFormatter` 的 CS1705。
+- CI 覆盖 `0.22.3` 与 `0.22.3-fix`；退役依赖旧界面的 11 个检查项目与 4 个预览工具。
+- 修复 VS Code 的 CS1061/CS0103：设计时构建补 `BuildingInsideVisualStudio`，新增根目录解决方案与工作区设置。
 
 ## 待办
 
-### 1. 前后端边界
+### 1. 新架构的测试
+- [ ] 为 WebView2 消息协议（`host.js` ↔ `MainWindow.xaml.cs`）补协议级测试，覆盖版本/Mod/服务器/社区/配置读写。
+- [ ] 真实 WebView2 环境回归：页面加载、导航、主题切换、错误提示与更新流程。
+- [ ] 保留的 Core/Auth 检查继续在 CI 运行；新增检查项目时同步 `run-checks` 与 CI 列表。
 
-- [ ] **让边界可执行**：在 `scripts/check-ui-boundaries.py` 增加规则——`Components/`、`Presentation/` 禁止 `new HttpClient`、`Process.Start`、`ProtectedData`、`JsonSerializer`（按文件白名单放行 `InlineFilePicker` 等）；Core 禁止新增用户可见中文（允许异常消息、诊断规则与日志）。先止住继续越界。
-- [ ] **迁移认证与账号安全**：把 `Authentication/MicrosoftAccountService`、`MuaAccountService`、`MinecraftOwnershipGuard`、`ProtectedAccountStorage`、`AvatarRenderer` 的下载部分移入 Core（或独立 `MCUGLauncher.Infrastructure`），UI 只保留 `EmbeddedMicrosoftOAuthUI`（WebView2）。
-- [ ] **用户文案回到 UI**：Core 只返回状态、枚举和计数；`OperationRecord.StateLabel`/`Summary`/`Detail`、`ContentService.DisplayTitle`、`ModPreflight.Summary`、`PackUpgrade` 的显示名由展示层生成，相关测试改为断言状态值。
-- [ ] **补用例层**：为启动、安装、更新、卸载、收藏各引一个用例对象，控制器只调用例，减少对 `ContentService`（8 个 UI 文件）、`JavaDiscovery`（6 个文件）等服务的分散调用。
-- [ ] **拆 Core 项目**：`Domain` 与 `Infrastructure`（CmlLib、HTTP、文件）分项目，域层可完全离线测试。
+### 2. 文档
+- [ ] 补 `docs/WEBVIEW_UI.md`：目录、消息协议、数据文件与调试方式。
+- [ ] 清理 `docs/` 下旧 WPF 文档引用；历史材料已归档到 `docs/archive/legacy-wpf/`。
+- [ ] README 的截图与功能说明随新界面更新。
 
-### 2. MainWindow 剩余拆分
+### 3. 发布
+- [ ] 版本号 0.22.3 的 CHANGELOG/README 一致性（`python scripts/check-version.py`）。
+- [ ] 合并到 `main` 后打 `v0.22.3` 标签，从标签构建完整版与 Lite 版并记录哈希。
+- [ ] 在 GitHub Releases 上传附件与发布说明（参考 [docs/releases](docs/releases/README.md)）。
 
-- [ ] 收窄仍通过 `LauncherWorkspace` 协作的模块：实例概览、资源工作区、任务协调、启动协调。
-- [ ] 拆分超过 400 行的模块：`LaunchCoordinator`（约 540 行）、`BookmarkLibraryController`（约 510 行）、`ResourceBrowserController`（约 480 行）、`ExperienceController`（约 407 行）。
+## 审查约定
 
-### 3. 验证与发布
-
-- [ ] 补齐 `IntegrationChecks`、真实微软 / MUA 授权与完整游戏启动矩阵的验收环境。
-- [ ] 合并到 `main` 后按 [版本号控制](docs/VERSIONING.md) 打 `v0.22.0` 标签，从标签构建完整版与 Lite 版并记录哈希。
-- [ ] 在 GitHub Releases 上传 0.22.0 附件与发布说明（可参考 [docs/releases/0.22.0.md](docs/releases/0.22.0.md)）。
-
-## 整合与拆分检查要点
-
-适用于后续任何分支合并与结构调整：
-
-- 保留用户可见功能、错误处理和数据兼容行为；不改存储目录、加密熵、JSON 字段名与实例格式。
-- 按功能与责任组件迁移改动，避免用旧版整文件替换当前实现，不重新引入 `partial MainWindow`。
-- 冲突或行为不明确时，先查对应 Core 服务、所属模块与 `test/*Checks`，再决定迁移方式。
-- 新增菜单或页面走 `LauncherMenuRegistry` 与 `LauncherPage` 边界，不复制下载分类或导航索引逻辑。
-- 每批整合后运行 Release 构建、相关检查、源码格式、布局与差异检查；文档、CHANGELOG 与版本号同步更新。
-- 版本号只改 `Directory.Build.props` 的 `McugVersion`，规则见 [版本号控制](docs/VERSIONING.md)；类型或目录调整后同步 `docs/classes`，`python scripts/check-class-docs.py` 必须通过。
+- 小步提交：一个提交只做一类改动（配置、删除、测试、文档），便于逐条审查。
+- 删除旧文件属于迁移的一部分，不需要逐个文件评审；重点审查 `MainWindow.xaml.cs` 的消息分发与 `Services/` 的数据边界。
+- 版本号只改 `Directory.Build.props` 的 `McugVersion`，规则见 [版本号控制](docs/VERSIONING.md)。

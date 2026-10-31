@@ -76,7 +76,7 @@ python scripts/check-layout.py
 只需 Python 3 标准库，在 Windows 或 Linux 上检查项目 XML、项目引用、链接源码、
 图标与复制资源是否存在，并检查旧路径残留；不会编译或运行游戏。CI 在构建前执行此校验。
 
-`docs/TESTING.md` 顶部记录当前版本验证范围，下方保留历史记录。
+`docs/archive/legacy-wpf/TESTING.md` 记录了旧 WPF 界面时期的验证范围，供历史追溯。
 
 ## 双版本发布
 
