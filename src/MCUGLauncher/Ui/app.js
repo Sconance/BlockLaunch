@@ -191,6 +191,8 @@ const instances = [
   { name:'梦乐园', loader:'Fabric 1.21.4', mods:4, updates:0 },
 ];
 
+const appVersion = () => window.state?.appVersion || "预览";
+
 function titlebar(active) {
   const navs = [
     ['home', '启动', 'play'],
@@ -201,7 +203,7 @@ function titlebar(active) {
     <div class="brand">
       ${BrandLogo()}
       <span class="brand-name">MCUG Launcher</span>
-      <span class="brand-version">0.22.3</span>
+      <span class="brand-version">${appVersion()}</span>
     </div>
     <nav class="topnav">
       ${navs.map(([id, label, ic]) => `<a class="nav-item ${active === id ? 'active' : ''}" href="?screen=${id}">${icon(ic)}<span>${label}</span></a>`).join('')}
@@ -234,7 +236,7 @@ function browseSidebar(active) {
       ${item('shader', '光影', 'sun', '?screen=download')}
       ${item('datapack', '数据包', 'database', '?screen=download')}
     </div>
-    <div class="side-foot"><span class="live-dot"></span><span>社区数据已连接 · v0.22.3</span></div>
+    <div class="side-foot"><span class="live-dot"></span><span>社区内容</span></div>
   </aside>`;
 }
 
@@ -246,6 +248,7 @@ function settingsSidebar(active) {
       <div class="side-label">启动与环境</div>
       ${page('launch', '启动设置', 'play')}
       ${page('java', 'Java 管理', 'terminal')}
+      ${page('install', '安装与导入', 'box')}
       ${page('network', '下载与网络', 'download')}
     </div>
     <div class="side-group">
@@ -261,6 +264,8 @@ function settingsSidebar(active) {
     <div class="side-group">
       <div class="side-label">游戏工具</div>
       ${page('servers', '服务器收藏', 'server')}
+      ${page('games', '运行中的游戏', 'play')}
+      ${page('bookmarks', '我的收藏', 'heart')}
       ${page('saves', '存档保护', 'box')}
     </div>
     <div class="side-group">
@@ -274,7 +279,7 @@ function settingsSidebar(active) {
       <div class="side-label">关于</div>
       ${page('about', '关于与许可', 'info')}
     </div>
-    <div class="side-foot"><span class="live-dot"></span><span>社区数据已连接 · v0.22.3</span></div>
+    <div class="side-foot"><span class="live-dot"></span><span>社区内容</span></div>
   </aside>`;
 }
 
@@ -293,8 +298,9 @@ function downloadSidebar(active = 'community') {
       ${item('resourcepack', '资源包', 'image', '?screen=catalog&type=resourcepack')}
       ${item('shader', '光影', 'sun', '?screen=catalog&type=shader')}
       ${item('datapack', '数据包', 'database', '?screen=catalog&type=datapack')}
+      ${item('install', '安装与导入', 'box', '?screen=settings&panel=install')}
     </div>
-    <div class="side-foot"><span class="live-dot"></span><span>社区数据已连接 · v0.22.3</span></div>
+    <div class="side-foot"><span class="live-dot"></span><span>社区内容</span></div>
   </aside>`;
 }
 
@@ -321,7 +327,7 @@ function accountCard() {
     <div class="acc-meta">${icon('shield')} 正版账号 · 启动时验证</div>
     <button class="btn btn-soft acc-btn">切换微软账号</button>
     <a class="acc-link" href="?screen=options">账号设置</a>
-    <div class="acc-foot"><span>上次登录 · 10 分钟前</span><strong>已保存</strong></div>
+    <div class="acc-foot"><span>账号保存在本机</span><strong>已保存</strong></div>
   </section>`;
 }
 
@@ -362,7 +368,7 @@ function instancePanel() {
 
 function serverTile(s) {
   const pingClass = !s.online ? 'bad' : s.ping < 45 ? 'good' : 'mid';
-  return `<article class="server-tile ${s.online ? '' : 'offline'}">
+  return `<article data-server-id="${s.id}" class="server-tile ${s.online ? '' : 'offline'}">
     <div class="server-top">
       <div class="server-icon ${tileClass(s.color)}">${icon(s.icon)}</div>
       <div class="flex1">
@@ -446,7 +452,8 @@ function annPanel(mode = 'normal') {
   if (mode === 'error') {
     return `<section class="card ann-panel">${head}<div class="ann-body"><div class="mini-error compact">${icon('alert')}<div><b>公告加载失败</b><span>数据源可能暂时不可用。</span></div><button class="btn-link">重试</button></div></div></section>`;
   }
-  const a = announcements[Q.ann];
+  if (!announcements.length) return annPanel("empty");
+  const a = announcements[Q.ann % announcements.length];
   const month = a.date.split('/')[0];
   const day = a.date.split('/')[1];
   return `<section class="card ann-panel">${head}<div class="ann-body">
@@ -489,7 +496,7 @@ function quoteStrip(mode = 'normal') {
   if (mode === 'error') {
     return `<section class="card quote-strip"><div class="quote-label"><div class="qmark">“</div><b>群友语录</b></div><div class="quote-main"><div class="quote-fallback">${icon('alert')}<span>语录加载失败。</span></div></div><div class="quote-side"><button class="btn-link">${icon('refresh')} 重试</button></div></section>`;
   }
-  const q = quotes[Q.qi];
+  const q = quotes[Q.qi % Math.max(1, quotes.length)] || {type:"text",text:"暂无群友语录",author:"",meta:""};
   const isImage = q.type === 'image';
   const showFallback = Q.quote === 'fallback' && isImage;
   const dots = `<div class="quote-dots">${quotes.map((_, i) => `<span class="qdot ${i === Q.qi ? 'on' : ''}"></span>`).join('')}</div>`;
@@ -641,10 +648,10 @@ function catalogPage(type = 'mod', query = '') {
   const meta = {
     vanilla: { title: '原版游戏', sub: '安装 Mojang 官方正式版，不修改现有实例。', icon: 'grid', code: 'grid' },
     mod: { title: '模组', sub: '从 Modrinth 搜索并下载到当前实例。', icon: 'box', code: 'mod' },
-    modpack: { title: '整合包', sub: '下载整合包文件，导入方式见文件说明。', icon: 'layers', code: 'layers' },
+    modpack: { title: '整合包', sub: '下载整合包后，在安装与导入页面选择文件。', icon: 'layers', code: 'layers' },
     resourcepack: { title: '资源包', sub: '下载后放入当前实例的 resourcepacks。', icon: 'image', code: 'image' },
     shader: { title: '光影', sub: '下载后放入当前实例的 shaderpacks。', icon: 'sun', code: 'sun' },
-    datapack: { title: '数据包', sub: '下载到当前实例的 datapacks，进入存档后启用。', icon: 'database', code: 'database' }
+    datapack: { title: '数据包', sub: '保存到下载目录，随后导入具体存档的 datapacks 文件夹。', icon: 'database', code: 'database' }
   }[type] || { title: '下载', sub: '浏览可下载内容。', icon: 'download', code: 'download' };
 
   if (type === 'vanilla') {
@@ -668,7 +675,7 @@ function catalogPage(type = 'mod', query = '') {
   } else if (!items.length) {
     body = `<div class="catalog-empty">${icon('search')}<b>没有找到内容</b><span>换一个关键词，或确认当前实例的版本与加载器。</span></div>`;
   } else {
-    body = `<div class="catalog-grid">${items.map((item) => `<article class="content-card">
+    body = `<div class="catalog-grid">${items.map((item) => `<article class="content-card" data-content-id="${item.id}" data-content-kind="${type}">
       <div class="content-top">${item.icon ? `<img class="content-icon" src="${item.icon}" alt="">` : `<span class="content-icon fallback">${(item.name || 'M').slice(0, 1)}</span>`}<div class="content-id"><b>${item.name}</b><span>${item.author || 'Modrinth'}</span></div></div>
       <div class="content-desc">${item.description || ''}</div>
       <div class="content-tags">${(item.tags || '').split(' · ').filter(Boolean).slice(0, 3).map((t) => `<span class="tag">${t}</span>`).join('')}</div>
@@ -686,6 +693,11 @@ function catalogPage(type = 'mod', query = '') {
 }
 
 function modDetailPage() {
+  if (window.chrome?.webview) {
+    const m = mods.find(x => x.id === Q.id) || mods[0];
+    const safe = value => String(value ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    return shell('download',downloadSidebar('mod'),`<a class="back-link" href="?screen=mods">返回模组列表</a><section class="card" style="padding:24px;margin-top:16px"><h2>${safe(m?.name || '未选择本地模组')}</h2><p>${safe(m?.desc || '请选择本地模组，或到下载分类搜索资源。')}</p><p>${safe(m?.v || '')}</p><button class="btn btn-ghost" data-open-folder="mods">打开模组目录</button><a class="btn btn-primary" href="?screen=catalog&type=mod">搜索资源</a></section>`);
+  }
   const m = mods.find(x => x.id === Q.id) || mods[0];
   const local = Q.mode === 'local';
   const shots = [0,1,2].map(i => `<div class="shot ${i === 0 ? 'on' : ''}" style="filter:hue-rotate(${i * 18}deg)">${QuotePhoto()}</div>`).join('');
@@ -738,7 +750,7 @@ function modDetailPage() {
 function versionManagePage() {
   const managed = mods;
   const updateFor = id => mods.find(item => item.id === id)?.update || '';
-  const current = instances.find(i => i.name === Q.inst) || instances[0];
+  const current = instances.find(i => i.name === Q.inst) || instances[0] || {name:"未选择实例",loader:"",mods:0,updates:0};
   const visible = managed.slice(0, Math.min(8, current.mods));
   const rows = visible.map((m) => {
     const disabled = m.enabled === false;
@@ -787,7 +799,7 @@ function versionSettingsPage() {
         <div class="vs-chips"><button>修改版本名</button><button>修改版本描述</button><button>加入收藏夹</button><button>自定义分类</button></div>
       </section>
       <section class="card vs-card"><div class="vs-card-title">快捷方式</div><div class="vs-chips"><button>${icon('folder')} 存档与截图库</button><button>版本文件夹</button><button>存档文件夹</button><button>Mod 文件夹</button><button>截图文件夹</button></div></section>
-      <section class="card vs-card"><div class="vs-card-title">启动概览</div><div class="vs-launch-grid"><div><span>Java</span><b>21.0.4 · 自动选择</b></div><div><span>内存</span><b>4096 MB</b></div><div><span>游戏窗口</span><b>1280 × 720</b></div><div><span>上次启动</span><b>10 分钟前</b></div></div></section>
+      <section class="card vs-card"><div class="vs-card-title">启动概览</div><div class="vs-launch-grid"><div><span>Java</span><b>${window.state?.java || "自动选择"}</b></div><div><span>内存</span><b>${window.state?.ram || 4096} MB</b></div><div><span>游戏窗口</span><b>${window.state?.width || 1280} × ${window.state?.height || 720}</b></div><div><span>运行状态</span><b>请查看运行中的游戏</b></div></div></section>
       <section class="card vs-card"><div class="vs-card-title">高级管理</div><div class="vs-chips"><button>${icon('external')} 导出启动脚本</button><button>${icon('refresh')} 补全文件</button><button class="danger-text" data-delete-version="${Q.v || ''}">${icon('trash')} 删除版本</button></div><div class="vs-note">删除版本会移到本机回收目录，存档与截图默认保留。</div></section>
     </div>
   </div>`);
@@ -808,7 +820,7 @@ function settingsPage(panel = 'launch') {
     const rows = (state.javaList || []).map((j) => `<div class="java-row ${j.error ? 'bad' : ''}"><div><b>Java ${j.major || '?'} · ${j.arch || ''} ${j.vendor || ''}</b><span>${j.path}</span>${j.error ? `<em>${j.error}</em>` : ''}</div><button class="btn btn-ghost btn-sm" data-use-java="${j.path}">使用</button></div>`).join('') || '<div class="empty-line">还没有扫描结果。点击「扫描本机 Java」。</div>';
     body = card('Java 运行时', '留空时由启动核心按版本自动选择；指定后优先使用该路径。', `
       ${field('当前 Java 路径', `<div class="path-row"><input class="input" data-setting-java value="${state.java || ''}" placeholder="留空自动选择"><button class="btn btn-ghost" data-pick="java">选择</button></div>`)}
-      <div class="settings-actions"><button class="btn btn-ghost" data-scan-java onclick="window.mcugScanJava?.()">扫描本机 Java</button><button class="btn btn-primary" data-save-launch>保存</button></div>`)
+      <div class="settings-actions"><button class="btn btn-ghost" data-scan-java>扫描本机 Java</button><button class="btn btn-primary" data-save-launch>保存</button></div>`)
       + card('扫描结果', '列出本机常见位置中存在的 java.exe；不会修改游戏版本。', `<div class="java-list" id="java-list">${rows}</div>`);
   } else if (panel === 'network') {
     title = '下载与网络';
@@ -823,7 +835,7 @@ function settingsPage(panel = 'launch') {
   } else if (panel === 'appearance') {
     title = '界面与背景';
     sub = '蓝白主题与窗口显示。';
-    body = card('主题', '0.22.3 固定使用蓝白主题，避免社区卡片与系统控件割裂。', `
+    body = card('主题', '默认使用蓝白主题。', `
       <div class="theme-preview"><span class="theme-dot"></span><div><b>蓝白 · 默认</b><span>#006DB8 强调色 / #F3F7F9 页面底色</span></div><span class="tag">当前</span></div>
       <div class="settings-actions"><button class="btn btn-ghost" data-reset-window>恢复默认窗口 1200×780</button></div>`);
   } else if (panel === 'servers') {
@@ -835,13 +847,22 @@ function settingsPage(panel = 'launch') {
     sub = '打开存档目录，或把当前存档打包备份。';
     body = card('存档备份', '备份会写到本地数据目录的 backups 文件夹，不修改原存档。', `
       <div class="settings-actions"><button class="btn btn-primary" data-backup-saves>立即备份</button><button class="btn btn-ghost" data-open-folder="saves">打开存档文件夹</button></div>
-      <div class="inline-note">备份文件：%LOCALAPPDATA%\\MCUGLauncher\\backups</div>`);
+      <div class="inline-note">备份按当前实例分别保存，恢复会创建新存档。</div><div data-save-backups></div>`);
+  } else if (panel === 'bookmarks') {
+    title = '我的收藏'; sub = '收藏保存在本地，可以继续下载或取消收藏。';
+    body = card('资源收藏', '下载时按当前实例重新检查兼容版本。', '<div data-bookmark-list></div>');
+  } else if (panel === 'games') {
+    title = '运行中的游戏';
+    sub = '各个游戏独立运行，关闭前会再次确认。';
+    body = card('游戏会话', '关闭启动器不会自动关闭游戏。', '<div data-games-list></div>');
+  } else if (panel === 'install') {
+    title = '安装与导入';
+    sub = '使用现有 Core 安装加载器或导入整合包，执行进度在下载任务中查看。';
+    body = card('游戏安装', '支持 Fabric、Quilt、Forge 和 NeoForge。', '<div data-install-tools></div>');
   } else if (panel === 'tasks') {
     title = '下载任务';
-    sub = '当前版本不保留后台下载队列。';
-    body = card('任务状态', '模组下载在详情页同步完成；关闭页面后不保留进度。', `
-      <div class="empty-line">没有正在进行的下载任务。</div>
-      <div class="settings-actions"><a class="btn btn-primary" href="?screen=mods">打开模组下载</a><button class="btn btn-ghost" data-open-folder="root">打开游戏目录</button></div>`);
+    sub = '下载任务独立于当前页面，支持排队、暂停、取消和重试。';
+    body = card('下载队列', '中断的任务可以继续；取消保留已校验缓存。', '<div data-task-list></div>');
   } else if (panel === 'recovery') {
     title = '任务与恢复';
     sub = '窗口、界面缓存与配置目录。';
@@ -862,9 +883,9 @@ function settingsPage(panel = 'launch') {
       <pre class="log-box" id="diag-box">${state.diagText || '点击「读取系统信息」。'}</pre>`);
   } else if (panel === 'about') {
     title = '关于与许可';
-    sub = 'MCUG Launcher 0.22.3。';
+    sub = 'MCUG Launcher ' + appVersion() + '。';
     body = card('MCUG Launcher', '面向 Windows 的 Minecraft Java 版启动器。', `
-      <div class="about-hero"><img src="assets/logo.png" alt=""><div><b>MCUG Launcher</b><span>0.22.3 · WPF + WebView2</span></div></div>
+      <div class="about-hero"><img src="assets/logo.png" alt=""><div><b>MCUG Launcher</b><span>${appVersion()} · WPF + WebView2</span></div></div>
       <div class="info-row"><span>社区数据仓库</span><a href="https://github.com/waibibabu1239/MCUGL-storage" target="_blank" rel="noreferrer">waibibabu1239/MCUGL-storage</a></div>
       <div class="info-row"><span>管理员文档</span><a href="docs/admin-and-community.md" target="_blank">docs/admin-and-community.md</a></div>
       <div class="info-row"><span>许可</span><span>沿用 MCUG Launcher 原仓库策略</span></div>`);
@@ -1009,18 +1030,18 @@ function adminPage() {
 
 /* ---------------- settings: datasource ---------------- */
 const DS = [
-  { key:'announcements', label:'公告', hint:'主页公告栏与全部公告', url:'https://raw.githubusercontent.com/MCUG-Launcher/community/main/announcements.json' },
-  { key:'servers', label:'服务器', hint:'主页正在开设的服务器', url:'https://raw.githubusercontent.com/MCUG-Launcher/community/main/servers.json' },
-  { key:'recommendations', label:'推荐', hint:'主页摘要与下载页群友推荐', url:'https://raw.githubusercontent.com/MCUG-Launcher/community/main/recommendations.json' },
-  { key:'quotes', label:'语录', hint:'主页群友语录（文字或图片）', url:'https://raw.githubusercontent.com/MCUG-Launcher/community/main/quotes.json' },
+  { key:'announcements', label:'公告', hint:'主页公告栏与全部公告', url:'https://raw.githubusercontent.com/waibibabu1239/MCUGL-storage/main/announcements.json' },
+  { key:'servers', label:'服务器', hint:'主页正在开设的服务器', url:'https://raw.githubusercontent.com/waibibabu1239/MCUGL-storage/main/servers.json' },
+  { key:'recommendations', label:'推荐', hint:'主页摘要与下载页群友推荐', url:'https://raw.githubusercontent.com/waibibabu1239/MCUGL-storage/main/recommendations.json' },
+  { key:'quotes', label:'语录', hint:'主页群友语录（文字或图片）', url:'https://raw.githubusercontent.com/waibibabu1239/MCUGL-storage/main/quotes.json' },
 ];
 
 function datasourcePage() {
   const err = Q.state === 'error';
   const urls = {
-    announcements: err ? 'https://raw.githubusercontent.com/MCUG-Launcher/community/main/announcements-v2.json' : DS[0].url,
+    announcements: err ? 'https://raw.githubusercontent.com/waibibabu1239/MCUGL-storage/main/announcements-v2.json' : DS[0].url,
     servers: DS[1].url,
-    recommendations: err ? 'github.com/MCUG-Launcher/community/recommendations.json' : DS[2].url,
+    recommendations: err ? 'github.com/waibibabu1239/MCUGL-storage/recommendations.json' : DS[2].url,
     quotes: DS[3].url,
   };
   const results = err ? {
@@ -1046,7 +1067,7 @@ function datasourcePage() {
       <section class="card settings-card">
         <div class="ds-preset">
           <div class="segmented"><button class="seg-btn ${err ? '' : 'active'}">GitHub 官方源</button><button class="seg-btn ${err ? 'active' : ''}">自定义</button></div>
-          <span class="ds-preset-note">${err ? '当前为自定义源，四项可分别填写。' : '官方源跟随 MCUG-Launcher/community 仓库更新。'}</span>
+          <span class="ds-preset-note">${err ? '当前为自定义源，四项可分别填写。' : '官方源跟随 waibibabu1239/MCUGL-storage 仓库更新。'}</span>
         </div>
         <div class="ds-rows">${rows}</div>
         <div class="ds-write">
@@ -1232,6 +1253,11 @@ function render() {
   else html = homePage();
   document.getElementById('app').innerHTML = html;
   bind();
+  window.McugTasks?.mount();
+  window.McugInstall?.mount();
+  window.McugGames?.mount();
+  window.McugBookmarks?.mount();
+  window.McugSaves?.mount();
 }
 
 function bind() {
@@ -1307,13 +1333,12 @@ function bind() {
       window.chrome?.webview?.postMessage({ type: 'saveRecommendations', items: recs });
     });
   });
-  const menu = document.querySelector('[data-server-menu]');
-  if (menu) menu.addEventListener('click', () => {
+  document.querySelectorAll('[data-server-menu]').forEach(menu => menu.addEventListener('click', () => {
     const id = menu.getAttribute('data-server-menu');
     const u = new URL(location.href);
     if (Q.menu === id) u.searchParams.delete('menu'); else u.searchParams.set('menu', id);
     go(u.toString());
-  });
+  }));
   document.querySelectorAll('[data-delete-server]').forEach((button) => {
     button.addEventListener('click', () => {
       const address = button.getAttribute('data-delete-server');
@@ -1322,6 +1347,10 @@ function bind() {
       }
     });
   });
+}
+// Mock content is available only in standalone browser previews.
+if (window.chrome?.webview) {
+  for (const collection of [servers, announcements, recs, quotes, versionGroups, instances, mods]) collection.splice(0);
 }
 render();
 

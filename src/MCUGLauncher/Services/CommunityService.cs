@@ -5,10 +5,14 @@ namespace MCUGLauncher.Services;
 
 public sealed class CommunityService
 {
-    readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(8) };
+    readonly HttpClient _http;
+    public CommunityService(HttpClient http) => _http = http;
 
     public async Task<(bool Ok, string Text, int Ms)> TestAsync(string url, CancellationToken token)
     {
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(token);
+        deadline.CancelAfter(TimeSpan.FromSeconds(8));
+        token = deadline.Token;
         if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) ||
             (uri.Scheme != Uri.UriSchemeHttps && uri.Scheme != Uri.UriSchemeHttp))
             return (false, "地址需以 https:// 或 http:// 开头", 0);
@@ -34,6 +38,9 @@ public sealed class CommunityService
 
     public async Task<string?> ReadAsync(string url, CancellationToken token)
     {
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(token);
+        deadline.CancelAfter(TimeSpan.FromSeconds(8));
+        token = deadline.Token;
         try
         {
             using var response = await _http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, token);

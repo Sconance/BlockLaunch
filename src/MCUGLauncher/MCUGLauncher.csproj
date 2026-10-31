@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
@@ -28,7 +28,11 @@
   <ItemGroup>
     <EmbeddedResource Include="Ui/index.html" LogicalName="MCUGLauncher.Ui.index.html" />
     <EmbeddedResource Include="Ui/styles.css" LogicalName="MCUGLauncher.Ui.styles.css" />
-    <EmbeddedResource Include="Ui/revision.css" LogicalName="MCUGLauncher.Ui.revision.css" />
+    <EmbeddedResource Include="Ui/install.js" LogicalName="MCUGLauncher.Ui.install.js" />
+    <EmbeddedResource Include="Ui/saves.js" LogicalName="MCUGLauncher.Ui.saves.js" />
+    <EmbeddedResource Include="Ui/bookmarks.js" LogicalName="MCUGLauncher.Ui.bookmarks.js" />
+    <EmbeddedResource Include="Ui/games.js" LogicalName="MCUGLauncher.Ui.games.js" />
+    <EmbeddedResource Include="Ui/tasks.js" LogicalName="MCUGLauncher.Ui.tasks.js" />
     <EmbeddedResource Include="Ui/app.js" LogicalName="MCUGLauncher.Ui.app.js" />
     <EmbeddedResource Include="Ui/host.js" LogicalName="MCUGLauncher.Ui.host.js" />
     <EmbeddedResource Include="Ui/assets/logo.png" LogicalName="MCUGLauncher.Ui.assets.logo.png" />

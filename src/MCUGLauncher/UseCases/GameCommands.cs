@@ -1,3 +1,5 @@
+using MCUGLauncher.Services;
+using System.Text.Json;
 using BlockLaunch;
 using CmlLib.Core.Auth;
 using static MCUGLauncher.UseCases.ProtocolValues;
@@ -44,7 +46,8 @@ internal sealed class GameCommands(LauncherContext context)
             return;
         }
 
-        var instanceDir = InstancePath(context.Config.Root, version);
+        InstancePath(context.Config.Root, version);
+        var instanceDir = VersionCatalog.InstanceDirectory(context.Config.Root, version);
         if (!Directory.Exists(instanceDir))
         {
             context.Send(new
@@ -76,19 +79,13 @@ internal sealed class GameCommands(LauncherContext context)
                     Path.Combine(context.Store.DataDirectory, "authlib-injector"), context.Http, context.Token);
                 external = new BlockLaunch.AuthlibLaunch(jar, metadata.Json);
             }
-            var defaults = new BlockLaunch.LaunchSettings();
-            var settings = new BlockLaunch.LaunchSettings
-            {
-                AutoMemory = false,
-                RamMb = context.Config.Ram,
-                Java = context.Config.Java,
-                Width = context.Config.Width,
-                Height = context.Config.Height,
-                Isolation = defaults.Isolation,
-                Visibility = defaults.Visibility,
-                Priority = defaults.Priority,
-                VersionInfo = "MCUGLauncher"
-            };
+            var settings = JsonSerializer.Deserialize<LaunchSettings>(JsonSerializer.Serialize(context.Config.LegacyPreferences.Launch))!;
+            settings.AutoMemory = false;
+            settings.RamMb = context.Config.Ram;
+            settings.Java = context.Config.Java;
+            settings.Width = context.Config.Width;
+            settings.Height = context.Config.Height;
+            settings.VersionInfo = "MCUGLauncher";
             var process = await BlockLaunch.LaunchService.Build(
                 new BlockLaunch.LaunchRequest(
                     context.Config.Root,
@@ -102,7 +99,11 @@ internal sealed class GameCommands(LauncherContext context)
                     settings,
                     external),
                 context.Token);
-            process.Start();
+            var game = context.Games.Start(context.Config.Root, instanceDir, version,
+                Path.Combine(context.Store.DataDirectory, "game-logs"), process, context.Log, new[] { session.AccessToken ?? "" },
+                context.Config.Player, context.Config.AccountType == "offline");
+            context.SendGames();
+            _ = ObserveAsync(game);
             context.Config.LastVersion = version;
             context.Config.LastInstance = version;
             context.Store.Save(context.Config);
@@ -123,4 +124,22 @@ internal sealed class GameCommands(LauncherContext context)
             });
         }
     }
+    async Task ObserveAsync(RunningGame game)
+    {
+        try
+        {
+            await game.Session.Completion;
+        }
+        catch (Exception ex) { context.Log(ex.ToString()); }
+        finally { context.Games.Release(game.Id); context.SendGames(); }
+    }
+
+    public void Stop(string id)
+    {
+        var game = context.Games.Active.FirstOrDefault(g => g.Id.ToString("N") == id)
+            ?? throw new InvalidOperationException("该游戏已经退出。");
+        if (!game.Session.RequestStop())
+            throw new IOException("关闭请求未成功，请稍后重试。");
+    }
+
 }

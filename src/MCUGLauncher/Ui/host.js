@@ -29,15 +29,15 @@
   }
 
   function applyState(next) {
-    state = next || {};
-    if (Array.isArray(next.versionGroups) && next.versionGroups.length) {
+    state = Object.assign({}, state, next || {});
+    if (Array.isArray(next.versionGroups)) {
       versionGroups.splice(0, versionGroups.length, ...next.versionGroups.map((group) => ({
         label: group.label,
         count: group.count,
         versions: asArray(group.versions).map((pair) => [pair?.[0] ?? '未命名', pair?.[1] ?? ''])
       })));
     }
-    if (Array.isArray(next.instances) && next.instances.length) {
+    if (Array.isArray(next.instances)) {
       instances.splice(0, instances.length, ...next.instances.map((item) => ({
         name: item.name,
         loader: item.loader || '原版',
@@ -407,53 +407,12 @@
     loadCatalog();
   }
 
-  async function fetchCatalog(type, query) {
+  let catalogSequence = 0;
+  function fetchCatalog(type, query) {
     if (!state || Q.screen !== 'catalog') return;
-    state.catalog ||= {};
-    state.catalogLoading ||= {};
-    state.vanilla ||= [];
-    window.state = state;
-    try {
-      if (type === 'vanilla') {
-        const response = await fetch('https://piston-meta.mojang.com/mc/game/version_manifest_v2.json', {
-          signal: AbortSignal.timeout(12000)
-        });
-        if (!response.ok) throw new Error('HTTP ' + response.status);
-        const data = await response.json();
-        state.vanilla = (data.versions || [])
-          .filter((item) => item.type === 'release')
-          .slice(0, 24)
-          .map((item) => ({ id: item.id, released: (item.releaseTime || '').slice(0, 10) }));
-        state.catalog.vanilla = state.vanilla;
-      } else {
-        const mc = (state.selectedVersion || '').match(/\d+\.\d+(?:\.\d+)?/)?.[0] || '';
-        const facets = [[`project_type:${type}`]];
-        if (mc) facets.push([`versions:${mc}`]);
-        const url = 'https://api.modrinth.com/v2/search?limit=12&index=relevance&query=' +
-          encodeURIComponent(query || '') + '&facets=' + encodeURIComponent(JSON.stringify(facets));
-        const response = await fetch(url, { signal: AbortSignal.timeout(12000) });
-        if (!response.ok) throw new Error('HTTP ' + response.status);
-        const data = await response.json();
-        state.catalog[type] = (data.hits || []).map((item) => ({
-          id: item.project_id,
-          name: item.title,
-          author: item.author,
-          description: item.description,
-          icon: item.icon_url,
-          downloads: item.downloads,
-          tags: (item.categories || []).slice(0, 3).join(' · ')
-        }));
-      }
-      state.catalogLoading[type] = false;
-      window.state = state;
-      render();
-    } catch (error) {
-      state.catalog[type] = state.catalog[type] || [];
-      state.catalogLoading[type] = false;
-      window.state = state;
-      render();
-      toast('内容加载失败：' + error.message);
-    }
+    state.catalogRequests ||= {};
+    const requestId = state.catalogRequests[type] = String(++catalogSequence);
+    post(type === 'vanilla' ? {type:'vanillaVersions'} : {type:'searchContent',category:type,query:query || '',requestId});
   }
 
   function loadCatalog(force = false) {
@@ -691,6 +650,7 @@
           applyState(message);
           break;
         case 'contentList':
+          if (message.requestId && message.requestId !== state?.catalogRequests?.[message.category]) break;
           state.catalog ||= {};
           state.catalogLoading ||= {};
           state.catalog[message.category] = message.items || [];
@@ -698,11 +658,14 @@
           if (Q.screen === 'catalog') render();
           break;
         case 'vanillaList':
+          state.catalog ||= {}; state.catalogLoading ||= {};
           state.vanilla = message.items || [];
+          state.catalog.vanilla = state.vanilla;
           state.catalogLoading.vanilla = false;
           if (Q.screen === 'catalog') render();
           break;
         case 'contentError':
+          if (message.requestId && message.requestId !== state?.catalogRequests?.[message.category]) break;
           if (message.category) {
             state.catalog[message.category] = [];
             state.catalogLoading[message.category] = false;
@@ -722,8 +685,16 @@
             server.ping = message.ping ?? 0;
             server.motd = message.motd || (message.online ? '在线' : '离线');
             server.version = message.version || '—';
-            render();
-            applyAccount();
+            document.querySelectorAll('[data-server-id]').forEach(node => {
+              if (node.dataset.serverId !== String(server.id)) return;
+              node.classList.toggle('offline', !server.online);
+              const sub=node.querySelector('.server-sub');
+              if(sub){const dot=document.createElement('span');dot.className='dot '+(server.online?'online':'offline');sub.replaceChildren(dot,document.createTextNode(`${server.online?'在线':'离线'} · ${server.version}`));}
+              const motd=node.querySelector('.server-motd');if(motd)motd.textContent=server.motd;
+              const stat=node.querySelector('.server-stat');if(stat)stat.textContent=server.online?`${server.players} / ${server.max}`:'上次在线人数未知';
+              const ping=node.querySelector('.server-ping');if(ping){ping.textContent=server.online?`${server.ping} ms`:'离线';ping.className='server-ping '+(!server.online?'bad':server.ping<45?'good':'mid');}
+              const status=document.querySelector('.server-status');if(status){const online=servers.filter(s=>s.online).length;status.textContent=`${online} 在线 · ${servers.length-online} 离线`;}
+            });
           }
           break;
         }
@@ -759,6 +730,7 @@
           toast('设置已保存。');
           break;
         case 'pickedPath': {
+          if (message.target === 'pack') break;
           const selector = message.target === 'java' ? '[data-setting-java]' : '[data-setting-root]';
           const input = document.querySelector(selector);
           if (input && message.path) input.value = message.path;

@@ -1,3 +1,4 @@
+using BlockLaunch;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using MCUGLauncher.Models;
@@ -109,7 +110,7 @@ public sealed class VersionCatalog
 
     public static IReadOnlyList<ModInfo> ReadMods(string root, string instance)
     {
-        var dir = Path.Combine(root, "versions", instance, "mods");
+        var dir = Path.Combine(InstanceDirectory(root, instance), "mods");
         if (!Directory.Exists(dir))
             return [];
         var result = new List<ModInfo>();
@@ -150,12 +151,23 @@ public sealed class VersionCatalog
 
     public static void Delete(ModInfo mod) => File.Delete(mod.Path);
 
-    public static string InstanceDirectory(string root, string instance) =>
-        Path.Combine(root, "versions", instance);
+    public static string InstanceDirectory(string root, string instance)
+    {
+        ContentService.SafeFile(instance);
+        if (instance is "." or "..")
+            throw new IOException("无效的实例名称。");
+        var catalog = new InstanceCatalog(root);
+        var metadata = catalog.MetadataDirectory(instance);
+        if (File.Exists(Path.Combine(metadata, ".blocklaunch-instance.json")))
+            return catalog.DirectoryFor(instance);
+        if (File.Exists(Path.Combine(metadata, ".blocklaunch-pack.json")))
+            return metadata;
+        return Path.Combine(root, "versions", instance);
+    }
 
     static int CountMods(string root, string instance)
     {
-        var dir = Path.Combine(root, "versions", instance, "mods");
+        var dir = Path.Combine(InstanceDirectory(root, instance), "mods");
         return Directory.Exists(dir) ? Directory.EnumerateFiles(dir).Count(IsModFile) : 0;
     }
 

@@ -45,103 +45,21 @@ internal sealed class SettingsCommands(LauncherContext context)
         context.RefreshState();
     }
 
-    public Task ScanJavaAsync()
+    public async Task ScanJavaAsync()
     {
-        try
+        var list = await JavaDiscovery.Scan(context.Config.Root, new[] { context.Config.Java }, context.Token);
+        context.Send(new
         {
-            var candidates = new List<string>();
-            if (!string.IsNullOrWhiteSpace(context.Config.Java))
-                candidates.Add(context.Config.Java);
-            foreach (var home in new[] { Environment.GetEnvironmentVariable("JAVA_HOME"), Environment.GetEnvironmentVariable("JDK_HOME") })
-                if (!string.IsNullOrWhiteSpace(home))
-                    candidates.Add(Path.Combine(home, "bin", "java.exe"));
-            foreach (var part in (Environment.GetEnvironmentVariable("PATH") ?? "").Split(Path.PathSeparator))
-                if (part.Length > 0)
-                    candidates.Add(Path.Combine(part, "java.exe"));
-
-            var bases = new[]
+            type = "javaList",
+            items = list.Select(item => new
             {
-                Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
-                Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)
-            };
-            var vendors = new[] { "Java", "Microsoft", "Eclipse Adoptium", "Zulu", "BellSoft", "Amazon Corretto" };
-            foreach (var basis in bases.Where(Directory.Exists))
-            {
-                foreach (var vendor in vendors)
-                {
-                    var vendorRoot = Path.Combine(basis, vendor);
-                    if (!Directory.Exists(vendorRoot))
-                        continue;
-                    candidates.Add(Path.Combine(vendorRoot, "bin", "java.exe"));
-                    foreach (var child in Directory.GetDirectories(vendorRoot, "*", SearchOption.TopDirectoryOnly).Take(24))
-                        candidates.Add(Path.Combine(child, "bin", "java.exe"));
-                }
-                var microsoft = Path.Combine(basis, "Microsoft");
-                if (Directory.Exists(microsoft))
-                    foreach (var child in Directory.GetDirectories(microsoft, "jdk*", SearchOption.TopDirectoryOnly).Take(24))
-                        candidates.Add(Path.Combine(child, "bin", "java.exe"));
-            }
-
-            var list = candidates
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .Where(File.Exists)
-                .Select(path => new { Path = path, Major = 0, Architecture = "x64", Vendor = "本机", Error = "" })
-                .ToList();
-            context.Send(new
-            {
-                type = "javaList",
-                items = list.Select(item => new
-                {
-                    path = item.Path,
-                    major = item.Major,
-                    arch = item.Architecture,
-                    vendor = item.Vendor,
-                    error = item.Error
-                })
-            });
-        }
-        catch (Exception ex)
-        {
-            context.Send(new
-            {
-                type = "toast",
-                message = "扫描 Java 失败：" + ex.Message
-            });
-        }
-        return Task.CompletedTask;
+                path = item.Path,
+                major = item.Major,
+                arch = item.Architecture,
+                vendor = item.Vendor,
+                error = item.Error
+            })
+        });
     }
 
-    public void BackupSaves()
-    {
-        try
-        {
-            var saves = Path.Combine(context.Config.Root, "saves");
-            if (!Directory.Exists(saves))
-            {
-                context.Send(new
-                {
-                    type = "toast",
-                    message = "还没有存档文件夹。"
-                });
-                return;
-            }
-            var folder = Path.Combine(context.Store.DataDirectory, "backups");
-            Directory.CreateDirectory(folder);
-            var zip = Path.Combine(folder, $"saves-{DateTime.Now:yyyyMMdd-HHmmss}.zip");
-            ZipFile.CreateFromDirectory(saves, zip, CompressionLevel.Optimal, false);
-            context.Send(new
-            {
-                type = "backupDone",
-                path = zip
-            });
-        }
-        catch (Exception ex)
-        {
-            context.Send(new
-            {
-                type = "toast",
-                message = "备份失败：" + ex.Message
-            });
-        }
-    }
 }

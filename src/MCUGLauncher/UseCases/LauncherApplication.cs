@@ -11,6 +11,9 @@ internal sealed class LauncherApplication : IDisposable
     readonly LauncherContext context;
     Task? startup;
     readonly IDesktopHost desktop;
+    readonly SaveCommands saveCommands;
+    readonly BookmarkCommands bookmarkCommands;
+    readonly InstallationCommands installationCommands;
     readonly AccountCommands accountCommands;
     readonly GameCommands gameCommands;
     readonly InstanceCommands instanceCommands;
@@ -25,6 +28,9 @@ internal sealed class LauncherApplication : IDisposable
         this.desktop = desktop;
         context = new LauncherContext(send, store);
         context.RefreshState = SendState;
+        saveCommands = new SaveCommands(context);
+        bookmarkCommands = new BookmarkCommands(context);
+        installationCommands = new InstallationCommands(context);
         accountCommands = new AccountCommands(context);
         gameCommands = new GameCommands(context);
         instanceCommands = new InstanceCommands(context);
@@ -32,6 +38,14 @@ internal sealed class LauncherApplication : IDisposable
         settingsCommands = new SettingsCommands(context);
         diagnosticCommands = new DiagnosticCommands(context);
         communityCommands = new CommunityCommands(context);
+    }
+
+    public void RememberWindow(double width, double height, bool maximized)
+    {
+        context.Config.WindowWidth = Math.Clamp(width, 960, 7680);
+        context.Config.WindowHeight = Math.Clamp(height, 640, 4320);
+        context.Config.WindowMaximized = maximized;
+        context.Store.Save(context.Config);
     }
 
     public async Task HandleAsync(string json)
@@ -49,7 +63,41 @@ internal sealed class LauncherApplication : IDisposable
                 case "ready":
                     // The browser can request fresh state after every navigation.
                     context.RefreshState();
+                    context.SendTasks();
+                    context.SendGames();
+                    context.Tasks.Start();
                     await (startup ??= Task.WhenAll(communityCommands.SendCommunityAsync(), accountCommands.RestoreMicrosoftAsync()));
+                    break;
+                case "listSaveBackups":
+                    saveCommands.List();
+                    break;
+                case "restoreSave":
+                    await saveCommands.RestoreAsync(root);
+                    break;
+                case "toggleBookmark":
+                    bookmarkCommands.Toggle(root);
+                    break;
+                case "requestGames":
+                    context.SendGames();
+                    break;
+                case "stopGame":
+                    if (desktop.ConfirmStopGame())
+                        gameCommands.Stop(ReadString(root, "id"));
+                    break;
+                case "listLoaders":
+                    await installationCommands.LoadersAsync(root);
+                    break;
+                case "installLoader":
+                    installationCommands.InstallLoader(root);
+                    break;
+                case "importPack":
+                    await installationCommands.ImportPackAsync(root);
+                    break;
+                case "requestTasks":
+                    context.SendTasks();
+                    break;
+                case "taskAction":
+                    context.Tasks.Change(ReadString(root, "id"), ReadString(root, "action"));
                     break;
                 case "requestState":
                     context.RefreshState();
@@ -124,7 +172,7 @@ internal sealed class LauncherApplication : IDisposable
                     await settingsCommands.ScanJavaAsync();
                     break;
                 case "backupSaves":
-                    settingsCommands.BackupSaves();
+                    await saveCommands.BackupAsync();
                     break;
                 case "readLog":
                     diagnosticCommands.ReadLog();
@@ -189,6 +237,7 @@ internal sealed class LauncherApplication : IDisposable
         var state = new
         {
             type = "state",
+            appVersion = ProductInfo.Version,
             player = context.Config.Player,
             accountType = context.Config.AccountType,
             accountLabel = context.Config.AccountType switch
@@ -228,6 +277,7 @@ internal sealed class LauncherApplication : IDisposable
                 enabled = mod.Enabled,
                 update = ""
             }),
+            favorites = bookmarkCommands.Snapshot(),
             servers = context.Config.Servers,
             dataSources = new
             {

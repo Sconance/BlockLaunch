@@ -13,8 +13,14 @@ internal sealed class LauncherContext : IDisposable
     {
         get;
     }
-    public CommunityService Community { get; } = new();
-    public HttpClient Http { get; } = new() { Timeout = TimeSpan.FromSeconds(30) };
+    public CommunityService Community
+    {
+        get;
+    }
+    public HttpClient Http
+    {
+        get;
+    }
     public MicrosoftAccountService? Microsoft
     {
         get; private set;
@@ -35,6 +41,16 @@ internal sealed class LauncherContext : IDisposable
     {
         get;
     }
+    public RunningGameRegistry Games { get; } = new();
+    public void SendGames() => Send(new { type = "games", items = Games.Active.Select(g => new { id = g.Id.ToString("N"), version = g.Version, player = g.PlayerName, pid = g.Session.Process.Id }) });
+
+    public LauncherTaskQueue Tasks
+    {
+        get;
+    }
+
+    public void SendTasks() => Send(new { type = "tasks", items = Tasks.History().Take(200).Select(r => new { r.Id, r.Name, state = r.State.ToString(), r.Percent, r.Message, r.Committing }) });
+
     public Action RefreshState { get; set; } = () => { };
 
     public LauncherContext(Action<object> send, ConfigStore? store = null)
@@ -42,6 +58,11 @@ internal sealed class LauncherContext : IDisposable
         Send = send;
         Store = store ?? new ConfigStore();
         Config = Store.Load();
+        Http = NetworkPolicyHandler.Create(Config.LegacyPreferences.Network);
+        Community = new CommunityService(Http);
+        var executor = new DownloadExecutor(Http, Games.UsesDirectory);
+        Tasks = new LauncherTaskQueue(Path.Combine(Store.DataDirectory, "operations"),
+            async (record, task) => { await executor.ExecuteAsync(record, task); RefreshState(); }, SendTasks, Log);
         var authDirectory = Path.Combine(Store.DataDirectory, "auth");
         try
         {
@@ -78,7 +99,17 @@ internal sealed class LauncherContext : IDisposable
     }
     public void Dispose()
     {
+        Tasks.Dispose();
         lifetime.Cancel();
-        Http.Dispose();
+        _ = ReleaseResourcesAsync();
     }
+    async Task ReleaseResourcesAsync()
+    {
+        try
+        {
+            await Tasks.Completion;
+        }
+        finally { Http.Dispose(); lifetime.Dispose(); }
+    }
+
 }

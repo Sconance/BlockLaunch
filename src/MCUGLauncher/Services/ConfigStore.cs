@@ -56,6 +56,13 @@ public sealed class ConfigStore
 
     public void Save(AppConfig config)
     {
+        config.LegacyPreferences.Root = config.Root;
+        config.LegacyPreferences.Player = config.Player;
+        config.LegacyPreferences.Java = config.Java;
+        config.LegacyPreferences.Ram = config.Ram;
+        config.LegacyPreferences.Width = config.Width;
+        config.LegacyPreferences.Height = config.Height;
+        config.LegacyPreferences.LastVersion = config.LastVersion;
         var temp = _file + ".tmp";
         File.WriteAllText(temp, JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true }));
         File.Move(temp, _file, true);
@@ -67,6 +74,11 @@ public sealed class ConfigStore
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "BlockLaunch",
             "settings.json");
+        return ReadLegacy(legacy);
+    }
+
+    internal static AppConfig? ReadLegacy(string legacy)
+    {
         if (!File.Exists(legacy))
             return null;
 
@@ -83,6 +95,7 @@ public sealed class ConfigStore
 
             var config = new AppConfig
             {
+                LegacyPreferences = new BlockLaunch.SettingsStore(Path.GetDirectoryName(legacy)!).Load(),
                 Root = Read("Root"),
                 Player = Read("Player"),
                 Java = Read("Java"),

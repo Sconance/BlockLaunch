@@ -229,10 +229,11 @@ internal sealed class CommunityCommands(LauncherContext context)
         {
             try
             {
-                using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(8) };
-                using var response = await http.PostAsync(
+                using var deadline = CancellationTokenSource.CreateLinkedTokenSource(context.Token);
+                deadline.CancelAfter(TimeSpan.FromSeconds(8));
+                using var response = await context.Http.PostAsync(
                     context.Config.WriteEndpoint,
-                    new StringContent(JsonSerializer.Serialize(record), System.Text.Encoding.UTF8, "application/json"));
+                    new StringContent(JsonSerializer.Serialize(record), System.Text.Encoding.UTF8, "application/json"), deadline.Token);
                 if (!response.IsSuccessStatusCode)
                     throw new IOException($"HTTP {(int)response.StatusCode}");
             }

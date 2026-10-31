@@ -21,6 +21,19 @@ public partial class MainWindow : Window, IDesktopHost
     {
         InitializeComponent();
         application = new LauncherApplication(Send, this);
+        Width = Math.Clamp(application.Config.WindowWidth, 960, 7680);
+        Height = Math.Clamp(application.Config.WindowHeight, 640, 4320);
+        if (application.Config.WindowMaximized)
+            WindowState = WindowState.Maximized;
+        Closing += (_, _) =>
+        {
+            var bounds = WindowState == WindowState.Normal ? new Rect(0, 0, Width, Height) : RestoreBounds;
+            try
+            {
+                application.RememberWindow(bounds.Width, bounds.Height, WindowState == WindowState.Maximized);
+            }
+            catch (Exception) { /* A locked settings file must not prevent closing. */ }
+        };
         Loaded += OnLoaded;
         Closed += (_, _) => { closed = true; application.Dispose(); Browser.Dispose(); };
     }
@@ -137,6 +150,9 @@ public partial class MainWindow : Window, IDesktopHost
         Uri.TryCreate(source, UriKind.Absolute, out var uri)
         && uri.Scheme == "https" && uri.Host == "app.local" && uri.IsDefaultPort;
 
+    public bool ConfirmStopGame() => MessageBox.Show(this, "确认关闭这个游戏？未保存的内容可能丢失。", "关闭游戏",
+        MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) == MessageBoxResult.Yes;
+
     public void Window(string action)
     {
         switch (action)
@@ -202,7 +218,7 @@ public partial class MainWindow : Window, IDesktopHost
             return;
         if (!Dispatcher.CheckAccess())
         {
-            Dispatcher.Invoke(() => Send(payload));
+            Dispatcher.BeginInvoke(() => Send(payload));
             return;
         }
         Browser.CoreWebView2?.PostWebMessageAsJson(JsonSerializer.Serialize(payload, new JsonSerializerOptions

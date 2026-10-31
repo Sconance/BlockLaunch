@@ -46,6 +46,8 @@ internal sealed class InstanceCommands(LauncherContext context)
     public void DeleteVersion(string version)
     {
         var source = InstancePath(context.Config.Root, version);
+        if (context.Games.UsesDirectory(VersionCatalog.InstanceDirectory(context.Config.Root, version)))
+            throw new IOException("请先关闭该实例的游戏再删除。");
         if (!Directory.Exists(source))
         {
             context.Send(new
