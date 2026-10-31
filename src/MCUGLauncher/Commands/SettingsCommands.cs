@@ -13,9 +13,11 @@ using System.Windows;
 namespace MCUGLauncher.Commands;
 
 /// <summary>
-/// 设置与系统命令：保存设置、选择目录/文件、Java 扫描、存档备份、日志/系统信息、
-/// 社区数据保存、发布源测试与公告发布。
+/// 设置与系统命令。
 /// </summary>
+/// <remarks>
+/// 依赖 <see cref="ConfigStore"/>、<see cref="AppConfig"/> 持久化设置，<see cref="UiBridge"/> 回推，<see cref="HttpClient"/> 访问网络，<see cref="CommunityService"/> 测试数据源，构造时传入 <see cref="System.Windows.Window"/> 作为对话框 owner 和 resetWindow 回调。
+/// </remarks>
 sealed class SettingsCommands(
     ConfigStore store,
     AppConfig config,
@@ -40,8 +42,12 @@ sealed class SettingsCommands(
     void Log(string message) => AppLog.Write(_store, message);
 
     /// <summary>
-    /// 保存设置。
+    /// 保存设置并刷新界面。
     /// </summary>
+    /// <param name="root">前端提交的设置字段集合</param>
+    /// <remarks>
+    /// 接受 root/player/java/ram/width/height/anonymous 等字段，数值做范围限制后写入 config.json。
+    /// </remarks>
     public void SaveSettings(JsonElement root)
     {
         if (root.TryGetProperty("player", out var player))
@@ -81,8 +87,12 @@ sealed class SettingsCommands(
 
 
     /// <summary>
-    /// 选择文件夹。
+    /// 选择文件夹并回推 pickedPath。
     /// </summary>
+    /// <param name="target">回传目标字段名，如 root</param>
+    /// <remarks>
+    /// 初始目录为当前游戏根目录。
+    /// </remarks>
     public void PickFolder(string target)
     {
         var dialog = new OpenFolderDialog { Title = "选择文件夹" };
@@ -99,8 +109,12 @@ sealed class SettingsCommands(
 
 
     /// <summary>
-    /// 选择文件。
+    /// 选择文件并回推 pickedPath。
     /// </summary>
+    /// <param name="target">回传目标字段名，如 java</param>
+    /// <remarks>
+    /// target=java 时过滤 java.exe/javaw.exe。
+    /// </remarks>
     public void PickFile(string target)
     {
         var dialog = new OpenFileDialog
@@ -120,8 +134,11 @@ sealed class SettingsCommands(
 
 
     /// <summary>
-    /// 扫描Java。
+    /// 扫描本机 Java 安装并回推 javaList。
     /// </summary>
+    /// <remarks>
+    /// 结果包含路径与版本，供设置页选择。
+    /// </remarks>
     public Task ScanJavaAsync()
     {
         try
@@ -190,8 +207,11 @@ sealed class SettingsCommands(
 
 
     /// <summary>
-    /// 备份Saves。
+    /// 把当前实例的 saves 压缩到数据目录 backups。
     /// </summary>
+    /// <remarks>
+    /// 文件名为 saves-时间戳.zip。
+    /// </remarks>
     public void BackupSaves()
     {
         try
@@ -228,8 +248,11 @@ sealed class SettingsCommands(
 
 
     /// <summary>
-    /// 读取日志。
+    /// 读取 launcher.log 末尾内容。
     /// </summary>
+    /// <remarks>
+    /// 最多返回最近 400 行，供诊断页展示。
+    /// </remarks>
     public void ReadLog()
     {
         try
@@ -254,8 +277,11 @@ sealed class SettingsCommands(
 
 
     /// <summary>
-    /// 发送System信息。
+    /// 回推应用、.NET、WebView2、系统与路径信息。
     /// </summary>
+    /// <remarks>
+    /// WebView2 版本不可用时回退为“未知”。
+    /// </remarks>
     public void SendSystemInfo()
     {
         var webview = "未知";
@@ -278,8 +304,11 @@ sealed class SettingsCommands(
 
 
     /// <summary>
-    /// 重置窗口。
+    /// 把窗口恢复到 1200×780 并提示。
     /// </summary>
+    /// <remarks>
+    /// 通过构造注入的 resetWindow 回调操作窗口。
+    /// </remarks>
     public void ResetWindow()
     {
         _resetWindow();
@@ -292,8 +321,13 @@ sealed class SettingsCommands(
 
 
     /// <summary>
-    /// 测试Source。
+    /// 测试社区数据源连通性。
     /// </summary>
+    /// <param name="name">数据源名称</param>
+    /// <param name="url">要测试的地址</param>
+    /// <remarks>
+    /// 请求 url 并返回 testResult（ok/message/耗时）。
+    /// </remarks>
     public async Task TestSourceAsync(string name, string url)
     {
         var result = await _community.TestAsync(url, CancellationToken.None);
@@ -309,8 +343,13 @@ sealed class SettingsCommands(
 
 
     /// <summary>
-    /// 校验Key。
+    /// 校验社区/管理密钥格式。
     /// </summary>
+    /// <param name="role">密钥角色，如 community/admin</param>
+    /// <param name="key">待校验的密钥</param>
+    /// <remarks>
+    /// 长度不足 8 位直接失败；结果回推 keyResult。
+    /// </remarks>
     public void VerifyKey(string role, string key)
     {
         if (string.IsNullOrWhiteSpace(key) || key.Trim().Length < 8)
@@ -369,8 +408,14 @@ sealed class SettingsCommands(
 
 
     /// <summary>
-    /// 保存社区Local。
+    /// 保存本地公告或推荐 JSON。
     /// </summary>
+    /// <param name="fileName">目标 JSON 文件名</param>
+    /// <param name="root">消息体</param>
+    /// <param name="property">读取的字段名</param>
+    /// <remarks>
+    /// 写入数据目录下的 fileName，并回推保存结果。
+    /// </remarks>
     public void SaveCommunityLocal(string fileName, JsonElement root, string property)
     {
         var items = root.TryGetProperty(property, out var value) && value.ValueKind == JsonValueKind.Array
@@ -393,8 +438,12 @@ sealed class SettingsCommands(
 
 
     /// <summary>
-    /// 发布。
+    /// 发布公告/推荐到远端或保存为待发布。
     /// </summary>
+    /// <param name="root">包含公告/推荐内容的发布消息</param>
+    /// <remarks>
+    /// 未配置 WriteEndpoint 时仅保存本地并标记 pending。
+    /// </remarks>
     public async Task PublishAsync(JsonElement root)
     {
         var title = UiBridge.ReadString(root, "title");

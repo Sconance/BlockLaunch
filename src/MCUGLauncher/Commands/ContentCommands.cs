@@ -7,8 +7,11 @@ using MCUGLauncher.Ui;
 namespace MCUGLauncher.Commands;
 
 /// <summary>
-/// 内容与版本命令：原版版本列表/安装、Modrinth 搜索与下载、本地模组启停/删除、版本删除。
+/// 内容与版本命令。
 /// </summary>
+/// <remarks>
+/// 依赖 <see cref="ConfigStore"/>、<see cref="AppConfig"/> 读写配置与实例，<see cref="HttpClient"/> 访问 Mojang/Modrinth，<see cref="UiBridge"/> 回推，<see cref="VersionCatalog"/>、<c>GameInstaller</c>、<c>ContentService</c> 完成安装与下载；构造时注入 <c>SendState</c> 回调。网络与安装均异步执行，异常转换为 contentError/toast。
+/// </remarks>
 sealed class ContentCommands(
     ConfigStore store,
     AppConfig config,
@@ -33,8 +36,11 @@ sealed class ContentCommands(
     }
 
     /// <summary>
-    /// 发送VanillaVersions。
+    /// 读取 Mojang 版本清单并返回最近的原版版本。
     /// </summary>
+    /// <remarks>
+    /// 只取 type=release 的前 24 条；失败回推 contentError。
+    /// </remarks>
     public async Task SendVanillaVersionsAsync()
     {
         try
@@ -69,8 +75,12 @@ sealed class ContentCommands(
 
 
     /// <summary>
-    /// 安装Vanilla。
+    /// 安装指定原版版本。
     /// </summary>
+    /// <param name="version">要安装的原版版本号</param>
+    /// <remarks>
+    /// 调用 GameInstaller 下载并安装；成功后写入 LastVersion 并刷新状态。
+    /// </remarks>
     public async Task InstallVanillaAsync(string version)
     {
         if (string.IsNullOrWhiteSpace(version))
@@ -105,8 +115,12 @@ sealed class ContentCommands(
 
 
     /// <summary>
-    /// 搜索内容。
+    /// 在 Modrinth 搜索模组/整合包/资源包/光影。
     /// </summary>
+    /// <param name="root">包含 category 与 query 的消息</param>
+    /// <remarks>
+    /// 结合当前实例的加载器与 Minecraft 版本做 facets 过滤；请求超时 12 秒；结果回推 contentList。
+    /// </remarks>
     public async Task SearchContentAsync(JsonElement root)
     {
         var category = UiBridge.ReadString(root, "category");
@@ -203,8 +217,12 @@ sealed class ContentCommands(
 
 
     /// <summary>
-    /// 安装内容。
+    /// 下载并安装 Modrinth 项目文件。
     /// </summary>
+    /// <param name="root">包含 id 与 category 的消息</param>
+    /// <remarks>
+    /// 按 category 解析目标目录（mods/resourcepacks/shaderpacks/datapacks），整合包下载到数据目录 downloads；完成后刷新状态。
+    /// </remarks>
     public async Task InstallContentAsync(JsonElement root)
     {
         var id = UiBridge.ReadString(root, "id");
@@ -304,8 +322,13 @@ sealed class ContentCommands(
 
 
     /// <summary>
-    /// 切换模组。
+    /// 启用或禁用本地模组。
     /// </summary>
+    /// <param name="file">模组文件名</param>
+    /// <param name="enabled">true 启用，false 禁用</param>
+    /// <remarks>
+    /// 按文件名在当前实例 mods 中查找并调用 VersionCatalog.SetEnabled。
+    /// </remarks>
     public void ToggleMod(string file, bool enabled)
     {
         var mod = FindMod(file);
@@ -317,8 +340,12 @@ sealed class ContentCommands(
 
 
     /// <summary>
-    /// 删除模组。
+    /// 删除本地模组文件。
     /// </summary>
+    /// <param name="file">要删除的模组文件名</param>
+    /// <remarks>
+    /// 目标不存在时静默返回。
+    /// </remarks>
     public void DeleteMod(string file)
     {
         var mod = FindMod(file);
@@ -330,8 +357,12 @@ sealed class ContentCommands(
 
 
     /// <summary>
-    /// 删除版本。
+    /// 删除整个版本目录。
     /// </summary>
+    /// <param name="version">要删除的版本目录名</param>
+    /// <remarks>
+    /// 拒绝空名称与包含非法文件名字符的版本。
+    /// </remarks>
     public void DeleteVersion(string version)
     {
         if (string.IsNullOrWhiteSpace(version) || version.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
@@ -375,8 +406,13 @@ sealed class ContentCommands(
 
 
     /// <summary>
-    /// 查找模组。
+    /// 按文件名查找本地模组。
     /// </summary>
+    /// <param name="file">模组文件名</param>
+    /// <returns>匹配的模组信息；未找到时为 null</returns>
+    /// <remarks>
+    /// 返回匹配的 ModInfo，未找到返回 null。
+    /// </remarks>
     public ModInfo? FindMod(string file)
     {
         var catalog = VersionCatalog.Load(_config.Root, _config.LastInstance);
@@ -386,8 +422,12 @@ sealed class ContentCommands(
 
 
     /// <summary>
-    /// 安装模组。
+    /// 按项目 id 安装 Mod 到实例或指定目录。
     /// </summary>
+    /// <param name="root">包含 id、mode、path 的消息</param>
+    /// <remarks>
+    /// mode=instance 时安装到当前实例 mods，否则使用 path 指定目录。
+    /// </remarks>
     public async Task InstallModAsync(JsonElement root)
     {
         var id = UiBridge.ReadString(root, "id");
