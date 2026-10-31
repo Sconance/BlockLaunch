@@ -12,6 +12,7 @@ using System.Windows.Threading;
 using CmlLib.Core.Auth;
 using BlockLaunch;
 using MCUGLauncher.Authentication;
+using MCUGLauncher.Commands;
 using MCUGLauncher.Models;
 using MCUGLauncher.Services;
 using MCUGLauncher.Ui;
@@ -31,6 +32,7 @@ public partial class MainWindow : Window
     readonly UiCommandRouter _router;
     readonly CommunityFeed _feed;
     readonly LaunchCoordinator _launch;
+    readonly ServerCommands _servers;
     AppConfig _config;
     bool _ready;
     string _uiDirectory = "";
@@ -45,6 +47,7 @@ public partial class MainWindow : Window
         _accounts.Changed += SendState;
         _feed = new CommunityFeed(_community, _store, _config, _bridge);
         _launch = new LaunchCoordinator(_store, _config, _bridge, _accounts, _http);
+        _servers = new ServerCommands(_store, _config, _bridge, SendState);
         _router = new UiCommandRouter();
         ConfigureCommands();
         Loaded += OnLoaded;
@@ -191,77 +194,13 @@ public partial class MainWindow : Window
 
     void HandleWindow(string action) => _chrome.Handle(action);
 
-    void OpenFolder(string kind)
-    {
-        var catalog = VersionCatalog.Load(_config.Root, _config.LastInstance);
-        var instance = VersionCatalog.InstanceDirectory(_config.Root, catalog.Selected);
-        var path = kind switch
-        {
-            "mods" => Path.Combine(instance, "mods"),
-            "saves" => Path.Combine(instance, "saves"),
-            "screenshots" => Path.Combine(instance, "screenshots"),
-            "version" => instance,
-            _ => _config.Root
-        };
-        Directory.CreateDirectory(path);
-        Process.Start(new ProcessStartInfo("explorer.exe", $"\"{path}\"") { UseShellExecute = true });
-    }
+    void OpenFolder(string kind) => _servers.OpenFolder(kind);
 
-    async Task PingAsync(string address, string id)
-    {
-        var result = await ServerPingService.PingAsync(address, CancellationToken.None);
-        _bridge.Send(new
-        {
-            type = "serverPing",
-            id,
-            online = result.Online,
-            players = result.OnlinePlayers,
-            max = result.MaxPlayers,
-            ping = result.Ping,
-            motd = result.Motd,
-            version = result.Version,
-            error = result.Error
-        });
-    }
+    async Task PingAsync(string address, string id) => await _servers.PingAsync(address, id);
 
-    void SaveServer(JsonElement root)
-    {
-        var name = UiBridge.ReadString(root, "name");
-        var address = UiBridge.ReadString(root, "address").Trim();
-        var oldAddress = UiBridge.ReadString(root, "oldAddress").Trim();
-        if (address.Length == 0)
-        {
-            _bridge.Send(new
-            {
-                type = "serverResult",
-                ok = false,
-                message = "请填写服务器地址。"
-            });
-            return;
-        }
-        if (name.Length == 0)
-            name = address.Split(':')[0];
-        if (!string.IsNullOrWhiteSpace(oldAddress) &&
-            !oldAddress.Equals(address, StringComparison.OrdinalIgnoreCase))
-            _config.Servers.RemoveAll(s => s.Address.Equals(oldAddress, StringComparison.OrdinalIgnoreCase));
-        _config.Servers.RemoveAll(s => s.Address.Equals(address, StringComparison.OrdinalIgnoreCase));
-        _config.Servers.Add(new SavedServer { Name = name, Address = address });
-        _store.Save(_config);
-        _bridge.Send(new
-        {
-            type = "serverResult",
-            ok = true,
-            message = (oldAddress.Length > 0 ? "已更新 " : "已添加 ") + name
-        });
-        SendState();
-    }
+    void SaveServer(JsonElement root) => _servers.SaveServer(root);
 
-    void DeleteServer(string address)
-    {
-        _config.Servers.RemoveAll(s => s.Address.Equals(address, StringComparison.OrdinalIgnoreCase));
-        _store.Save(_config);
-        SendState();
-    }
+    void DeleteServer(string address) => _servers.DeleteServer(address);
 
     void ToggleMod(string file, bool enabled)
     {
