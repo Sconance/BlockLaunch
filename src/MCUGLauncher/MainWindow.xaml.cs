@@ -13,6 +13,7 @@ using CmlLib.Core.Auth;
 using BlockLaunch;
 using MCUGLauncher.Models;
 using MCUGLauncher.Services;
+using MCUGLauncher.Ui;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Win32;
 
@@ -23,6 +24,7 @@ public partial class MainWindow : Window
     readonly ConfigStore _store = new();
     readonly CommunityService _community = new();
     readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(30) };
+    readonly WindowChromeController _chrome;
     MicrosoftAccountService? _microsoft;
     MuaAccountService? _mua;
     MSession? _onlineSession;
@@ -33,6 +35,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        _chrome = new WindowChromeController(this);
         _config = _store.Load();
         var authDirectory = Path.Combine(_store.DataDirectory, "auth");
         try
@@ -57,74 +60,13 @@ public partial class MainWindow : Window
         Loaded += OnLoaded;
     }
 
-    [DllImport("user32.dll")]
-    static extern bool GetCursorPos(out POINT point);
-
-    [DllImport("user32.dll")]
-    static extern short GetAsyncKeyState(int key);
-
-    [DllImport("user32.dll")]
-    static extern bool GetWindowRect(IntPtr hwnd, out RECT rect);
-
-    [DllImport("user32.dll")]
-    static extern bool SetWindowPos(IntPtr hwnd, IntPtr after, int x, int y, int cx, int cy, uint flags);
-
-    [DllImport("dwmapi.dll")]
-    static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
-
-    [StructLayout(LayoutKind.Sequential)]
-    struct POINT
-    {
-        public int X; public int Y;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    struct RECT
-    {
-        public int Left; public int Top; public int Right; public int Bottom;
-    }
-
-    DispatcherTimer? _dragTimer;
-    IntPtr _dragWindow;
-    POINT _dragCursor;
-    RECT _dragRect;
-
     protected override void OnSourceInitialized(EventArgs e)
     {
         base.OnSourceInitialized(e);
-        // Let Windows 11 round the real window frame; WPF's chrome alone cannot.
-        var hwnd = new WindowInteropHelper(this).Handle;
-        var preference = 2; // DWMWCP_ROUND
-        DwmSetWindowAttribute(hwnd, 33, ref preference, sizeof(int));
+        _chrome.Initialize();
     }
 
-    void BeginWindowDrag()
-    {
-        // WebView2 owns the mouse, so track the cursor on a timer instead of using DragMove().
-        _dragWindow = new WindowInteropHelper(this).Handle;
-        GetCursorPos(out _dragCursor);
-        GetWindowRect(_dragWindow, out _dragRect);
-        if (_dragTimer is null)
-        {
-            _dragTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(15) };
-            _dragTimer.Tick += (_, _) => DragTick();
-        }
-        _dragTimer.Start();
-    }
-
-    void DragTick()
-    {
-        if ((GetAsyncKeyState(0x01) & 0x8000) == 0)
-        {
-            _dragTimer?.Stop();
-            return;
-        }
-        GetCursorPos(out var cursor);
-        SetWindowPos(_dragWindow, IntPtr.Zero,
-            _dragRect.Left + cursor.X - _dragCursor.X,
-            _dragRect.Top + cursor.Y - _dragCursor.Y,
-            0, 0, 0x0001 | 0x0004 | 0x0010);
-    }
+    void BeginWindowDrag() => _chrome.BeginDrag();
 
     void FitUiToWindow()
     {
@@ -644,21 +586,7 @@ public partial class MainWindow : Window
         }
     }
 
-    void HandleWindow(string action)
-    {
-        switch (action)
-        {
-            case "minimize":
-                WindowState = WindowState.Minimized;
-                break;
-            case "close":
-                Close();
-                break;
-            case "maximize":
-                WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
-                break;
-        }
-    }
+    void HandleWindow(string action) => _chrome.Handle(action);
 
     void OpenFolder(string kind)
     {
@@ -1320,9 +1248,7 @@ public partial class MainWindow : Window
 
     void ResetWindow()
     {
-        Width = 1200;
-        Height = 780;
-        WindowState = WindowState.Normal;
+        _chrome.Reset();
         Send(new
         {
             type = "toast",
