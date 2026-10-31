@@ -179,69 +179,7 @@ public partial class MainWindow : Window
         _router.Register("saveRecommendations", root => SaveCommunityLocal("recommendations.local.json", root, "items"));
     }
 
-    void SendState()
-    {
-        var catalog = VersionCatalog.Load(_config.Root, _config.LastInstance);
-        _config.LastInstance = catalog.Selected;
-        if (string.IsNullOrWhiteSpace(_config.LastVersion) ||
-            !catalog.Instances.Any(item => item.Name.Equals(_config.LastVersion, StringComparison.OrdinalIgnoreCase)))
-            _config.LastVersion = catalog.Selected;
-
-        var mods = VersionCatalog.ReadMods(_config.Root, catalog.Selected);
-        var state = new
-        {
-            type = "state",
-            player = _config.Player,
-            accountType = _config.AccountType,
-            accountLabel = _config.AccountType switch
-            {
-                "microsoft" => "正版账号 · 在线验证",
-                "mua" => "MUA 账号 · 外置登录",
-                _ => "离线账号 · 本地启动"
-            },
-            root = _config.Root,
-            java = _config.Java,
-            width = _config.Width,
-            height = _config.Height,
-            selectedVersion = _config.LastVersion,
-            selectedInstance = catalog.Selected,
-            ram = _config.Ram,
-            anonymous = _config.Anonymous,
-            communityKey = !string.IsNullOrWhiteSpace(_config.CommunityKey),
-            adminKey = !string.IsNullOrWhiteSpace(_config.AdminKey),
-            skinStation = _config.SkinStation,
-            cape = _config.Cape,
-            versionGroups = catalog.Groups,
-            instances = catalog.Instances,
-            mods = mods.Select(mod => new
-            {
-                id = mod.Id,
-                name = mod.Name,
-                author = "本地模组",
-                desc = mod.File,
-                tags = new[] { "本地" },
-                size = FormatSize(mod.Size),
-                downloads = "",
-                v = string.IsNullOrWhiteSpace(mod.Version) ? "—" : mod.Version,
-                color = mod.Enabled ? "green" : "slate",
-                ic = "box",
-                file = mod.File,
-                path = mod.Path,
-                enabled = mod.Enabled,
-                update = ""
-            }),
-            servers = _config.Servers,
-            dataSources = new
-            {
-                announcements = _config.DataSources.Announcements,
-                servers = _config.DataSources.Servers,
-                recommendations = _config.DataSources.Recommendations,
-                quotes = _config.DataSources.Quotes
-            },
-            writeEndpoint = _config.WriteEndpoint
-        };
-        _bridge.Send(state);
-    }
+    void SendState() => _bridge.Send(LauncherStateBuilder.Build(_config));
 
     async Task SendCommunityAsync()
     {
@@ -1212,12 +1150,4 @@ public partial class MainWindow : Window
         return new Guid(hash).ToString("N");
     }
 
-    static string FormatSize(long bytes)
-    {
-        if (bytes <= 0)
-            return "—";
-        if (bytes < 1024 * 1024)
-            return $"{bytes / 1024.0:0.#} KB";
-        return $"{bytes / 1024.0 / 1024.0:0.#} MB";
-    }
 }

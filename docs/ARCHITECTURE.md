@@ -26,6 +26,7 @@ MainWindow (WPF 窗口 + WebView2 宿主 + 消息分发)
 | `UiBridge` | `Ui/UiBridge.cs` | C# → JS 的 JSON 出口（camelCase、UI 线程切换）与消息字段读取 |
 | `AccountSession` | `Authentication/AccountSession.cs` | 微软 / MUA 登录、会话恢复、退出与账号状态通知 |
 | `UiCommandRouter` | `Ui/UiCommandRouter.cs` | 把 WebView2 消息的 `type` 分发到注册的命令处理器 |
+| `LauncherStateBuilder` | `Ui/LauncherStateBuilder.cs` | 组装 `state` 快照（版本目录、实例、本地模组、数据源） |
 | `ConfigStore` | `Services/ConfigStore.cs` | `%LOCALAPPDATA%\MCUGLauncher\config.json` 读写与旧配置导入 |
 | `VersionCatalog` | `Services/VersionCatalog.cs` | 版本目录扫描、实例列表与选中项 |
 | `ModService` | `Services/ModService.cs` | Modrinth 项目下载到实例 |
@@ -48,3 +49,4 @@ MainWindow (WPF 窗口 + WebView2 宿主 + 消息分发)
 | 第 3 步 | `UiBridge`（消息序列化/线程切换/字段读取） | 1418 |
 | 第 4 步 | `AccountSession`（登录/恢复/退出/会话状态） | 1276 |
 | 第 5 步 | `UiCommandRouter`（消息 type 分发；主窗口只做命令注册） | 1223 |
+| 第 6 步 | `LauncherStateBuilder`（`state` 快照组装与体积格式化） | 1153 |
