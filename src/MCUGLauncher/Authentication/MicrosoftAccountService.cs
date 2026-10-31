@@ -71,6 +71,9 @@ public sealed class MicrosoftAccountService
     /// <summary>
     /// 执行 Authenticate。
     /// </summary>
+    /// <param name="interactive">true 时打开系统浏览器授权，false 时静默刷新</param>
+    /// <param name="token">取消令牌</param>
+    /// <returns>已通过校验的微软会话</returns>
     public async Task<MSession> Authenticate(bool interactive, CancellationToken token)
     {
         using var lease = LockAccount();

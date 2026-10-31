@@ -205,6 +205,11 @@ public sealed class MuaAccountService : IDisposable
     /// <summary>
     /// 登录。
     /// </summary>
+    /// <param name="account">MUA 账号</param>
+    /// <param name="password">密码</param>
+    /// <param name="select">多角色时选择具体档案的回调</param>
+    /// <param name="token">取消令牌</param>
+    /// <returns>已保存的 MUA 凭据</returns>
     public async Task<MuaCredential> Login(string account, string password, Func<IReadOnlyList<MuaProfile>, Task<MuaProfile?>> select, CancellationToken token)
     {
         if (string.IsNullOrWhiteSpace(account) || account.Length > 320 || password.Length == 0 || password.Length > 4096)

@@ -7,9 +7,11 @@ using MCUGLauncher.Ui;
 namespace MCUGLauncher.Authentication;
 
 /// <summary>
-/// 账号会话：持有微软 / MUA 登录服务、当前会话与令牌存储，
-/// 负责登录、恢复与退出，并在状态变化时通知界面刷新。
+/// 账号会话。
 /// </summary>
+/// <remarks>
+/// 依赖 MicrosoftAccountService、MuaAccountService、<see cref="ConfigStore"/>、<see cref="AppConfig"/> 与 <see cref="UiBridge"/>；登录是异步网络操作，状态变化通过 Changed 事件通知界面。
+/// </remarks>
 sealed class AccountSession
 {
     readonly ConfigStore _store;
@@ -63,8 +65,11 @@ sealed class AccountSession
     public event Action? Changed;
 
     /// <summary>
-    /// 登录Microsoft。
+    /// 执行交互式微软登录。
     /// </summary>
+    /// <remarks>
+    /// 成功后写 AccountType=microsoft 与玩家名；失败只提示，不覆盖已保存账号。
+    /// </remarks>
     public async Task LoginMicrosoftAsync()
     {
         if (Microsoft == null)
@@ -100,8 +105,11 @@ sealed class AccountSession
     }
 
     /// <summary>
-    /// 恢复Microsoft。
+    /// 静默刷新已保存的微软会话。
     /// </summary>
+    /// <remarks>
+    /// 仅 AccountType=microsoft 时执行；刷新失败会降级为离线账号。
+    /// </remarks>
     public async Task RestoreMicrosoftAsync()
     {
         if (_config.AccountType != "microsoft" || Microsoft == null)
@@ -124,8 +132,13 @@ sealed class AccountSession
     }
 
     /// <summary>
-    /// 登录Mua。
+    /// 登录 MUA 外置账号。
     /// </summary>
+    /// <param name="account">MUA 账号</param>
+    /// <param name="password">MUA 密码</param>
+    /// <remarks>
+    /// 账号或密码为空直接失败；成功后写 AccountType=mua 与角色名。
+    /// </remarks>
     public async Task LoginMuaAsync(string account, string password)
     {
         if (Mua == null)
@@ -167,8 +180,11 @@ sealed class AccountSession
     }
 
     /// <summary>
-    /// 退出。
+    /// 退出当前账号。
     /// </summary>
+    /// <remarks>
+    /// 清空内存会话并把 AccountType 置为 offline，不删除磁盘上的令牌缓存。
+    /// </remarks>
     public void Logout()
     {
         Session = null;
