@@ -206,32 +206,8 @@ public partial class MainWindow : Window
 
     void DeleteServer(string address) => _servers.DeleteServer(address);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     void Log(string message) => AppLog.Write(_store, message);
-
-
-
-
-
-
-
-
-
-
+    
     Task SendVanillaVersionsAsync() => _content.SendVanillaVersionsAsync();
     Task InstallVanillaAsync(string version) => _content.InstallVanillaAsync(version);
     Task SearchContentAsync(JsonElement root) => _content.SearchContentAsync(root);

@@ -39,6 +39,9 @@ sealed class SettingsCommands(
 
     void Log(string message) => AppLog.Write(_store, message);
 
+    /// <summary>
+    /// 保存设置。
+    /// </summary>
     public void SaveSettings(JsonElement root)
     {
         if (root.TryGetProperty("player", out var player))
@@ -77,6 +80,9 @@ sealed class SettingsCommands(
     }
 
 
+    /// <summary>
+    /// 选择文件夹。
+    /// </summary>
     public void PickFolder(string target)
     {
         var dialog = new OpenFolderDialog { Title = "选择文件夹" };
@@ -92,6 +98,9 @@ sealed class SettingsCommands(
     }
 
 
+    /// <summary>
+    /// 选择文件。
+    /// </summary>
     public void PickFile(string target)
     {
         var dialog = new OpenFileDialog
@@ -110,6 +119,9 @@ sealed class SettingsCommands(
     }
 
 
+    /// <summary>
+    /// 扫描Java。
+    /// </summary>
     public Task ScanJavaAsync()
     {
         try
@@ -177,6 +189,9 @@ sealed class SettingsCommands(
     }
 
 
+    /// <summary>
+    /// 备份Saves。
+    /// </summary>
     public void BackupSaves()
     {
         try
@@ -212,6 +227,9 @@ sealed class SettingsCommands(
     }
 
 
+    /// <summary>
+    /// 读取日志。
+    /// </summary>
     public void ReadLog()
     {
         try
@@ -235,6 +253,9 @@ sealed class SettingsCommands(
     }
 
 
+    /// <summary>
+    /// 发送System信息。
+    /// </summary>
     public void SendSystemInfo()
     {
         var webview = "未知";
@@ -256,6 +277,9 @@ sealed class SettingsCommands(
     }
 
 
+    /// <summary>
+    /// 重置窗口。
+    /// </summary>
     public void ResetWindow()
     {
         _resetWindow();
@@ -267,6 +291,9 @@ sealed class SettingsCommands(
     }
 
 
+    /// <summary>
+    /// 测试Source。
+    /// </summary>
     public async Task TestSourceAsync(string name, string url)
     {
         var result = await _community.TestAsync(url, CancellationToken.None);
@@ -281,6 +308,9 @@ sealed class SettingsCommands(
     }
 
 
+    /// <summary>
+    /// 校验Key。
+    /// </summary>
     public void VerifyKey(string role, string key)
     {
         if (string.IsNullOrWhiteSpace(key) || key.Trim().Length < 8)
@@ -338,6 +368,9 @@ sealed class SettingsCommands(
     }
 
 
+    /// <summary>
+    /// 保存社区Local。
+    /// </summary>
     public void SaveCommunityLocal(string fileName, JsonElement root, string property)
     {
         var items = root.TryGetProperty(property, out var value) && value.ValueKind == JsonValueKind.Array
@@ -359,6 +392,9 @@ sealed class SettingsCommands(
     }
 
 
+    /// <summary>
+    /// 发布。
+    /// </summary>
     public async Task PublishAsync(JsonElement root)
     {
         var title = UiBridge.ReadString(root, "title");

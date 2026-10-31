@@ -32,6 +32,9 @@ sealed class ContentCommands(
         return match.Success ? match.Value : "";
     }
 
+    /// <summary>
+    /// 发送VanillaVersions。
+    /// </summary>
     public async Task SendVanillaVersionsAsync()
     {
         try
@@ -65,6 +68,9 @@ sealed class ContentCommands(
     }
 
 
+    /// <summary>
+    /// 安装Vanilla。
+    /// </summary>
     public async Task InstallVanillaAsync(string version)
     {
         if (string.IsNullOrWhiteSpace(version))
@@ -98,6 +104,9 @@ sealed class ContentCommands(
     }
 
 
+    /// <summary>
+    /// 搜索内容。
+    /// </summary>
     public async Task SearchContentAsync(JsonElement root)
     {
         var category = UiBridge.ReadString(root, "category");
@@ -193,6 +202,9 @@ sealed class ContentCommands(
     }
 
 
+    /// <summary>
+    /// 安装内容。
+    /// </summary>
     public async Task InstallContentAsync(JsonElement root)
     {
         var id = UiBridge.ReadString(root, "id");
@@ -291,6 +303,9 @@ sealed class ContentCommands(
     }
 
 
+    /// <summary>
+    /// 切换模组。
+    /// </summary>
     public void ToggleMod(string file, bool enabled)
     {
         var mod = FindMod(file);
@@ -301,6 +316,9 @@ sealed class ContentCommands(
     }
 
 
+    /// <summary>
+    /// 删除模组。
+    /// </summary>
     public void DeleteMod(string file)
     {
         var mod = FindMod(file);
@@ -311,6 +329,9 @@ sealed class ContentCommands(
     }
 
 
+    /// <summary>
+    /// 删除版本。
+    /// </summary>
     public void DeleteVersion(string version)
     {
         if (string.IsNullOrWhiteSpace(version) || version.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
@@ -353,6 +374,9 @@ sealed class ContentCommands(
     }
 
 
+    /// <summary>
+    /// 查找模组。
+    /// </summary>
     public ModInfo? FindMod(string file)
     {
         var catalog = VersionCatalog.Load(_config.Root, _config.LastInstance);
@@ -361,6 +385,9 @@ sealed class ContentCommands(
     }
 
 
+    /// <summary>
+    /// 安装模组。
+    /// </summary>
     public async Task InstallModAsync(JsonElement root)
     {
         var id = UiBridge.ReadString(root, "id");

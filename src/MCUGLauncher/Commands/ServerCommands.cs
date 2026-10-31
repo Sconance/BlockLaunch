@@ -18,6 +18,9 @@ sealed class ServerCommands(ConfigStore store, AppConfig config, UiBridge bridge
 
     void SendState() => _stateChanged();
 
+    /// <summary>
+    /// 打开文件夹。
+    /// </summary>
     public void OpenFolder(string kind)
     {
         var catalog = VersionCatalog.Load(_config.Root, _config.LastInstance);
@@ -34,6 +37,9 @@ sealed class ServerCommands(ConfigStore store, AppConfig config, UiBridge bridge
         Process.Start(new ProcessStartInfo("explorer.exe", $"\"{path}\"") { UseShellExecute = true });
     }
 
+    /// <summary>
+    /// 查询。
+    /// </summary>
     public async Task PingAsync(string address, string id)
     {
         var result = await ServerPingService.PingAsync(address, CancellationToken.None);
@@ -51,6 +57,9 @@ sealed class ServerCommands(ConfigStore store, AppConfig config, UiBridge bridge
         });
     }
 
+    /// <summary>
+    /// 保存服务器。
+    /// </summary>
     public void SaveServer(JsonElement root)
     {
         var name = UiBridge.ReadString(root, "name");
@@ -83,6 +92,9 @@ sealed class ServerCommands(ConfigStore store, AppConfig config, UiBridge bridge
         SendState();
     }
 
+    /// <summary>
+    /// 删除服务器。
+    /// </summary>
     public void DeleteServer(string address)
     {
         _config.Servers.RemoveAll(s => s.Address.Equals(address, StringComparison.OrdinalIgnoreCase));
