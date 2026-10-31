@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using MCUGLauncher.Models;
 
 namespace MCUGLauncher.Services;
@@ -16,7 +16,10 @@ public sealed class ConfigStore
         _file = Path.Combine(DataDirectory, "config.json");
     }
 
-    public string DataDirectory { get; }
+    public string DataDirectory
+    {
+        get;
+    }
 
     public AppConfig Load()
     {
@@ -134,4 +137,3 @@ public sealed class ConfigStore
             .FirstOrDefault() ?? "";
     }
 }
-

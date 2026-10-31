@@ -73,10 +73,16 @@ public partial class MainWindow : Window
     static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
 
     [StructLayout(LayoutKind.Sequential)]
-    struct POINT { public int X; public int Y; }
+    struct POINT
+    {
+        public int X; public int Y;
+    }
 
     [StructLayout(LayoutKind.Sequential)]
-    struct RECT { public int Left; public int Top; public int Right; public int Bottom; }
+    struct RECT
+    {
+        public int Left; public int Top; public int Right; public int Bottom;
+    }
 
     DispatcherTimer? _dragTimer;
     IntPtr _dragWindow;
@@ -322,7 +328,11 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            Send(new { type = "error", message = ex.Message });
+            Send(new
+            {
+                type = "error",
+                message = ex.Message
+            });
         }
     }
 
@@ -340,7 +350,12 @@ public partial class MainWindow : Window
             type = "state",
             player = _config.Player,
             accountType = _config.AccountType,
-            accountLabel = _config.AccountType switch { "microsoft" => "正版账号 · 在线验证", "mua" => "MUA 账号 · 外置登录", _ => "离线账号 · 本地启动" },
+            accountLabel = _config.AccountType switch
+            {
+                "microsoft" => "正版账号 · 在线验证",
+                "mua" => "MUA 账号 · 外置登录",
+                _ => "离线账号 · 本地启动"
+            },
             root = _config.Root,
             java = _config.Java,
             width = _config.Width,
@@ -389,9 +404,11 @@ public partial class MainWindow : Window
     {
         var items = new Dictionary<string, string>();
         var localAnn = Path.Combine(_store.DataDirectory, "announcements.local.json");
-        if (File.Exists(localAnn)) items["announcements"] = File.ReadAllText(localAnn);
+        if (File.Exists(localAnn))
+            items["announcements"] = File.ReadAllText(localAnn);
         var localRecs = Path.Combine(_store.DataDirectory, "recommendations.local.json");
-        if (File.Exists(localRecs)) items["recommendations"] = File.ReadAllText(localRecs);
+        if (File.Exists(localRecs))
+            items["recommendations"] = File.ReadAllText(localRecs);
         var jobs = new[]
         {
             ("announcements", _config.DataSources.Announcements),
@@ -400,23 +417,38 @@ public partial class MainWindow : Window
         };
         foreach (var (name, url) in jobs)
         {
-            if (items.ContainsKey(name)) continue;
+            if (items.ContainsKey(name))
+                continue;
             var text = await _community.ReadAsync(url, CancellationToken.None);
             if (text != null)
                 items[name] = text;
         }
         if (items.Count > 0)
-            Send(new { type = "community", payload = items });
+            Send(new
+            {
+                type = "community",
+                payload = items
+            });
     }
 
     async Task LoginMicrosoftAsync()
     {
         if (_microsoft == null)
         {
-            Send(new { type = "authResult", ok = false, message = "登录组件未就绪。" });
+            Send(new
+            {
+                type = "authResult",
+                ok = false,
+                message = "登录组件未就绪。"
+            });
             return;
         }
-        Send(new { type = "authResult", pending = true, message = "已打开微软登录页，请完成授权…" });
+        Send(new
+        {
+            type = "authResult",
+            pending = true,
+            message = "已打开微软登录页，请完成授权…"
+        });
         try
         {
             var session = await _microsoft.Authenticate(true, CancellationToken.None);
@@ -424,18 +456,29 @@ public partial class MainWindow : Window
             _config.AccountType = "microsoft";
             _config.Player = session.Username ?? _config.Player;
             _store.Save(_config);
-            Send(new { type = "authResult", ok = true, message = $"已登录正版账号 {session.Username}" });
+            Send(new
+            {
+                type = "authResult",
+                ok = true,
+                message = $"已登录正版账号 {session.Username}"
+            });
             SendState();
         }
         catch (Exception)
         {
-            Send(new { type = "authResult", ok = false, message = "微软登录未完成。请检查网络后重试；已保存的账号不会被覆盖。" });
+            Send(new
+            {
+                type = "authResult",
+                ok = false,
+                message = "微软登录未完成。请检查网络后重试；已保存的账号不会被覆盖。"
+            });
         }
     }
 
     async Task RestoreMicrosoftAsync()
     {
-        if (_config.AccountType != "microsoft" || _microsoft == null) return;
+        if (_config.AccountType != "microsoft" || _microsoft == null)
+            return;
         try
         {
             var session = await _microsoft.Authenticate(false, CancellationToken.None);
@@ -457,15 +500,30 @@ public partial class MainWindow : Window
     {
         if (_mua == null)
         {
-            Send(new { type = "authResult", ok = false, message = "登录组件未就绪。" });
+            Send(new
+            {
+                type = "authResult",
+                ok = false,
+                message = "登录组件未就绪。"
+            });
             return;
         }
         if (string.IsNullOrWhiteSpace(account) || string.IsNullOrEmpty(password))
         {
-            Send(new { type = "authResult", ok = false, message = "请填写 MUA 账号和密码。" });
+            Send(new
+            {
+                type = "authResult",
+                ok = false,
+                message = "请填写 MUA 账号和密码。"
+            });
             return;
         }
-        Send(new { type = "authResult", pending = true, message = "正在登录 MUA…" });
+        Send(new
+        {
+            type = "authResult",
+            pending = true,
+            message = "正在登录 MUA…"
+        });
         try
         {
             var credential = await _mua.Login(account.Trim(), password,
@@ -474,12 +532,22 @@ public partial class MainWindow : Window
             _config.AccountType = "mua";
             _config.Player = credential.Profile.Name;
             _store.Save(_config);
-            Send(new { type = "authResult", ok = true, message = $"已登录 MUA 账号 {credential.Profile.Name}" });
+            Send(new
+            {
+                type = "authResult",
+                ok = true,
+                message = $"已登录 MUA 账号 {credential.Profile.Name}"
+            });
             SendState();
         }
         catch (Exception)
         {
-            Send(new { type = "authResult", ok = false, message = "MUA 登录失败。请检查账号、密码和网络后重试。" });
+            Send(new
+            {
+                type = "authResult",
+                ok = false,
+                message = "MUA 登录失败。请检查账号、密码和网络后重试。"
+            });
         }
     }
 
@@ -489,14 +557,24 @@ public partial class MainWindow : Window
             version = _config.LastVersion;
         if (string.IsNullOrWhiteSpace(version))
         {
-            Send(new { type = "launchResult", ok = false, message = "还没有可启动的版本。" });
+            Send(new
+            {
+                type = "launchResult",
+                ok = false,
+                message = "还没有可启动的版本。"
+            });
             return;
         }
 
         var instanceDir = Path.Combine(_config.Root, "versions", version);
         if (!Directory.Exists(instanceDir))
         {
-            Send(new { type = "launchResult", ok = false, message = "版本目录不存在：" + version });
+            Send(new
+            {
+                type = "launchResult",
+                ok = false,
+                message = "版本目录不存在：" + version
+            });
             return;
         }
 
@@ -548,11 +626,21 @@ public partial class MainWindow : Window
             _config.LastVersion = version;
             _config.LastInstance = version;
             _store.Save(_config);
-            Send(new { type = "launchResult", ok = true, message = "已启动 " + version });
+            Send(new
+            {
+                type = "launchResult",
+                ok = true,
+                message = "已启动 " + version
+            });
         }
         catch (Exception ex)
         {
-            Send(new { type = "launchResult", ok = false, message = ex.Message });
+            Send(new
+            {
+                type = "launchResult",
+                ok = false,
+                message = ex.Message
+            });
         }
     }
 
@@ -612,7 +700,12 @@ public partial class MainWindow : Window
         var oldAddress = ReadString(root, "oldAddress").Trim();
         if (address.Length == 0)
         {
-            Send(new { type = "serverResult", ok = false, message = "请填写服务器地址。" });
+            Send(new
+            {
+                type = "serverResult",
+                ok = false,
+                message = "请填写服务器地址。"
+            });
             return;
         }
         if (name.Length == 0)
@@ -623,7 +716,12 @@ public partial class MainWindow : Window
         _config.Servers.RemoveAll(s => s.Address.Equals(address, StringComparison.OrdinalIgnoreCase));
         _config.Servers.Add(new SavedServer { Name = name, Address = address });
         _store.Save(_config);
-        Send(new { type = "serverResult", ok = true, message = (oldAddress.Length > 0 ? "已更新 " : "已添加 ") + name });
+        Send(new
+        {
+            type = "serverResult",
+            ok = true,
+            message = (oldAddress.Length > 0 ? "已更新 " : "已添加 ") + name
+        });
         SendState();
     }
 
@@ -659,11 +757,19 @@ public partial class MainWindow : Window
                     released = v.GetProperty("releaseTime").GetDateTimeOffset().ToString("yyyy-MM-dd")
                 })
                 .ToList();
-            Send(new { type = "vanillaList", items });
+            Send(new
+            {
+                type = "vanillaList",
+                items
+            });
         }
         catch (Exception ex)
         {
-            Send(new { type = "contentError", message = "读取原版版本列表失败：" + ex.Message });
+            Send(new
+            {
+                type = "contentError",
+                message = "读取原版版本列表失败：" + ex.Message
+            });
         }
     }
 
@@ -671,19 +777,31 @@ public partial class MainWindow : Window
     {
         if (string.IsNullOrWhiteSpace(version))
             return;
-        Send(new { type = "toast", message = $"开始安装原版 {version}，请稍候…" });
+        Send(new
+        {
+            type = "toast",
+            message = $"开始安装原版 {version}，请稍候…"
+        });
         try
         {
             var installer = new GameInstaller(_http, _config.Root, _config.Java, Log);
             await installer.Install(new PackRequirements(version, "vanilla", ""));
             _config.LastVersion = version;
             _store.Save(_config);
-            Send(new { type = "toast", message = $"原版 {version} 已安装。" });
+            Send(new
+            {
+                type = "toast",
+                message = $"原版 {version} 已安装。"
+            });
             SendState();
         }
         catch (Exception ex)
         {
-            Send(new { type = "toast", message = "安装失败：" + ex.Message });
+            Send(new
+            {
+                type = "toast",
+                message = "安装失败：" + ex.Message
+            });
         }
     }
 
@@ -736,7 +854,8 @@ public partial class MainWindow : Window
                     var tags = new List<string>();
                     if (hit.TryGetProperty("categories", out var cats))
                         foreach (var cat in cats.EnumerateArray())
-                            if (cat.GetString() is { } c && !tags.Contains(c)) tags.Add(c);
+                            if (cat.GetString() is { } c && !tags.Contains(c))
+                                tags.Add(c);
                     items.Add(new
                     {
                         id = hit.TryGetProperty("project_id", out var pid) ? pid.GetString() : "",
@@ -751,17 +870,32 @@ public partial class MainWindow : Window
                 }
             }
             Log($"search stage parsed {items.Count}");
-            Send(new { type = "contentList", category, items });
+            Send(new
+            {
+                type = "contentList",
+                category,
+                items
+            });
             Log("search stage sent");
         }
         catch (OperationCanceledException)
         {
-            Send(new { type = "contentError", category, message = "读取 Modrinth 超时，请稍后重试。" });
+            Send(new
+            {
+                type = "contentError",
+                category,
+                message = "读取 Modrinth 超时，请稍后重试。"
+            });
         }
         catch (Exception ex)
         {
             Log("search failed " + ex);
-            Send(new { type = "contentError", category, message = "读取 Modrinth 失败：" + ex.Message });
+            Send(new
+            {
+                type = "contentError",
+                category,
+                message = "读取 Modrinth 失败：" + ex.Message
+            });
         }
     }
 
@@ -771,7 +905,11 @@ public partial class MainWindow : Window
         var category = ReadString(root, "category");
         if (string.IsNullOrWhiteSpace(id))
             return;
-        Send(new { type = "toast", message = "正在解析文件…" });
+        Send(new
+        {
+            type = "toast",
+            message = "正在解析文件…"
+        });
         try
         {
             var catalog = VersionCatalog.Load(_config.Root, _config.LastInstance);
@@ -797,17 +935,26 @@ public partial class MainWindow : Window
             {
                 foreach (var version in doc.RootElement.EnumerateArray())
                 {
-                    if (!version.TryGetProperty("files", out var files)) continue;
+                    if (!version.TryGetProperty("files", out var files))
+                        continue;
                     JsonElement? chosen = null;
                     foreach (var f in files.EnumerateArray())
                     {
-                        if (f.TryGetProperty("primary", out var primary) && primary.GetBoolean()) { chosen = f; break; }
+                        if (f.TryGetProperty("primary", out var primary) && primary.GetBoolean())
+                        {
+                            chosen = f;
+                            break;
+                        }
                         chosen ??= f;
                     }
-                    if (chosen is not { } file) continue;
-                    if (file.TryGetProperty("url", out var u)) fileUrl = u.GetString() ?? "";
-                    if (file.TryGetProperty("filename", out var fn)) fileName = fn.GetString() ?? "";
-                    if (!string.IsNullOrWhiteSpace(fileUrl)) break;
+                    if (chosen is not { } file)
+                        continue;
+                    if (file.TryGetProperty("url", out var u))
+                        fileUrl = u.GetString() ?? "";
+                    if (file.TryGetProperty("filename", out var fn))
+                        fileName = fn.GetString() ?? "";
+                    if (!string.IsNullOrWhiteSpace(fileUrl))
+                        break;
                 }
             }
             if (string.IsNullOrWhiteSpace(fileUrl) || string.IsNullOrWhiteSpace(fileName))
@@ -832,12 +979,20 @@ public partial class MainWindow : Window
             var bytes = await _http.GetByteArrayAsync(fileUrl);
             var path = Path.Combine(folder, ContentService.SafeFile(fileName));
             await File.WriteAllBytesAsync(path, bytes);
-            Send(new { type = "toast", message = $"已下载：{path}" });
+            Send(new
+            {
+                type = "toast",
+                message = $"已下载：{path}"
+            });
             SendState();
         }
         catch (Exception ex)
         {
-            Send(new { type = "toast", message = "下载失败：" + ex.Message });
+            Send(new
+            {
+                type = "toast",
+                message = "下载失败：" + ex.Message
+            });
         }
     }
 
@@ -857,7 +1012,11 @@ public partial class MainWindow : Window
         var source = Path.Combine(_config.Root, "versions", version);
         if (!Directory.Exists(source))
         {
-            Send(new { type = "toast", message = "版本目录不存在。" });
+            Send(new
+            {
+                type = "toast",
+                message = "版本目录不存在。"
+            });
             return;
         }
         try
@@ -870,12 +1029,20 @@ public partial class MainWindow : Window
             if (_config.LastVersion.Equals(version, StringComparison.OrdinalIgnoreCase))
                 _config.LastVersion = "";
             _store.Save(_config);
-            Send(new { type = "toast", message = $"版本已移到回收目录：{target}" });
+            Send(new
+            {
+                type = "toast",
+                message = $"版本已移到回收目录：{target}"
+            });
             SendState();
         }
         catch (Exception ex)
         {
-            Send(new { type = "toast", message = "删除版本失败：" + ex.Message });
+            Send(new
+            {
+                type = "toast",
+                message = "删除版本失败：" + ex.Message
+            });
         }
     }
 
@@ -897,19 +1064,34 @@ public partial class MainWindow : Window
             : Path.Combine(VersionCatalog.InstanceDirectory(_config.Root, catalog.Selected), "mods");
         if (string.IsNullOrWhiteSpace(target))
         {
-            Send(new { type = "modResult", ok = false, message = "请选择保存位置。" });
+            Send(new
+            {
+                type = "modResult",
+                ok = false,
+                message = "请选择保存位置。"
+            });
             return;
         }
         Directory.CreateDirectory(target);
         try
         {
             var file = await new ModService().DownloadAsync(id, "1.20.1", target, CancellationToken.None);
-            Send(new { type = "modResult", ok = true, message = "已下载 " + Path.GetFileName(file) });
+            Send(new
+            {
+                type = "modResult",
+                ok = true,
+                message = "已下载 " + Path.GetFileName(file)
+            });
             SendState();
         }
         catch (Exception ex)
         {
-            Send(new { type = "modResult", ok = false, message = ex.Message });
+            Send(new
+            {
+                type = "modResult",
+                ok = false,
+                message = ex.Message
+            });
         }
     }
 
@@ -933,7 +1115,8 @@ public partial class MainWindow : Window
         if (root.TryGetProperty("root", out var gameRoot))
         {
             var value = gameRoot.GetString()?.Trim() ?? "";
-            if (value.Length > 0) _config.Root = value;
+            if (value.Length > 0)
+                _config.Root = value;
         }
         if (root.TryGetProperty("java", out var java))
             _config.Java = java.GetString()?.Trim() ?? "";
@@ -942,16 +1125,25 @@ public partial class MainWindow : Window
         if (root.TryGetProperty("height", out var height) && height.TryGetInt32(out var heightValue))
             _config.Height = Math.Clamp(heightValue, 480, 4320);
         _store.Save(_config);
-        Send(new { type = "settingsSaved" });
+        Send(new
+        {
+            type = "settingsSaved"
+        });
         SendState();
     }
 
     void PickFolder(string target)
     {
         var dialog = new OpenFolderDialog { Title = "选择文件夹" };
-        if (!string.IsNullOrWhiteSpace(_config.Root)) dialog.InitialDirectory = _config.Root;
+        if (!string.IsNullOrWhiteSpace(_config.Root))
+            dialog.InitialDirectory = _config.Root;
         if (dialog.ShowDialog(this) == true)
-            Send(new { type = "pickedPath", target, path = dialog.FolderName });
+            Send(new
+            {
+                type = "pickedPath",
+                target,
+                path = dialog.FolderName
+            });
     }
 
     void PickFile(string target)
@@ -963,7 +1155,12 @@ public partial class MainWindow : Window
             CheckFileExists = true
         };
         if (dialog.ShowDialog(this) == true)
-            Send(new { type = "pickedPath", target, path = dialog.FileName });
+            Send(new
+            {
+                type = "pickedPath",
+                target,
+                path = dialog.FileName
+            });
     }
 
     Task ScanJavaAsync()
@@ -971,11 +1168,14 @@ public partial class MainWindow : Window
         try
         {
             var candidates = new List<string>();
-            if (!string.IsNullOrWhiteSpace(_config.Java)) candidates.Add(_config.Java);
+            if (!string.IsNullOrWhiteSpace(_config.Java))
+                candidates.Add(_config.Java);
             foreach (var home in new[] { Environment.GetEnvironmentVariable("JAVA_HOME"), Environment.GetEnvironmentVariable("JDK_HOME") })
-                if (!string.IsNullOrWhiteSpace(home)) candidates.Add(Path.Combine(home, "bin", "java.exe"));
+                if (!string.IsNullOrWhiteSpace(home))
+                    candidates.Add(Path.Combine(home, "bin", "java.exe"));
             foreach (var part in (Environment.GetEnvironmentVariable("PATH") ?? "").Split(Path.PathSeparator))
-                if (part.Length > 0) candidates.Add(Path.Combine(part, "java.exe"));
+                if (part.Length > 0)
+                    candidates.Add(Path.Combine(part, "java.exe"));
 
             var bases = new[]
             {
@@ -988,7 +1188,8 @@ public partial class MainWindow : Window
                 foreach (var vendor in vendors)
                 {
                     var vendorRoot = Path.Combine(basis, vendor);
-                    if (!Directory.Exists(vendorRoot)) continue;
+                    if (!Directory.Exists(vendorRoot))
+                        continue;
                     candidates.Add(Path.Combine(vendorRoot, "bin", "java.exe"));
                     foreach (var child in Directory.GetDirectories(vendorRoot, "*", SearchOption.TopDirectoryOnly).Take(24))
                         candidates.Add(Path.Combine(child, "bin", "java.exe"));
@@ -1019,7 +1220,11 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            Send(new { type = "toast", message = "扫描 Java 失败：" + ex.Message });
+            Send(new
+            {
+                type = "toast",
+                message = "扫描 Java 失败：" + ex.Message
+            });
         }
         return Task.CompletedTask;
     }
@@ -1031,18 +1236,30 @@ public partial class MainWindow : Window
             var saves = Path.Combine(_config.Root, "saves");
             if (!Directory.Exists(saves))
             {
-                Send(new { type = "toast", message = "还没有存档文件夹。" });
+                Send(new
+                {
+                    type = "toast",
+                    message = "还没有存档文件夹。"
+                });
                 return;
             }
             var folder = Path.Combine(_store.DataDirectory, "backups");
             Directory.CreateDirectory(folder);
             var zip = Path.Combine(folder, $"saves-{DateTime.Now:yyyyMMdd-HHmmss}.zip");
             ZipFile.CreateFromDirectory(saves, zip, CompressionLevel.Optimal, false);
-            Send(new { type = "backupDone", path = zip });
+            Send(new
+            {
+                type = "backupDone",
+                path = zip
+            });
         }
         catch (Exception ex)
         {
-            Send(new { type = "toast", message = "备份失败：" + ex.Message });
+            Send(new
+            {
+                type = "toast",
+                message = "备份失败：" + ex.Message
+            });
         }
     }
 
@@ -1052,11 +1269,19 @@ public partial class MainWindow : Window
         {
             var path = Path.Combine(_store.DataDirectory, "launcher.log");
             var text = File.Exists(path) ? string.Join('\n', File.ReadLines(path).TakeLast(400)) : "还没有日志。启动或启动游戏后会写入这里。";
-            Send(new { type = "logText", text });
+            Send(new
+            {
+                type = "logText",
+                text
+            });
         }
         catch (Exception ex)
         {
-            Send(new { type = "logText", text = "读取日志失败：" + ex.Message });
+            Send(new
+            {
+                type = "logText",
+                text = "读取日志失败：" + ex.Message
+            });
         }
     }
 
@@ -1076,7 +1301,11 @@ public partial class MainWindow : Window
     void SendSystemInfo()
     {
         var webview = "未知";
-        try { webview = CoreWebView2Environment.GetAvailableBrowserVersionString(); } catch { }
+        try
+        {
+            webview = CoreWebView2Environment.GetAvailableBrowserVersionString();
+        }
+        catch { }
         Send(new
         {
             type = "systemInfo",
@@ -1094,20 +1323,37 @@ public partial class MainWindow : Window
         Width = 1200;
         Height = 780;
         WindowState = WindowState.Normal;
-        Send(new { type = "toast", message = "窗口已恢复为 1200 × 780。" });
+        Send(new
+        {
+            type = "toast",
+            message = "窗口已恢复为 1200 × 780。"
+        });
     }
 
     async Task TestSourceAsync(string name, string url)
     {
         var result = await _community.TestAsync(url, CancellationToken.None);
-        Send(new { type = "testResult", name, ok = result.Ok, message = result.Text, ms = result.Ms });
+        Send(new
+        {
+            type = "testResult",
+            name,
+            ok = result.Ok,
+            message = result.Text,
+            ms = result.Ms
+        });
     }
 
     void VerifyKey(string role, string key)
     {
         if (string.IsNullOrWhiteSpace(key) || key.Trim().Length < 8)
         {
-            Send(new { type = "keyResult", role, ok = false, message = "密钥格式不正确，请向群管理员确认。" });
+            Send(new
+            {
+                type = "keyResult",
+                role,
+                ok = false,
+                message = "密钥格式不正确，请向群管理员确认。"
+            });
             return;
         }
         if (role == "admin")
@@ -1116,13 +1362,25 @@ public partial class MainWindow : Window
             {
                 _config.AdminKey = key.Trim();
                 _store.Save(_config);
-                Send(new { type = "keyResult", role, ok = true, message = "已设置本机管理员密钥。" });
+                Send(new
+                {
+                    type = "keyResult",
+                    role,
+                    ok = true,
+                    message = "已设置本机管理员密钥。"
+                });
                 SendState();
                 return;
             }
             if (!string.Equals(_config.AdminKey, key.Trim(), StringComparison.Ordinal))
             {
-                Send(new { type = "keyResult", role, ok = false, message = "管理员密钥不匹配。" });
+                Send(new
+                {
+                    type = "keyResult",
+                    role,
+                    ok = false,
+                    message = "管理员密钥不匹配。"
+                });
                 return;
             }
         }
@@ -1131,7 +1389,13 @@ public partial class MainWindow : Window
             _config.CommunityKey = key.Trim();
         }
         _store.Save(_config);
-        Send(new { type = "keyResult", role, ok = true, message = "验证成功" });
+        Send(new
+        {
+            type = "keyResult",
+            role,
+            ok = true,
+            message = "验证成功"
+        });
         SendState();
     }
 
@@ -1143,8 +1407,16 @@ public partial class MainWindow : Window
         var file = Path.Combine(_store.DataDirectory, fileName);
         File.WriteAllText(file, items);
         var key = fileName.StartsWith("announcements", StringComparison.OrdinalIgnoreCase) ? "announcements" : "recommendations";
-        Send(new { type = "community", payload = new Dictionary<string, string> { [key] = items } });
-        Send(new { type = "saved", message = "本地内容已更新。" });
+        Send(new
+        {
+            type = "community",
+            payload = new Dictionary<string, string> { [key] = items }
+        });
+        Send(new
+        {
+            type = "saved",
+            message = "本地内容已更新。"
+        });
     }
 
     async Task PublishAsync(JsonElement root)
@@ -1153,7 +1425,12 @@ public partial class MainWindow : Window
         var body = ReadString(root, "body");
         if (title.Length == 0 || body.Length == 0)
         {
-            Send(new { type = "publishResult", ok = false, message = "标题和正文不能为空。" });
+            Send(new
+            {
+                type = "publishResult",
+                ok = false,
+                message = "标题和正文不能为空。"
+            });
             return;
         }
 
@@ -1176,7 +1453,11 @@ public partial class MainWindow : Window
         list.Add(JsonSerializer.SerializeToElement(record));
         var localJson = JsonSerializer.Serialize(list, new JsonSerializerOptions { WriteIndented = true });
         File.WriteAllText(file, localJson);
-        Send(new { type = "community", payload = new Dictionary<string, string> { ["announcements"] = localJson } });
+        Send(new
+        {
+            type = "community",
+            payload = new Dictionary<string, string> { ["announcements"] = localJson }
+        });
 
         if (!string.IsNullOrWhiteSpace(_config.WriteEndpoint))
         {
@@ -1191,7 +1472,12 @@ public partial class MainWindow : Window
             }
             catch (Exception ex)
             {
-                Send(new { type = "publishResult", ok = false, message = "已保存到本机，但同步失败：" + ex.Message });
+                Send(new
+                {
+                    type = "publishResult",
+                    ok = false,
+                    message = "已保存到本机，但同步失败：" + ex.Message
+                });
                 return;
             }
         }
@@ -1246,6 +1532,3 @@ public partial class MainWindow : Window
         return $"{bytes / 1024.0 / 1024.0:0.#} MB";
     }
 }
-
-
-

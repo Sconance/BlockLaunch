@@ -1,4 +1,4 @@
-﻿namespace MCUGLauncher.Models;
+namespace MCUGLauncher.Models;
 
 public sealed class AppConfig
 {
@@ -11,7 +11,10 @@ public sealed class AppConfig
     public int Height { get; set; } = 720;
     public string LastVersion { get; set; } = "";
     public string LastInstance { get; set; } = "";
-    public bool Anonymous { get; set; }
+    public bool Anonymous
+    {
+        get; set;
+    }
     public string CommunityKey { get; set; } = "";
     public string AdminKey { get; set; } = "";
     public string WriteEndpoint { get; set; } = "";
@@ -51,4 +54,3 @@ public sealed record ModInfo(
     string Loader);
 
 public sealed record LaunchResult(bool Ok, string Message);
-

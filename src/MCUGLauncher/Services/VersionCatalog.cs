@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using MCUGLauncher.Models;
 
@@ -166,14 +166,18 @@ public sealed class VersionCatalog
     static string DetectLoader(string value)
     {
         var text = value.ToLowerInvariant();
-        if (text.Contains("fabric")) return "Fabric";
-        if (text.Contains("neoforge")) return "NeoForge";
-        if (text.Contains("forge")) return "Forge";
-        if (text.Contains("quilt")) return "Quilt";
-        if (text.Contains("optifine")) return "OptiFine";
+        if (text.Contains("fabric"))
+            return "Fabric";
+        if (text.Contains("neoforge"))
+            return "NeoForge";
+        if (text.Contains("forge"))
+            return "Forge";
+        if (text.Contains("quilt"))
+            return "Quilt";
+        if (text.Contains("optifine"))
+            return "OptiFine";
         return "原版";
     }
 }
 
 public sealed record VersionDetails(string Name, string Minecraft, string Loader, string Java, bool Complete);
-

@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Diagnostics;
 using System.Net.Sockets;
 using System.Text;
@@ -193,6 +193,3 @@ public static class ServerPingService
         stream.WriteByte((byte)(value & 0xFF));
     }
 }
-
-
-
