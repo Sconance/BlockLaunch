@@ -3,6 +3,9 @@ using MCUGLauncher.Models;
 
 namespace MCUGLauncher.Services;
 
+/// <summary>
+/// 提供 配置Store 相关功能。
+/// </summary>
 public sealed class ConfigStore
 {
     readonly string _file;
@@ -21,6 +24,9 @@ public sealed class ConfigStore
         get;
     }
 
+    /// <summary>
+    /// 加载。
+    /// </summary>
     public AppConfig Load()
     {
         AppConfig config;
@@ -52,6 +58,9 @@ public sealed class ConfigStore
         return config;
     }
 
+    /// <summary>
+    /// 保存。
+    /// </summary>
     public void Save(AppConfig config)
     {
         var temp = _file + ".tmp";

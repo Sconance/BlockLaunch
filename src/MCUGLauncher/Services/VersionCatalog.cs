@@ -4,13 +4,31 @@ using MCUGLauncher.Models;
 
 namespace MCUGLauncher.Services;
 
+/// <summary>
+/// 提供 版本Catalog 相关功能。
+/// </summary>
 public sealed class VersionCatalog
 {
+    /// <summary>
+    /// 获取或设置 分组。
+    /// </summary>
     public IReadOnlyList<VersionGroup> Groups { get; init; } = [];
+    /// <summary>
+    /// 获取或设置 Instances。
+    /// </summary>
     public IReadOnlyList<InstanceInfo> Instances { get; init; } = [];
+    /// <summary>
+    /// 获取或设置 Selected。
+    /// </summary>
     public string Selected { get; init; } = "";
+    /// <summary>
+    /// 获取或设置 根目录。
+    /// </summary>
     public string Root { get; init; } = "";
 
+    /// <summary>
+    /// 加载。
+    /// </summary>
     public static VersionCatalog Load(string root, string selected)
     {
         var groups = new List<VersionGroup>();
@@ -61,6 +79,9 @@ public sealed class VersionCatalog
         return new VersionCatalog { Groups = groups, Instances = instances, Selected = current, Root = root };
     }
 
+    /// <summary>
+    /// 读取Details。
+    /// </summary>
     public static VersionDetails ReadDetails(string root, string name)
     {
         var file = Path.Combine(root, "versions", name, name + ".json");
@@ -107,6 +128,9 @@ public sealed class VersionCatalog
         }
     }
 
+    /// <summary>
+    /// 读取Mods。
+    /// </summary>
     public static IReadOnlyList<ModInfo> ReadMods(string root, string instance)
     {
         var dir = Path.Combine(root, "versions", instance, "mods");
@@ -135,6 +159,9 @@ public sealed class VersionCatalog
         return result;
     }
 
+    /// <summary>
+    /// 设置Enabled。
+    /// </summary>
     public static void SetEnabled(ModInfo mod, bool enabled)
     {
         var target = enabled
@@ -148,8 +175,14 @@ public sealed class VersionCatalog
             File.Move(mod.Path, target);
     }
 
+    /// <summary>
+    /// 删除。
+    /// </summary>
     public static void Delete(ModInfo mod) => File.Delete(mod.Path);
 
+    /// <summary>
+    /// 执行 实例Directory。
+    /// </summary>
     public static string InstanceDirectory(string root, string instance) =>
         Path.Combine(root, "versions", instance);
 
@@ -180,4 +213,7 @@ public sealed class VersionCatalog
     }
 }
 
+/// <summary>
+/// 表示 版本Details 数据。
+/// </summary>
 public sealed record VersionDetails(string Name, string Minecraft, string Loader, string Java, bool Complete);

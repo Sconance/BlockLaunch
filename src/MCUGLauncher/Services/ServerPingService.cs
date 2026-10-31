@@ -7,12 +7,21 @@ using System.Text.RegularExpressions;
 
 namespace MCUGLauncher.Services;
 
+/// <summary>
+/// 表示 服务器状态结果 数据。
+/// </summary>
 public sealed record PingResult(bool Online, int OnlinePlayers, int MaxPlayers, int Ping, string Motd, string Version, string Error);
 
+/// <summary>
+/// 提供 服务器服务器状态Service 相关功能。
+/// </summary>
 public static class ServerPingService
 {
     const int Protocol = 763;
 
+    /// <summary>
+    /// 查询。
+    /// </summary>
     public static async Task<PingResult> PingAsync(string address, CancellationToken token)
     {
         var (host, port) = Split(address);

@@ -3,10 +3,16 @@ using System.Text.Json;
 
 namespace MCUGLauncher.Services;
 
+/// <summary>
+/// 提供 模组Service 相关功能。
+/// </summary>
 public sealed class ModService
 {
     static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(60) };
 
+    /// <summary>
+    /// 执行 下载。
+    /// </summary>
     public async Task<string> DownloadAsync(string projectId, string gameVersion, string targetDirectory, CancellationToken token)
     {
         if (string.IsNullOrWhiteSpace(projectId))

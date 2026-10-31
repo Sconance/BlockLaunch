@@ -3,6 +3,9 @@ using System.Net.Http;
 
 namespace MCUGLauncher.Services;
 
+/// <summary>
+/// 提供 社区Service 相关功能。
+/// </summary>
 public sealed class CommunityService
 {
     readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(8) };
@@ -32,6 +35,9 @@ public sealed class CommunityService
         }
     }
 
+    /// <summary>
+    /// 读取。
+    /// </summary>
     public async Task<string?> ReadAsync(string url, CancellationToken token)
     {
         try
