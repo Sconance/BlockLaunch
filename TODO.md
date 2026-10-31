@@ -40,3 +40,7 @@
 - 小步提交：一个提交只做一类改动（配置、删除、测试、文档），便于逐条审查。
 - 删除旧文件属于迁移的一部分，不需要逐个文件评审；重点审查 `MainWindow.xaml.cs` 的消息分发与 `Services/` 的数据边界。
 - 版本号只改 `Directory.Build.props` 的 `McugVersion`，规则见 [版本号控制](docs/VERSIONING.md)。
+
+## 2026-11-01 报告修复
+
+任务队列、加载器/整合包导入、运行游戏、资源收藏、存档备份恢复、响应式布局与回归检查已在 0.22.3-codex 接入。逐项状态和未完成范围以 [REPORT_FIX_STATUS](docs/REPORT_FIX_STATUS.md) 为准，前面的历史清单不代表新分支已完成所有迁移。

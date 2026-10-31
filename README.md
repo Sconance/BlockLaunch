@@ -1,6 +1,6 @@
 # MCUG Launcher 0.22.3
 
-Windows 上的 Minecraft Java 版启动器。0.22.3 重做了界面，并把版本管理、模组下载、服务器状态和社区内容串成一套完整体验。
+Windows 上的 Minecraft Java 版启动器。当前 0.22.3-codex 是 WebView2 迁移开发分支，已接回下载任务、加载器安装、整合包导入、运行游戏、收藏与存档备份等入口，仍有部分旧功能待恢复。具体范围见 [修复状态](docs/REPORT_FIX_STATUS.md)。
 
 当前版本为 **0.22.3**。
 

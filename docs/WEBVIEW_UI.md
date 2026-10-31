@@ -1,38 +1,40 @@
 # WebView2 UI 开发说明
 
-## 分层与入口
+## 分层
 
-- `MainWindow.xaml.cs`：WebView2 生命周期、可信页面限制、Windows 窗口操作与原生文件选择；不实现账号、下载或配置业务。
-- `UseCases/LauncherApplication`：唯一消息分发入口，校验消息后调用按职责划分的 Commands，并生成界面状态。
-- `UseCases/LauncherContext`：共享配置、账号会话、HTTP 生命周期与发送/刷新回调；不包含控件树，不引用窗口。
-- `AccountCommands`、`GameCommands`、`InstanceCommands`、`ResourceCommands`、`SettingsCommands`、`DiagnosticCommands`、`CommunityCommands`：各自负责对应业务流程；复用 `Services/` 与 Core。
-- `IDesktopHost`：业务调用原生窗口操作的接口，检查时替换为假实现。
-- `Ui/app.js`：页面与演示数据；`Ui/host.js`：真实宿主数据绑定和交互；样式保持原分支。
+- MainWindow：WebView2 生命周期、可信来源校验、窗口和原生确认/文件选择。
+- LauncherApplication：解析/校验消息、调用按职责划分的 UseCases、生成状态。
+- LauncherContext：配置、账号、网络、任务队列与游戏会话的组合与生命周期。
+- Services/LauncherTaskQueue：OperationCoordinator 的持久队列调度；DownloadExecutor 调用 Core 安装与校验下载。页面不持有任务。
+- Core：启动、依赖解析、事务安装、校验下载、Java 扫描、收藏与存档归档等既有能力。
+- Ui：app.js/host.js 保留旧路由；新增 tasks/install/games/bookmarks/saves 模块独立维护。styles.css 是当前样式入口，revision.css 已合并。
 
-新增命令应放入所属 Commands，在分发器登记并补协议检查。不要把业务搬回窗口，也不要通过 partial 文件隐藏窗口复杂度。
+新增功能优先使用 Core，协议分发后调用相应 UseCase，不把业务搬回窗口。开发约定见根目录 AGENTS.md。
 
-## 消息协议
+## 协议与数据
 
-页面仅从 `https://app.local` 向宿主发送 JSON 对象，`type` 为命令名。字段名称延续 0.22.3，不改已有页面协议：例如 `saveSettings` 携带 `player/root/java/ram/width/height`；`toggleMod` 携带 `file/enabled`。
+宿主仅接受 `https://app.local` 的 JSON 命令。消息先验证字段类型，错误返回 `{type:"error",message:"..."}`。
 
-分发前校验字段类型，错误以 `{type:"error",message:"..."}` 返回。各业务的响应继续使用 `state`、`settingsSaved`、`launchResult`、`contentList` 等原消息类型。发送由窗口统一切换到 UI 线程；窗口关闭后丢弃响应，并取消使用宿主令牌的请求。启动安装器等尚未接受令牌的 Core API 仍需后续补齐取消支持。
+任务命令为 requestTasks/taskAction，操作包括 pause/resume/cancel/delete；tasks 响应包含持久记录 id、name、state、percent、message、committing。提交阶段不允许取消。
 
-初始化先发送本地状态，再并行读取社区与恢复微软账号，重复 ready 不重复执行在线初始化。在线账号未完成验证时不允许静默以离线身份启动。
+加载器通过 listLoaders/installLoader；整合包通过 pickFile(target=pack)/importPack；游戏通过 requestGames/stopGame；收藏通过 toggleBookmark；备份通过 listSaveBackups/backupSaves/restoreSave。原有命令继续兼容。
+
+配置在 `%LOCALAPPDATA%/MCUGLauncher/config.json`；Core Preferences 的保留模型在 LegacyPreferences，网络/启动实际复用它。任务记录在 operations；收藏在 resource-bookmarks.json；备份按实例哈希放在 backups；游戏日志在 game-logs。
+
+数据包不能直接安装到游戏根目录：先下载，再导入具体存档。整合包先下载后在安装与导入中选择文件，或直接选择已有本地包。
 
 ## 验证
 
 ```powershell
+python scripts/check-layout.py
+python scripts/check-version.py
 python scripts/check-web-boundaries.py
+dotnet run --project tools/SourceFormatter
 ./scripts/run-checks.ps1 -Name AuthChecks,MuaChecks,DownloadChecks,QueueChecks,CompatibilityChecks,WebBridgeChecks
+npm ci --ignore-scripts --prefix test/WebUiChecks
+npm test --prefix test/WebUiChecks
 ```
 
-`WebBridgeChecks` 使用隔离目录、假桌面接口和假 HTTP：覆盖真实消息分发、配置持久化、畸形消息、服务器增删、社区本地写入、Mod 开关、下载版本/加载器过滤、下载文件名和离线 UUID。不会读取或覆盖用户账号，也不连接真实服务。
+WebUiChecks 默认使用系统 Edge；也可通过 BROWSER_CHANNEL 指定支持的浏览器通道。截图输出到 work/verify/report-ui（不入库）。测试使用隔离目录、假 HTTP 和模拟桥接，不涉及真实用户账号。
 
-还需人工验收：真实 WebView2 拖动/吸附、多 DPI、微软/MUA 授权、Minecraft 完整启动、各资源类型的真实下载。浏览器页面渲染和隔离检查不能替代这些验收。
-
-## 后续工作
-
-- 按页面拆 `app.js`，按账号/资源/设置拆 `host.js`，保留当前 DOM 与消息协议。
-- 将现有字符串命令逐步改为类型明确的请求/响应模型，扩充协议字段及错误状态检查。
-- 补运行游戏会话管理与进程退出验收；迁移版不能仅凭“构建成功”宣布旧功能全部恢复。
-- 下载任务取消、整合包导入、依赖选择等尚未完成的界面入口应继续明确提示，不能用演示数据冒充完成。
+完整的进展与剩余缺口见 [报告对应修复状态](REPORT_FIX_STATUS.md)。真实 WebView2、账号与游戏必须另行验收。
