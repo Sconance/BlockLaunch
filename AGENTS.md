@@ -20,8 +20,10 @@
 
 ## 提交前
 
-运行布局、版本、源码格式、Web 边界检查及受影响的 test/*Checks。修改页面需运行 WebUiChecks 并查看截图。修改任务需验证排队、取消和恢复。
+运行布局、版本、C# SourceFormatter、JavaScript Prettier、Web 边界检查及受影响的 test/*Checks。修改页面需运行 WebUiChecks 并查看截图。修改任务需验证排队、取消和恢复。
 
 测试进程、假 HTTP 和浏览器模拟桥接不能代替真实账号、游戏和 WebView2 验收；提交说明须说明验证范围和剩余缺口。
 
 只推送用户指定分支。发布 Release、移动标签或覆盖正式程序须有相应用户指示。
+
+前端 app.js 只保留路由，页面不要放回入口；原生模式不能直接加载 preview-data.js。服务层不反向依赖 UseCases。卸载必须经过路径预览与原生确认，恢复排队卸载也必须确认。

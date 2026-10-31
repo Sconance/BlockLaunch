@@ -78,6 +78,8 @@ Windows 上的 Minecraft Java 版启动器。当前 0.22.3-codex 是 WebView2 �
 - 公告配图以 data URL 保存/提交；如果写入接口有对象存储，建议在服务端转存并替换为图片 URL。
 - 管理员认证、删除边界与 GitHub 托管步骤见 [docs/admin-and-community.md](docs/admin-and-community.md)。
 
+本轮继续接回实例克隆、整合包 ZIP 导出、卸载路径预览和内容更新预览；结构与格式检查结论见 [代码风格复查](docs/CODE_STYLE_REVIEW.md)。
+
 ## 技术架构
 
 ```
