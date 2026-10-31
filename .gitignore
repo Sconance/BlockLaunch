@@ -1,17 +1,19 @@
-# Build output
-bin/
-obj/
-dist/
-
-# IDE
+**/bin/
+**/obj/
 .vs/
 .idea/
+artifacts/
+publish/
 *.user
 *.suo
-
-# Local runtime data
-MCUGLauncher.exe
-
-# OS
-Thumbs.db
-.DS_Store
+*.log
+.env
+.env.*
+accounts.bin
+settings.json
+token.json
+.minecraft/
+runtime/
+/work/
+/outputs/
+__pycache__/
