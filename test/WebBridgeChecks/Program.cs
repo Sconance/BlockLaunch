@@ -57,30 +57,40 @@ Check(Has("error") && File.ReadAllText(Path.Combine(fixture, "announcements.loca
 Check(MainWindow.IsLocalPage("https://app.local/index.html?screen=mods") && !MainWindow.IsLocalPage("https://evil.example/") && !MainWindow.IsLocalPage("https://app.local:9999/"), "bridge origin whitelist");
 Check(ProtocolValues.OfflineUuid("Notch") == "b50ad385829d3141a2167e7d7539ba7f", "offline UUID uses Java byte order");
 
-using var handler = new ModFixtureHandler();
-using var http = new HttpClient(handler);
-var service = new ModService(http);
-var saved = await service.DownloadAsync("fixture", "1.21.1", Path.Combine(fixture, "downloads"), CancellationToken.None, "neoforge");
-Check(File.ReadAllText(saved) == "verified bytes" && handler.Query.Contains("1.21.1") && handler.Query.Contains("neoforge"), "mod download uses requested version and loader");
-handler.Empty = true;
-try
+var legacyDirectory = Path.Combine(fixture, "legacy");
+Directory.CreateDirectory(legacyDirectory);
+var legacyPreferences = new BlockLaunch.Preferences
 {
-    await service.DownloadAsync("fixture", "1.21.1", fixture, CancellationToken.None);
-    throw new Exception("empty response accepted");
-}
-catch (IOException) { Check(true, "empty file list rejected"); }
-handler.Empty = false;
-handler.FileName = "../escaped.jar";
-try
-{
-    await service.DownloadAsync("fixture", "1.21.1", fixture, CancellationToken.None);
-    throw new Exception("unsafe filename accepted");
-}
-catch (IOException) { Check(!File.Exists(Path.Combine(fixture, "escaped.jar")), "unsafe download filename rejected"); }
+    Player = "Old",
+    ProtectSaves = false,
+    SaveBackupCount = 12,
+    ExtraJavaPaths = new List<string> { "fixture-java" },
+    BackgroundPath = "fixture-background"
+};
+legacyPreferences.Network.LimitKibPerSecond = 777;
+legacyPreferences.Launch.JvmArguments = "-Dfixture=true";
+new BlockLaunch.SettingsStore(legacyDirectory).Save(legacyPreferences);
+var imported = ConfigStore.ReadLegacy(Path.Combine(legacyDirectory, "settings.json"))!;
+Check(imported.LegacyPreferences.Network.LimitKibPerSecond == 777 && imported.LegacyPreferences.SaveBackupCount == 12
+    && imported.LegacyPreferences.Launch.JvmArguments == "-Dfixture=true" && imported.LegacyPreferences.BackgroundPath == "fixture-background",
+    "legacy migration preserves network launch appearance and save preferences");
+await Request("""{"type":"toggleBookmark","id":"fixture-project","kind":"mod","name":"Fixture","description":"fixture","author":"fixture"}""");
+Check(new BlockLaunch.ResourceBookmarkStore(fixture).Read().Any(b => b.Project.Id == "fixture-project"), "bookmark command persists through Core store");
+await Request("""{"type":"toggleBookmark","id":"fixture-project"}""");
+Check(!new BlockLaunch.ResourceBookmarkStore(fixture).Read().Any(b => b.Project.Id == "fixture-project"), "bookmark command removes through Core store");
+await Request("""{"type":"listSaveBackups"}""");
+Check(Has("saveBackups") && messages.Last().GetProperty("items").GetArrayLength() == 0, "save backup listing uses selected instance");
+await Request("""{"type":"requestGames"}""");
+Check(Has("games") && messages.Last().GetProperty("items").GetArrayLength() == 0, "running games request contains only owned sessions");
+application.RememberWindow(1400, 900, true);
+Check(store.Load().WindowWidth == 1400 && store.Load().WindowMaximized, "window dimensions persist through application boundary");
+await ResourceScenarios.Run(fixture);
+await QueueScenarios.Run(fixture);
 Console.WriteLine("ALL_WEB_BRIDGE_CHECKS_PASSED (isolated fixtures; no live account or gameplay)");
 
 sealed class FakeDesktop : IDesktopHost
 {
+    public bool ConfirmStopGame() => false;
     public string LastAction = "";
     public void Window(string action) => LastAction = action;
     public void Drag()
@@ -94,19 +104,5 @@ sealed class FakeDesktop : IDesktopHost
     }
     public void ResetWindow()
     {
-    }
-}
-sealed class ModFixtureHandler : HttpMessageHandler
-{
-    public string Query = "";
-    public bool Empty;
-    public string FileName = "fixture.jar";
-    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken token)
-    {
-        if (request.RequestUri!.Host == "files.example")
-            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("verified bytes") });
-        Query = Uri.UnescapeDataString(request.RequestUri.Query);
-        var files = Empty ? Array.Empty<object>() : new object[] { new { primary = true, filename = FileName, url = "https://files.example/fixture.jar" } };
-        return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(JsonSerializer.Serialize(new[] { new { files } }), Encoding.UTF8, "application/json") });
     }
 }

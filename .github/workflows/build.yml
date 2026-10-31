@@ -27,3 +27,13 @@ jobs:
 
       - name: Run isolated regression checks
         run: ./scripts/run-checks.ps1 -Name AuthChecks,MuaChecks,DownloadChecks,QueueChecks,CompatibilityChecks,WebBridgeChecks
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install browser check dependencies
+        run: npm ci --ignore-scripts
+        working-directory: test/WebUiChecks
+      - name: Check Web UI interactions and responsive layout
+        run: npm test
+        working-directory: test/WebUiChecks

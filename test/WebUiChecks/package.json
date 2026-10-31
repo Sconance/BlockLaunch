@@ -1,0 +1,1 @@
+{"name":"mcug-web-ui-checks","private":true,"version":"1.0.0","scripts":{"test":"node check.cjs"},"devDependencies":{"playwright":"1.62.1"}}

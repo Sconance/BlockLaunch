@@ -18,3 +18,4 @@ runtime/
 /work/
 /outputs/
 __pycache__/
+node_modules/
