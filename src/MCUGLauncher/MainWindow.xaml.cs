@@ -25,6 +25,7 @@ public partial class MainWindow : Window
     readonly CommunityService _community = new();
     readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(30) };
     readonly WindowChromeController _chrome;
+    readonly UiBridge _bridge;
     MicrosoftAccountService? _microsoft;
     MuaAccountService? _mua;
     MSession? _onlineSession;
@@ -36,6 +37,7 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         _chrome = new WindowChromeController(this);
+        _bridge = new UiBridge(Browser, Dispatcher);
         _config = _store.Load();
         var authDirectory = Path.Combine(_store.DataDirectory, "auth");
         try
@@ -120,7 +122,7 @@ public partial class MainWindow : Window
         {
             using var doc = JsonDocument.Parse(e.WebMessageAsJson);
             var root = doc.RootElement;
-            var type = ReadString(root, "type");
+            var type = UiBridge.ReadString(root, "type");
             switch (type)
             {
                 case "ready":
@@ -133,48 +135,48 @@ public partial class MainWindow : Window
                     SendState();
                     break;
                 case "launch":
-                    await LaunchAsync(ReadString(root, "version"));
+                    await LaunchAsync(UiBridge.ReadString(root, "version"));
                     break;
                 case "window":
-                    HandleWindow(ReadString(root, "action"));
+                    HandleWindow(UiBridge.ReadString(root, "action"));
                     break;
                 case "drag":
                     BeginWindowDrag();
                     break;
                 case "selectVersion":
-                    _config.LastVersion = ReadString(root, "version");
+                    _config.LastVersion = UiBridge.ReadString(root, "version");
                     _config.LastInstance = _config.LastVersion;
                     _store.Save(_config);
                     SendState();
                     break;
                 case "selectInstance":
-                    _config.LastInstance = ReadString(root, "instance");
+                    _config.LastInstance = UiBridge.ReadString(root, "instance");
                     _store.Save(_config);
                     SendState();
                     break;
                 case "openFolder":
-                    OpenFolder(ReadString(root, "kind"));
+                    OpenFolder(UiBridge.ReadString(root, "kind"));
                     break;
                 case "pingServer":
-                    await PingAsync(ReadString(root, "address"), ReadString(root, "id"));
+                    await PingAsync(UiBridge.ReadString(root, "address"), UiBridge.ReadString(root, "id"));
                     break;
                 case "saveServer":
                     SaveServer(root);
                     break;
                 case "deleteServer":
-                    DeleteServer(ReadString(root, "address"));
+                    DeleteServer(UiBridge.ReadString(root, "address"));
                     break;
                 case "toggleMod":
-                    ToggleMod(ReadString(root, "file"), root.TryGetProperty("enabled", out var enabled) && enabled.GetBoolean());
+                    ToggleMod(UiBridge.ReadString(root, "file"), root.TryGetProperty("enabled", out var enabled) && enabled.GetBoolean());
                     break;
                 case "deleteMod":
-                    DeleteMod(ReadString(root, "file"));
+                    DeleteMod(UiBridge.ReadString(root, "file"));
                     break;
                 case "deleteVersion":
-                    DeleteVersion(ReadString(root, "version"));
+                    DeleteVersion(UiBridge.ReadString(root, "version"));
                     break;
                 case "searchContent":
-                    Log("searchContent " + ReadString(root, "category") + " " + ReadString(root, "query"));
+                    Log("searchContent " + UiBridge.ReadString(root, "category") + " " + UiBridge.ReadString(root, "query"));
                     await SearchContentAsync(root);
                     break;
                 case "installContent":
@@ -184,7 +186,7 @@ public partial class MainWindow : Window
                     await SendVanillaVersionsAsync();
                     break;
                 case "installVanilla":
-                    await InstallVanillaAsync(ReadString(root, "version"));
+                    await InstallVanillaAsync(UiBridge.ReadString(root, "version"));
                     break;
                 case "installMod":
                     await InstallModAsync(root);
@@ -193,10 +195,10 @@ public partial class MainWindow : Window
                     SaveSettings(root);
                     break;
                 case "pickFolder":
-                    PickFolder(ReadString(root, "target"));
+                    PickFolder(UiBridge.ReadString(root, "target"));
                     break;
                 case "pickFile":
-                    PickFile(ReadString(root, "target"));
+                    PickFile(UiBridge.ReadString(root, "target"));
                     break;
                 case "scanJava":
                     await ScanJavaAsync();
@@ -217,7 +219,7 @@ public partial class MainWindow : Window
                     await LoginMicrosoftAsync();
                     break;
                 case "loginMua":
-                    await LoginMuaAsync(ReadString(root, "account"), ReadString(root, "password"));
+                    await LoginMuaAsync(UiBridge.ReadString(root, "account"), UiBridge.ReadString(root, "password"));
                     break;
                 case "logoutAccount":
                     _onlineSession = null;
@@ -226,10 +228,10 @@ public partial class MainWindow : Window
                     SendState();
                     break;
                 case "testSource":
-                    await TestSourceAsync(ReadString(root, "name"), ReadString(root, "url"));
+                    await TestSourceAsync(UiBridge.ReadString(root, "name"), UiBridge.ReadString(root, "url"));
                     break;
                 case "verifyKey":
-                    VerifyKey(ReadString(root, "role"), ReadString(root, "key"));
+                    VerifyKey(UiBridge.ReadString(root, "role"), UiBridge.ReadString(root, "key"));
                     break;
                 case "publish":
                     await PublishAsync(root);
@@ -244,7 +246,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            Send(new
+            _bridge.Send(new
             {
                 type = "error",
                 message = ex.Message
@@ -313,7 +315,7 @@ public partial class MainWindow : Window
             },
             writeEndpoint = _config.WriteEndpoint
         };
-        Send(state);
+        _bridge.Send(state);
     }
 
     async Task SendCommunityAsync()
@@ -340,7 +342,7 @@ public partial class MainWindow : Window
                 items[name] = text;
         }
         if (items.Count > 0)
-            Send(new
+            _bridge.Send(new
             {
                 type = "community",
                 payload = items
@@ -351,7 +353,7 @@ public partial class MainWindow : Window
     {
         if (_microsoft == null)
         {
-            Send(new
+            _bridge.Send(new
             {
                 type = "authResult",
                 ok = false,
@@ -359,7 +361,7 @@ public partial class MainWindow : Window
             });
             return;
         }
-        Send(new
+        _bridge.Send(new
         {
             type = "authResult",
             pending = true,
@@ -372,7 +374,7 @@ public partial class MainWindow : Window
             _config.AccountType = "microsoft";
             _config.Player = session.Username ?? _config.Player;
             _store.Save(_config);
-            Send(new
+            _bridge.Send(new
             {
                 type = "authResult",
                 ok = true,
@@ -382,7 +384,7 @@ public partial class MainWindow : Window
         }
         catch (Exception)
         {
-            Send(new
+            _bridge.Send(new
             {
                 type = "authResult",
                 ok = false,
@@ -416,7 +418,7 @@ public partial class MainWindow : Window
     {
         if (_mua == null)
         {
-            Send(new
+            _bridge.Send(new
             {
                 type = "authResult",
                 ok = false,
@@ -426,7 +428,7 @@ public partial class MainWindow : Window
         }
         if (string.IsNullOrWhiteSpace(account) || string.IsNullOrEmpty(password))
         {
-            Send(new
+            _bridge.Send(new
             {
                 type = "authResult",
                 ok = false,
@@ -434,7 +436,7 @@ public partial class MainWindow : Window
             });
             return;
         }
-        Send(new
+        _bridge.Send(new
         {
             type = "authResult",
             pending = true,
@@ -448,7 +450,7 @@ public partial class MainWindow : Window
             _config.AccountType = "mua";
             _config.Player = credential.Profile.Name;
             _store.Save(_config);
-            Send(new
+            _bridge.Send(new
             {
                 type = "authResult",
                 ok = true,
@@ -458,7 +460,7 @@ public partial class MainWindow : Window
         }
         catch (Exception)
         {
-            Send(new
+            _bridge.Send(new
             {
                 type = "authResult",
                 ok = false,
@@ -473,7 +475,7 @@ public partial class MainWindow : Window
             version = _config.LastVersion;
         if (string.IsNullOrWhiteSpace(version))
         {
-            Send(new
+            _bridge.Send(new
             {
                 type = "launchResult",
                 ok = false,
@@ -485,7 +487,7 @@ public partial class MainWindow : Window
         var instanceDir = Path.Combine(_config.Root, "versions", version);
         if (!Directory.Exists(instanceDir))
         {
-            Send(new
+            _bridge.Send(new
             {
                 type = "launchResult",
                 ok = false,
@@ -542,7 +544,7 @@ public partial class MainWindow : Window
             _config.LastVersion = version;
             _config.LastInstance = version;
             _store.Save(_config);
-            Send(new
+            _bridge.Send(new
             {
                 type = "launchResult",
                 ok = true,
@@ -551,7 +553,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            Send(new
+            _bridge.Send(new
             {
                 type = "launchResult",
                 ok = false,
@@ -581,7 +583,7 @@ public partial class MainWindow : Window
     async Task PingAsync(string address, string id)
     {
         var result = await ServerPingService.PingAsync(address, CancellationToken.None);
-        Send(new
+        _bridge.Send(new
         {
             type = "serverPing",
             id,
@@ -597,12 +599,12 @@ public partial class MainWindow : Window
 
     void SaveServer(JsonElement root)
     {
-        var name = ReadString(root, "name");
-        var address = ReadString(root, "address").Trim();
-        var oldAddress = ReadString(root, "oldAddress").Trim();
+        var name = UiBridge.ReadString(root, "name");
+        var address = UiBridge.ReadString(root, "address").Trim();
+        var oldAddress = UiBridge.ReadString(root, "oldAddress").Trim();
         if (address.Length == 0)
         {
-            Send(new
+            _bridge.Send(new
             {
                 type = "serverResult",
                 ok = false,
@@ -618,7 +620,7 @@ public partial class MainWindow : Window
         _config.Servers.RemoveAll(s => s.Address.Equals(address, StringComparison.OrdinalIgnoreCase));
         _config.Servers.Add(new SavedServer { Name = name, Address = address });
         _store.Save(_config);
-        Send(new
+        _bridge.Send(new
         {
             type = "serverResult",
             ok = true,
@@ -659,7 +661,7 @@ public partial class MainWindow : Window
                     released = v.GetProperty("releaseTime").GetDateTimeOffset().ToString("yyyy-MM-dd")
                 })
                 .ToList();
-            Send(new
+            _bridge.Send(new
             {
                 type = "vanillaList",
                 items
@@ -667,7 +669,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            Send(new
+            _bridge.Send(new
             {
                 type = "contentError",
                 message = "读取原版版本列表失败：" + ex.Message
@@ -679,7 +681,7 @@ public partial class MainWindow : Window
     {
         if (string.IsNullOrWhiteSpace(version))
             return;
-        Send(new
+        _bridge.Send(new
         {
             type = "toast",
             message = $"开始安装原版 {version}，请稍候…"
@@ -690,7 +692,7 @@ public partial class MainWindow : Window
             await installer.Install(new PackRequirements(version, "vanilla", ""));
             _config.LastVersion = version;
             _store.Save(_config);
-            Send(new
+            _bridge.Send(new
             {
                 type = "toast",
                 message = $"原版 {version} 已安装。"
@@ -699,7 +701,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            Send(new
+            _bridge.Send(new
             {
                 type = "toast",
                 message = "安装失败：" + ex.Message
@@ -709,8 +711,8 @@ public partial class MainWindow : Window
 
     async Task SearchContentAsync(JsonElement root)
     {
-        var category = ReadString(root, "category");
-        var query = ReadString(root, "query");
+        var category = UiBridge.ReadString(root, "category");
+        var query = UiBridge.ReadString(root, "query");
         if (category is "vanilla")
         {
             await SendVanillaVersionsAsync();
@@ -772,7 +774,7 @@ public partial class MainWindow : Window
                 }
             }
             Log($"search stage parsed {items.Count}");
-            Send(new
+            _bridge.Send(new
             {
                 type = "contentList",
                 category,
@@ -782,7 +784,7 @@ public partial class MainWindow : Window
         }
         catch (OperationCanceledException)
         {
-            Send(new
+            _bridge.Send(new
             {
                 type = "contentError",
                 category,
@@ -792,7 +794,7 @@ public partial class MainWindow : Window
         catch (Exception ex)
         {
             Log("search failed " + ex);
-            Send(new
+            _bridge.Send(new
             {
                 type = "contentError",
                 category,
@@ -803,11 +805,11 @@ public partial class MainWindow : Window
 
     async Task InstallContentAsync(JsonElement root)
     {
-        var id = ReadString(root, "id");
-        var category = ReadString(root, "category");
+        var id = UiBridge.ReadString(root, "id");
+        var category = UiBridge.ReadString(root, "category");
         if (string.IsNullOrWhiteSpace(id))
             return;
-        Send(new
+        _bridge.Send(new
         {
             type = "toast",
             message = "正在解析文件…"
@@ -881,7 +883,7 @@ public partial class MainWindow : Window
             var bytes = await _http.GetByteArrayAsync(fileUrl);
             var path = Path.Combine(folder, ContentService.SafeFile(fileName));
             await File.WriteAllBytesAsync(path, bytes);
-            Send(new
+            _bridge.Send(new
             {
                 type = "toast",
                 message = $"已下载：{path}"
@@ -890,7 +892,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            Send(new
+            _bridge.Send(new
             {
                 type = "toast",
                 message = "下载失败：" + ex.Message
@@ -914,7 +916,7 @@ public partial class MainWindow : Window
         var source = Path.Combine(_config.Root, "versions", version);
         if (!Directory.Exists(source))
         {
-            Send(new
+            _bridge.Send(new
             {
                 type = "toast",
                 message = "版本目录不存在。"
@@ -931,7 +933,7 @@ public partial class MainWindow : Window
             if (_config.LastVersion.Equals(version, StringComparison.OrdinalIgnoreCase))
                 _config.LastVersion = "";
             _store.Save(_config);
-            Send(new
+            _bridge.Send(new
             {
                 type = "toast",
                 message = $"版本已移到回收目录：{target}"
@@ -940,7 +942,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            Send(new
+            _bridge.Send(new
             {
                 type = "toast",
                 message = "删除版本失败：" + ex.Message
@@ -957,16 +959,16 @@ public partial class MainWindow : Window
 
     async Task InstallModAsync(JsonElement root)
     {
-        var id = ReadString(root, "id");
-        var mode = ReadString(root, "mode");
-        var path = ReadString(root, "path");
+        var id = UiBridge.ReadString(root, "id");
+        var mode = UiBridge.ReadString(root, "mode");
+        var path = UiBridge.ReadString(root, "path");
         var catalog = VersionCatalog.Load(_config.Root, _config.LastInstance);
         var target = mode == "local"
             ? path
             : Path.Combine(VersionCatalog.InstanceDirectory(_config.Root, catalog.Selected), "mods");
         if (string.IsNullOrWhiteSpace(target))
         {
-            Send(new
+            _bridge.Send(new
             {
                 type = "modResult",
                 ok = false,
@@ -978,7 +980,7 @@ public partial class MainWindow : Window
         try
         {
             var file = await new ModService().DownloadAsync(id, "1.20.1", target, CancellationToken.None);
-            Send(new
+            _bridge.Send(new
             {
                 type = "modResult",
                 ok = true,
@@ -988,7 +990,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            Send(new
+            _bridge.Send(new
             {
                 type = "modResult",
                 ok = false,
@@ -1007,10 +1009,10 @@ public partial class MainWindow : Window
             _config.WriteEndpoint = endpoint.GetString() ?? "";
         if (root.TryGetProperty("dataSources", out var sources))
         {
-            _config.DataSources.Announcements = ReadString(sources, "announcements");
-            _config.DataSources.Servers = ReadString(sources, "servers");
-            _config.DataSources.Recommendations = ReadString(sources, "recommendations");
-            _config.DataSources.Quotes = ReadString(sources, "quotes");
+            _config.DataSources.Announcements = UiBridge.ReadString(sources, "announcements");
+            _config.DataSources.Servers = UiBridge.ReadString(sources, "servers");
+            _config.DataSources.Recommendations = UiBridge.ReadString(sources, "recommendations");
+            _config.DataSources.Quotes = UiBridge.ReadString(sources, "quotes");
         }
         if (root.TryGetProperty("ram", out var ram) && ram.TryGetInt32(out var ramValue))
             _config.Ram = Math.Clamp(ramValue, 512, 65536);
@@ -1027,7 +1029,7 @@ public partial class MainWindow : Window
         if (root.TryGetProperty("height", out var height) && height.TryGetInt32(out var heightValue))
             _config.Height = Math.Clamp(heightValue, 480, 4320);
         _store.Save(_config);
-        Send(new
+        _bridge.Send(new
         {
             type = "settingsSaved"
         });
@@ -1040,7 +1042,7 @@ public partial class MainWindow : Window
         if (!string.IsNullOrWhiteSpace(_config.Root))
             dialog.InitialDirectory = _config.Root;
         if (dialog.ShowDialog(this) == true)
-            Send(new
+            _bridge.Send(new
             {
                 type = "pickedPath",
                 target,
@@ -1057,7 +1059,7 @@ public partial class MainWindow : Window
             CheckFileExists = true
         };
         if (dialog.ShowDialog(this) == true)
-            Send(new
+            _bridge.Send(new
             {
                 type = "pickedPath",
                 target,
@@ -1107,7 +1109,7 @@ public partial class MainWindow : Window
                 .Where(File.Exists)
                 .Select(path => new { Path = path, Major = 0, Architecture = "x64", Vendor = "本机", Error = "" })
                 .ToList();
-            Send(new
+            _bridge.Send(new
             {
                 type = "javaList",
                 items = list.Select(item => new
@@ -1122,7 +1124,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            Send(new
+            _bridge.Send(new
             {
                 type = "toast",
                 message = "扫描 Java 失败：" + ex.Message
@@ -1138,7 +1140,7 @@ public partial class MainWindow : Window
             var saves = Path.Combine(_config.Root, "saves");
             if (!Directory.Exists(saves))
             {
-                Send(new
+                _bridge.Send(new
                 {
                     type = "toast",
                     message = "还没有存档文件夹。"
@@ -1149,7 +1151,7 @@ public partial class MainWindow : Window
             Directory.CreateDirectory(folder);
             var zip = Path.Combine(folder, $"saves-{DateTime.Now:yyyyMMdd-HHmmss}.zip");
             ZipFile.CreateFromDirectory(saves, zip, CompressionLevel.Optimal, false);
-            Send(new
+            _bridge.Send(new
             {
                 type = "backupDone",
                 path = zip
@@ -1157,7 +1159,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            Send(new
+            _bridge.Send(new
             {
                 type = "toast",
                 message = "备份失败：" + ex.Message
@@ -1171,7 +1173,7 @@ public partial class MainWindow : Window
         {
             var path = Path.Combine(_store.DataDirectory, "launcher.log");
             var text = File.Exists(path) ? string.Join('\n', File.ReadLines(path).TakeLast(400)) : "还没有日志。启动或启动游戏后会写入这里。";
-            Send(new
+            _bridge.Send(new
             {
                 type = "logText",
                 text
@@ -1179,7 +1181,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            Send(new
+            _bridge.Send(new
             {
                 type = "logText",
                 text = "读取日志失败：" + ex.Message
@@ -1208,7 +1210,7 @@ public partial class MainWindow : Window
             webview = CoreWebView2Environment.GetAvailableBrowserVersionString();
         }
         catch { }
-        Send(new
+        _bridge.Send(new
         {
             type = "systemInfo",
             app = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "0.22.3",
@@ -1223,7 +1225,7 @@ public partial class MainWindow : Window
     void ResetWindow()
     {
         _chrome.Reset();
-        Send(new
+        _bridge.Send(new
         {
             type = "toast",
             message = "窗口已恢复为 1200 × 780。"
@@ -1233,7 +1235,7 @@ public partial class MainWindow : Window
     async Task TestSourceAsync(string name, string url)
     {
         var result = await _community.TestAsync(url, CancellationToken.None);
-        Send(new
+        _bridge.Send(new
         {
             type = "testResult",
             name,
@@ -1247,7 +1249,7 @@ public partial class MainWindow : Window
     {
         if (string.IsNullOrWhiteSpace(key) || key.Trim().Length < 8)
         {
-            Send(new
+            _bridge.Send(new
             {
                 type = "keyResult",
                 role,
@@ -1262,7 +1264,7 @@ public partial class MainWindow : Window
             {
                 _config.AdminKey = key.Trim();
                 _store.Save(_config);
-                Send(new
+                _bridge.Send(new
                 {
                     type = "keyResult",
                     role,
@@ -1274,7 +1276,7 @@ public partial class MainWindow : Window
             }
             if (!string.Equals(_config.AdminKey, key.Trim(), StringComparison.Ordinal))
             {
-                Send(new
+                _bridge.Send(new
                 {
                     type = "keyResult",
                     role,
@@ -1289,7 +1291,7 @@ public partial class MainWindow : Window
             _config.CommunityKey = key.Trim();
         }
         _store.Save(_config);
-        Send(new
+        _bridge.Send(new
         {
             type = "keyResult",
             role,
@@ -1307,12 +1309,12 @@ public partial class MainWindow : Window
         var file = Path.Combine(_store.DataDirectory, fileName);
         File.WriteAllText(file, items);
         var key = fileName.StartsWith("announcements", StringComparison.OrdinalIgnoreCase) ? "announcements" : "recommendations";
-        Send(new
+        _bridge.Send(new
         {
             type = "community",
             payload = new Dictionary<string, string> { [key] = items }
         });
-        Send(new
+        _bridge.Send(new
         {
             type = "saved",
             message = "本地内容已更新。"
@@ -1321,11 +1323,11 @@ public partial class MainWindow : Window
 
     async Task PublishAsync(JsonElement root)
     {
-        var title = ReadString(root, "title");
-        var body = ReadString(root, "body");
+        var title = UiBridge.ReadString(root, "title");
+        var body = UiBridge.ReadString(root, "body");
         if (title.Length == 0 || body.Length == 0)
         {
-            Send(new
+            _bridge.Send(new
             {
                 type = "publishResult",
                 ok = false,
@@ -1334,7 +1336,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        var imageData = ReadString(root, "imageData");
+        var imageData = UiBridge.ReadString(root, "imageData");
         var record = new
         {
             id = Guid.NewGuid().ToString("N"),
@@ -1343,7 +1345,7 @@ public partial class MainWindow : Window
             tag = "公告",
             author = _config.Player,
             publishedAt = DateTimeOffset.Now.ToString("O"),
-            expiresAt = ReadString(root, "expiresAt"),
+            expiresAt = UiBridge.ReadString(root, "expiresAt"),
             imageUrl = imageData.StartsWith("data:image/", StringComparison.Ordinal) ? imageData : ""
         };
         var file = Path.Combine(_store.DataDirectory, "announcements.local.json");
@@ -1353,7 +1355,7 @@ public partial class MainWindow : Window
         list.Add(JsonSerializer.SerializeToElement(record));
         var localJson = JsonSerializer.Serialize(list, new JsonSerializerOptions { WriteIndented = true });
         File.WriteAllText(file, localJson);
-        Send(new
+        _bridge.Send(new
         {
             type = "community",
             payload = new Dictionary<string, string> { ["announcements"] = localJson }
@@ -1372,7 +1374,7 @@ public partial class MainWindow : Window
             }
             catch (Exception ex)
             {
-                Send(new
+                _bridge.Send(new
                 {
                     type = "publishResult",
                     ok = false,
@@ -1382,7 +1384,7 @@ public partial class MainWindow : Window
             }
         }
 
-        Send(new
+        _bridge.Send(new
         {
             type = "publishResult",
             ok = true,
@@ -1390,24 +1392,6 @@ public partial class MainWindow : Window
             message = string.IsNullOrWhiteSpace(_config.WriteEndpoint) ? "已保存为待发布" : "公告已发布"
         });
     }
-
-    void Send(object payload)
-    {
-        if (!Dispatcher.CheckAccess())
-        {
-            Dispatcher.Invoke(() => Send(payload));
-            return;
-        }
-        Browser.CoreWebView2?.PostWebMessageAsJson(JsonSerializer.Serialize(payload, new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        }));
-    }
-
-    static string ReadString(JsonElement root, string name) =>
-        root.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
-            ? value.GetString() ?? ""
-            : "";
 
     static string GuessMinecraft(string value)
     {
