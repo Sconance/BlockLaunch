@@ -29,6 +29,7 @@ public partial class MainWindow : Window
     readonly UiBridge _bridge;
     readonly AccountSession _accounts;
     readonly UiCommandRouter _router;
+    readonly CommunityFeed _feed;
     AppConfig _config;
     bool _ready;
     string _uiDirectory = "";
@@ -41,6 +42,7 @@ public partial class MainWindow : Window
         _config = _store.Load();
         _accounts = new AccountSession(_store, _config, _bridge, _http);
         _accounts.Changed += SendState;
+        _feed = new CommunityFeed(_community, _store, _config, _bridge);
         _router = new UiCommandRouter();
         ConfigureCommands();
         Loaded += OnLoaded;
@@ -181,36 +183,7 @@ public partial class MainWindow : Window
 
     void SendState() => _bridge.Send(LauncherStateBuilder.Build(_config));
 
-    async Task SendCommunityAsync()
-    {
-        var items = new Dictionary<string, string>();
-        var localAnn = Path.Combine(_store.DataDirectory, "announcements.local.json");
-        if (File.Exists(localAnn))
-            items["announcements"] = File.ReadAllText(localAnn);
-        var localRecs = Path.Combine(_store.DataDirectory, "recommendations.local.json");
-        if (File.Exists(localRecs))
-            items["recommendations"] = File.ReadAllText(localRecs);
-        var jobs = new[]
-        {
-            ("announcements", _config.DataSources.Announcements),
-            ("recommendations", _config.DataSources.Recommendations),
-            ("quotes", _config.DataSources.Quotes)
-        };
-        foreach (var (name, url) in jobs)
-        {
-            if (items.ContainsKey(name))
-                continue;
-            var text = await _community.ReadAsync(url, CancellationToken.None);
-            if (text != null)
-                items[name] = text;
-        }
-        if (items.Count > 0)
-            _bridge.Send(new
-            {
-                type = "community",
-                payload = items
-            });
-    }
+    async Task SendCommunityAsync() => await _feed.SendAsync();
 
     async Task LaunchAsync(string version)
     {
