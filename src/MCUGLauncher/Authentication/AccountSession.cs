@@ -62,6 +62,9 @@ sealed class AccountSession
     /// <summary>登录状态、玩家名或账号类型变化后触发，用于刷新界面状态。</summary>
     public event Action? Changed;
 
+    /// <summary>
+    /// 登录Microsoft。
+    /// </summary>
     public async Task LoginMicrosoftAsync()
     {
         if (Microsoft == null)
@@ -96,6 +99,9 @@ sealed class AccountSession
         }
     }
 
+    /// <summary>
+    /// 恢复Microsoft。
+    /// </summary>
     public async Task RestoreMicrosoftAsync()
     {
         if (_config.AccountType != "microsoft" || Microsoft == null)
@@ -117,6 +123,9 @@ sealed class AccountSession
         }
     }
 
+    /// <summary>
+    /// 登录Mua。
+    /// </summary>
     public async Task LoginMuaAsync(string account, string password)
     {
         if (Mua == null)
@@ -157,6 +166,9 @@ sealed class AccountSession
         }
     }
 
+    /// <summary>
+    /// 退出。
+    /// </summary>
     public void Logout()
     {
         Session = null;
