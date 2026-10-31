@@ -1373,3 +1373,7 @@ button:focus-visible,a:focus-visible { outline:2px solid var(--accent); outline-
 [data-running-games] { margin-top:8px; width:100%; }
 
 .bookmark-button { color:var(--red); font-size:23px; padding:4px; }
+
+.update-row { display:flex; align-items:center; gap:8px; padding:10px 0; border-bottom:1px solid var(--line); }
+[data-uninstall-review] li,[data-update-preview] p { overflow-wrap:anywhere; white-space:pre-wrap; }
+[data-instance-tools] > .select { min-height:36px; width:100%; padding:6px 10px; border:1px solid var(--line); border-radius:8px; }

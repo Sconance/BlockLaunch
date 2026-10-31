@@ -4,14 +4,22 @@
   let toasting = 0;
 
   const post = (message) => {
-    try { bridge?.postMessage(message); } catch (_) { /* window is closing */ }
+    try {
+      bridge?.postMessage(message);
+    } catch (_) {
+      /* window is closing */
+    }
   };
 
-  const esc = (value) => String(value ?? '')
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  const esc = (value) =>
+    String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
 
-  const asArray = (value) => Array.isArray(value) ? value : [];
+  const asArray = (value) => (Array.isArray(value) ? value : []);
 
   function toast(message, bad = false) {
     if (!message) return;
@@ -31,59 +39,81 @@
   function applyState(next) {
     state = Object.assign({}, state, next || {});
     if (Array.isArray(next.versionGroups)) {
-      versionGroups.splice(0, versionGroups.length, ...next.versionGroups.map((group) => ({
-        label: group.label,
-        count: group.count,
-        versions: asArray(group.versions).map((pair) => [pair?.[0] ?? '未命名', pair?.[1] ?? ''])
-      })));
+      versionGroups.splice(
+        0,
+        versionGroups.length,
+        ...next.versionGroups.map((group) => ({
+          label: group.label,
+          count: group.count,
+          versions: asArray(group.versions).map((pair) => [pair?.[0] ?? '未命名', pair?.[1] ?? '']),
+        }))
+      );
     }
     if (Array.isArray(next.instances)) {
-      instances.splice(0, instances.length, ...next.instances.map((item) => ({
-        name: item.name,
-        loader: item.loader || '原版',
-        mods: Number(item.mods) || 0,
-        updates: Number(item.updates) || 0
-      })));
+      instances.splice(
+        0,
+        instances.length,
+        ...next.instances.map((item) => ({
+          name: item.name,
+          loader: item.loader || '原版',
+          displayName: item.displayName || item.name,
+          minecraft: item.minecraft || '',
+          mods: Number(item.mods) || 0,
+          updates: Number(item.updates) || 0,
+        }))
+      );
     }
     if (Array.isArray(next.mods)) {
-      mods.splice(0, mods.length, ...next.mods.map((item, index) => ({
-        id: item.id || `local-${index}`,
-        name: item.name || item.file || '本地模组',
-        author: item.author || '本地',
-        desc: item.desc || '',
-        tags: asArray(item.tags).length ? item.tags : ['本地'],
-        size: item.size || '—',
-        downloads: item.downloads || '',
-        v: item.v || '—',
-        color: item.color || 'slate',
-        ic: item.ic || 'box',
-        file: item.file || '',
-        path: item.path || '',
-        enabled: item.enabled !== false,
-        update: item.update || ''
-      })));
+      mods.splice(
+        0,
+        mods.length,
+        ...next.mods.map((item, index) => ({
+          id: item.id || `local-${index}`,
+          name: item.name || item.file || '本地模组',
+          author: item.author || '本地',
+          desc: item.desc || '',
+          tags: asArray(item.tags).length ? item.tags : ['本地'],
+          size: item.size || '—',
+          downloads: item.downloads || '',
+          v: item.v || '—',
+          color: item.color || 'slate',
+          ic: item.ic || 'box',
+          file: item.file || '',
+          path: item.path || '',
+          enabled: item.enabled !== false,
+          update: item.update || '',
+        }))
+      );
     }
     if (Array.isArray(next.servers)) {
       const colors = ['green', 'blue', 'slate'];
-      servers.splice(0, servers.length, ...next.servers.map((item, index) => ({
-        id: item.address || `server-${index}`,
-        name: item.name || item.address || '未命名服务器',
-        address: item.address || '',
-        version: '—',
-        motd: '正在读取服务器状态…',
-        players: 0,
-        max: 0,
-        ping: 0,
-        online: false,
-        color: colors[index % colors.length],
-        icon: index % 3 === 2 ? 'globe' : 'server'
-      })));
+      servers.splice(
+        0,
+        servers.length,
+        ...next.servers.map((item, index) => ({
+          id: item.address || `server-${index}`,
+          name: item.name || item.address || '未命名服务器',
+          address: item.address || '',
+          version: '—',
+          motd: '正在读取服务器状态…',
+          players: 0,
+          max: 0,
+          ping: 0,
+          online: false,
+          color: colors[index % colors.length],
+          icon: index % 3 === 2 ? 'globe' : 'server',
+        }))
+      );
     }
     if (!new URLSearchParams(location.search).get('inst') && next.selectedInstance)
       Q.inst = next.selectedInstance;
     window.state = Object.assign(window.state || {}, next, {
-      servers, announcements, recs, quotes, mods,
-      dataSources: next.dataSources || window.state?.dataSources || {}
+      servers,
+      announcements,
+      recs,
+      quotes,
+      mods,
+      dataSources: next.dataSources || window.state?.dataSources || {},
     });
     render();
     applyAccount();
@@ -94,9 +124,16 @@
   function applySources(next) {
     if (!document.querySelector('.ds-rows')) return;
     const sources = next.dataSources || {};
-    const values = [sources.announcements, sources.servers, sources.recommendations, sources.quotes];
+    const values = [
+      sources.announcements,
+      sources.servers,
+      sources.recommendations,
+      sources.quotes,
+    ];
     const inputs = document.querySelectorAll('.ds-rows .ds-row input');
-    inputs.forEach((input, index) => { if (values[index]) input.value = values[index]; });
+    inputs.forEach((input, index) => {
+      if (values[index]) input.value = values[index];
+    });
     const write = document.querySelector('.ds-write input');
     if (write && next.writeEndpoint) write.value = next.writeEndpoint;
   }
@@ -152,7 +189,7 @@
       text: item.body || item.text || '',
       time: valid ? date.toLocaleString('zh-CN', { hour12: false }) : '',
       date: valid ? `${String(date.getDate()).padStart(2, '0')} / ${date.getMonth() + 1}月` : '—',
-      image: item.imageUrl || ''
+      image: item.imageUrl || '',
     };
   }
 
@@ -171,7 +208,7 @@
       online: false,
       players: 0,
       max: 0,
-      ping: 0
+      ping: 0,
     };
   }
 
@@ -192,7 +229,7 @@
         text: item.text || '',
         author: item.author || '群友',
         meta: item.source || '',
-        image: item.imageUrl || ''
+        image: item.imageUrl || '',
       }));
       if (items.length) quotes.splice(0, quotes.length, ...items);
     }
@@ -253,7 +290,8 @@
     if (install) {
       install.addEventListener('click', () => {
         const mode = Q.mode === 'local' ? 'local' : 'instance';
-        const path = mode === 'local' ? document.querySelector('.path-field input')?.value || '' : '';
+        const path =
+          mode === 'local' ? document.querySelector('.path-field input')?.value || '' : '';
         const id = mods.find((item) => item.id === Q.id)?.id || Q.id;
         install.disabled = true;
         post({ type: 'installMod', id, mode, path });
@@ -264,7 +302,10 @@
       button.addEventListener('click', (event) => {
         event.preventDefault();
         const label = button.getAttribute('aria-label');
-        post({ type: 'window', action: label === '关闭' ? 'close' : label === '最大化' ? 'maximize' : 'minimize' });
+        post({
+          type: 'window',
+          action: label === '关闭' ? 'close' : label === '最大化' ? 'maximize' : 'minimize',
+        });
       });
     });
     const bar = document.querySelector('.titlebar');
@@ -333,7 +374,8 @@
       toast('离线账号已更新。');
     });
 
-    const versionLaunch = document.querySelector('.vs-layout') && document.querySelector('.vm-actions .btn-primary');
+    const versionLaunch =
+      document.querySelector('.vs-layout') && document.querySelector('.vm-actions .btn-primary');
     versionLaunch?.addEventListener('click', () => {
       post({ type: 'launch', version: Q.v || state?.selectedVersion || '' });
     });
@@ -358,7 +400,8 @@
     });
 
     document.querySelector('[data-delete-version]')?.addEventListener('click', (event) => {
-      const version = event.currentTarget.dataset.deleteVersion || Q.v || state?.selectedVersion || '';
+      const version =
+        event.currentTarget.dataset.deleteVersion || Q.v || state?.selectedVersion || '';
       if (!version) return;
       if (confirm(`把版本“${version}”移到回收目录？存档与截图不会删除。`))
         post({ type: 'deleteVersion', version });
@@ -382,11 +425,13 @@
         row.style.display = show ? '' : 'none';
       });
     };
-    chips.forEach((chip) => chip.addEventListener('click', () => {
-      chips.forEach((item) => item.classList.remove('active'));
-      chip.classList.add('active');
-      filterRows();
-    }));
+    chips.forEach((chip) =>
+      chip.addEventListener('click', () => {
+        chips.forEach((item) => item.classList.remove('active'));
+        chip.classList.add('active');
+        filterRows();
+      })
+    );
     search?.addEventListener('input', filterRows);
 
     document.querySelector('.dl-head-side .btn-primary')?.addEventListener('click', () => {
@@ -411,8 +456,12 @@
   function fetchCatalog(type, query) {
     if (!state || Q.screen !== 'catalog') return;
     state.catalogRequests ||= {};
-    const requestId = state.catalogRequests[type] = String(++catalogSequence);
-    post(type === 'vanilla' ? {type:'vanillaVersions'} : {type:'searchContent',category:type,query:query || '',requestId});
+    const requestId = (state.catalogRequests[type] = String(++catalogSequence));
+    post(
+      type === 'vanilla'
+        ? { type: 'vanillaVersions' }
+        : { type: 'searchContent', category: type, query: query || '', requestId }
+    );
   }
 
   function loadCatalog(force = false) {
@@ -431,7 +480,8 @@
   function bindCatalog() {
     const search = document.querySelector('#catalog-query');
     const runSearch = () => {
-      const type = document.querySelector('[data-content-search]')?.dataset.contentSearch || Q.type || 'mod';
+      const type =
+        document.querySelector('[data-content-search]')?.dataset.contentSearch || Q.type || 'mod';
       state.catalog[type] = undefined;
       state.catalogLoading[type] = true;
       render();
@@ -448,7 +498,9 @@
       fetchCatalog('vanilla', '');
     });
     document.querySelectorAll('[data-install-vanilla]').forEach((button) => {
-      button.addEventListener('click', () => post({ type: 'installVanilla', version: button.dataset.installVanilla }));
+      button.addEventListener('click', () =>
+        post({ type: 'installVanilla', version: button.dataset.installVanilla })
+      );
     });
     document.querySelectorAll('[data-content-install]').forEach((button) => {
       button.addEventListener('click', () => {
@@ -457,7 +509,11 @@
         if (!confirm(`将「${name}」下载到当前实例？`)) return;
         button.disabled = true;
         button.textContent = '下载中…';
-        post({ type: 'installContent', id: button.dataset.contentInstall, category: button.dataset.contentCategory });
+        post({
+          type: 'installContent',
+          id: button.dataset.contentInstall,
+          category: button.dataset.contentCategory,
+        });
       });
     });
   }
@@ -473,7 +529,7 @@
         java: val('[data-setting-java]'),
         ram: Number(val('[data-setting-ram]')) || 4096,
         width: Number(val('[data-setting-width]')) || 1280,
-        height: Number(val('[data-setting-height]')) || 720
+        height: Number(val('[data-setting-height]')) || 720,
       });
     });
     scope.querySelectorAll('[data-pick]').forEach((button) => {
@@ -494,30 +550,45 @@
         toast('已填入 Java 路径，保存后生效。');
       });
     });
-    scope.querySelector('[data-backup-saves]')?.addEventListener('click', () => post({ type: 'backupSaves' }));
-    scope.querySelector('[data-read-log]')?.addEventListener('click', () => post({ type: 'readLog' }));
-    scope.querySelector('[data-system-info]')?.addEventListener('click', () => post({ type: 'systemInfo' }));
+    scope
+      .querySelector('[data-backup-saves]')
+      ?.addEventListener('click', () => post({ type: 'backupSaves' }));
+    scope
+      .querySelector('[data-read-log]')
+      ?.addEventListener('click', () => post({ type: 'readLog' }));
+    scope
+      .querySelector('[data-system-info]')
+      ?.addEventListener('click', () => post({ type: 'systemInfo' }));
     scope.querySelector('[data-copy-diag]')?.addEventListener('click', async () => {
       try {
-        await navigator.clipboard.writeText(state.diagText || document.querySelector('#diag-box')?.textContent || '');
+        await navigator.clipboard.writeText(
+          state.diagText || document.querySelector('#diag-box')?.textContent || ''
+        );
         toast('诊断信息已复制。');
       } catch {
         toast('复制失败，请手动选择文本。', true);
       }
     });
-    scope.querySelector('[data-reset-window]')?.addEventListener('click', () => post({ type: 'resetWindow' }));
+    scope
+      .querySelector('[data-reset-window]')
+      ?.addEventListener('click', () => post({ type: 'resetWindow' }));
     scope.querySelector('[data-reset-ui]')?.addEventListener('click', () => location.reload());
     document.querySelector('[data-delete-version]')?.addEventListener('click', (event) => {
-      const version = event.currentTarget.dataset.deleteVersion || Q.v || state?.selectedVersion || '';
+      const version =
+        event.currentTarget.dataset.deleteVersion || Q.v || state?.selectedVersion || '';
       if (!version) return;
       if (confirm(`把版本“${version}”移到回收目录？存档与截图不会删除。`))
         post({ type: 'deleteVersion', version });
     });
     scope.querySelectorAll('[data-open-folder]').forEach((button) => {
-      button.addEventListener('click', () => post({ type: 'openFolder', kind: button.dataset.openFolder }));
+      button.addEventListener('click', () =>
+        post({ type: 'openFolder', kind: button.dataset.openFolder })
+      );
     });
     scope.querySelectorAll('[data-ping-server]').forEach((button) => {
-      button.addEventListener('click', () => post({ type: 'pingServer', id: button.dataset.pingServer }));
+      button.addEventListener('click', () =>
+        post({ type: 'pingServer', id: button.dataset.pingServer })
+      );
     });
     scope.querySelector('[data-test-all]')?.addEventListener('click', () => {
       window.mcugGo?.('?screen=datasource');
@@ -538,8 +609,12 @@
         toast('请填写服务器地址。', true);
         return;
       }
-      post({ type: 'saveServer', name: inputs[0]?.value?.trim() || '', address,
-        oldAddress: document.querySelector('[data-server-old]')?.value || '' });
+      post({
+        type: 'saveServer',
+        name: inputs[0]?.value?.trim() || '',
+        address,
+        oldAddress: document.querySelector('[data-server-old]')?.value || '',
+      });
     });
   }
 
@@ -558,8 +633,9 @@
         post({ type: 'testSource', name: DS[index]?.key || '', url: input?.value || '' });
       });
     });
-    const save = [...document.querySelectorAll('.ds-footer .btn-primary')]
-      .find((button) => button.textContent.includes('保存'));
+    const save = [...document.querySelectorAll('.ds-footer .btn-primary')].find((button) =>
+      button.textContent.includes('保存')
+    );
     save?.addEventListener('click', (event) => {
       event.preventDefault();
       const inputs = [...document.querySelectorAll('.ds-rows .ds-row input')];
@@ -569,9 +645,9 @@
           announcements: inputs[0]?.value || '',
           servers: inputs[1]?.value || '',
           recommendations: inputs[2]?.value || '',
-          quotes: inputs[3]?.value || ''
+          quotes: inputs[3]?.value || '',
         },
-        writeEndpoint: document.querySelector('.ds-write input')?.value || ''
+        writeEndpoint: document.querySelector('.ds-write input')?.value || '',
       });
     });
   }
@@ -579,10 +655,12 @@
   function decorateKeys() {
     const keyInput = document.querySelector('.admin-auth-card input');
     if (keyInput) {
-      document.querySelector('.admin-auth-card .btn-primary')?.addEventListener('click', (event) => {
-        event.preventDefault();
-        post({ type: 'verifyKey', role: 'admin', key: keyInput.value });
-      });
+      document
+        .querySelector('.admin-auth-card .btn-primary')
+        ?.addEventListener('click', (event) => {
+          event.preventDefault();
+          post({ type: 'verifyKey', role: 'admin', key: keyInput.value });
+        });
     }
     const communityInput = document.querySelector('.settings-card input[placeholder*="密钥"]');
     if (communityInput && Q.screen === 'options') {
@@ -606,8 +684,14 @@
     fileInput?.addEventListener('change', () => {
       const file = fileInput.files?.[0];
       if (!file) return;
-      if (!/^image\//.test(file.type)) { toast('请选择图片文件。', true); return; }
-      if (file.size > 4 * 1024 * 1024) { toast('图片不能超过 4 MB。', true); return; }
+      if (!/^image\//.test(file.type)) {
+        toast('请选择图片文件。', true);
+        return;
+      }
+      if (file.size > 4 * 1024 * 1024) {
+        toast('图片不能超过 4 MB。', true);
+        return;
+      }
       const reader = new FileReader();
       reader.onload = () => {
         publishImageData = String(reader.result || '');
@@ -636,7 +720,7 @@
         title: title?.value || '',
         body: body?.value || '',
         expiresAt: expiry?.value || '',
-        imageData: publishImageData
+        imageData: publishImageData,
       });
     });
   }
@@ -650,7 +734,8 @@
           applyState(message);
           break;
         case 'contentList':
-          if (message.requestId && message.requestId !== state?.catalogRequests?.[message.category]) break;
+          if (message.requestId && message.requestId !== state?.catalogRequests?.[message.category])
+            break;
           state.catalog ||= {};
           state.catalogLoading ||= {};
           state.catalog[message.category] = message.items || [];
@@ -658,14 +743,16 @@
           if (Q.screen === 'catalog') render();
           break;
         case 'vanillaList':
-          state.catalog ||= {}; state.catalogLoading ||= {};
+          state.catalog ||= {};
+          state.catalogLoading ||= {};
           state.vanilla = message.items || [];
           state.catalog.vanilla = state.vanilla;
           state.catalogLoading.vanilla = false;
           if (Q.screen === 'catalog') render();
           break;
         case 'contentError':
-          if (message.requestId && message.requestId !== state?.catalogRequests?.[message.category]) break;
+          if (message.requestId && message.requestId !== state?.catalogRequests?.[message.category])
+            break;
           if (message.category) {
             state.catalog[message.category] = [];
             state.catalogLoading[message.category] = false;
@@ -677,7 +764,9 @@
           applyCommunity(message.payload);
           break;
         case 'serverPing': {
-          const server = servers.find((item) => item.address === message.id || item.id === message.id);
+          const server = servers.find(
+            (item) => item.address === message.id || item.id === message.id
+          );
           if (server) {
             server.online = !!message.online;
             server.players = message.players ?? 0;
@@ -685,15 +774,36 @@
             server.ping = message.ping ?? 0;
             server.motd = message.motd || (message.online ? '在线' : '离线');
             server.version = message.version || '—';
-            document.querySelectorAll('[data-server-id]').forEach(node => {
+            document.querySelectorAll('[data-server-id]').forEach((node) => {
               if (node.dataset.serverId !== String(server.id)) return;
               node.classList.toggle('offline', !server.online);
-              const sub=node.querySelector('.server-sub');
-              if(sub){const dot=document.createElement('span');dot.className='dot '+(server.online?'online':'offline');sub.replaceChildren(dot,document.createTextNode(`${server.online?'在线':'离线'} · ${server.version}`));}
-              const motd=node.querySelector('.server-motd');if(motd)motd.textContent=server.motd;
-              const stat=node.querySelector('.server-stat');if(stat)stat.textContent=server.online?`${server.players} / ${server.max}`:'上次在线人数未知';
-              const ping=node.querySelector('.server-ping');if(ping){ping.textContent=server.online?`${server.ping} ms`:'离线';ping.className='server-ping '+(!server.online?'bad':server.ping<45?'good':'mid');}
-              const status=document.querySelector('.server-status');if(status){const online=servers.filter(s=>s.online).length;status.textContent=`${online} 在线 · ${servers.length-online} 离线`;}
+              const sub = node.querySelector('.server-sub');
+              if (sub) {
+                const dot = document.createElement('span');
+                dot.className = 'dot ' + (server.online ? 'online' : 'offline');
+                sub.replaceChildren(
+                  dot,
+                  document.createTextNode(`${server.online ? '在线' : '离线'} · ${server.version}`)
+                );
+              }
+              const motd = node.querySelector('.server-motd');
+              if (motd) motd.textContent = server.motd;
+              const stat = node.querySelector('.server-stat');
+              if (stat)
+                stat.textContent = server.online
+                  ? `${server.players} / ${server.max}`
+                  : '上次在线人数未知';
+              const ping = node.querySelector('.server-ping');
+              if (ping) {
+                ping.textContent = server.online ? `${server.ping} ms` : '离线';
+                ping.className =
+                  'server-ping ' + (!server.online ? 'bad' : server.ping < 45 ? 'good' : 'mid');
+              }
+              const status = document.querySelector('.server-status');
+              if (status) {
+                const online = servers.filter((s) => s.online).length;
+                status.textContent = `${online} 在线 · ${servers.length - online} 离线`;
+              }
             });
           }
           break;
@@ -703,8 +813,12 @@
           break;
         case 'authResult':
           toast(message.message || '', message.ok === false);
-          document.querySelectorAll('[data-mua-submit]').forEach((button) => { button.disabled = false; });
-          document.querySelectorAll('[data-ms-login]').forEach((button) => { button.disabled = false; });
+          document.querySelectorAll('[data-mua-submit]').forEach((button) => {
+            button.disabled = false;
+          });
+          document.querySelectorAll('[data-ms-login]').forEach((button) => {
+            button.disabled = false;
+          });
           if (message.ok && Q.modal === 'mua') window.mcugGo?.('?screen=home');
           if (message.ok && Q.modal === 'ms') window.mcugGo?.('?screen=home');
           break;
@@ -714,15 +828,21 @@
           break;
         case 'modResult':
           toast(message.message || '', !message.ok);
-          document.querySelectorAll('.mod-install-btn').forEach((button) => { button.disabled = false; });
+          document.querySelectorAll('.mod-install-btn').forEach((button) => {
+            button.disabled = false;
+          });
           if (message.ok) post({ type: 'requestState' });
           break;
         case 'testResult': {
           const index = DS.findIndex((item) => item.key === message.name);
-          const result = document.querySelectorAll('.ds-rows .ds-row')[index]?.querySelector('.ds-result');
+          const result = document
+            .querySelectorAll('.ds-rows .ds-row')
+            [index]?.querySelector('.ds-result');
           if (result) {
             result.className = `ds-result ${message.ok ? 'ok' : 'bad'}`;
-            result.textContent = message.ok ? `连接正常 · ${message.ms} ms` : (message.message || '连接失败');
+            result.textContent = message.ok
+              ? `连接正常 · ${message.ms} ms`
+              : message.message || '连接失败';
           }
           break;
         }
@@ -730,8 +850,9 @@
           toast('设置已保存。');
           break;
         case 'pickedPath': {
-          if (message.target === 'pack') break;
-          const selector = message.target === 'java' ? '[data-setting-java]' : '[data-setting-root]';
+          if (['pack', 'exportInstance'].includes(message.target)) break;
+          const selector =
+            message.target === 'java' ? '[data-setting-java]' : '[data-setting-root]';
           const input = document.querySelector(selector);
           if (input && message.path) input.value = message.path;
           toast('已选择路径，保存后生效。');
@@ -758,7 +879,7 @@
             `WebView2：${message.webview}`,
             `系统：${message.os}`,
             `游戏目录：${message.root}`,
-            `数据目录：${message.data}`
+            `数据目录：${message.data}`,
           ].join('\n');
           const box = document.querySelector('#diag-box');
           if (box) box.textContent = state.diagText;
@@ -798,8 +919,3 @@
   decorate();
   post({ type: 'ready' });
 })();
-
-
-
-
-

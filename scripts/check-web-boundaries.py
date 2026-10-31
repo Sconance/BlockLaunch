@@ -27,6 +27,26 @@ for source in (root / 'src/MCUGLauncher').rglob('*.cs'):
         errors.append(f'Business must not hide in a MainWindow partial: {source.name}')
 if 'fetch(' in front:
     errors.append('Frontend transfers must use host commands and the Core network policy.')
+for source in (root / 'src/MCUGLauncher/Services').glob('*.cs'):
+    if 'using MCUGLauncher.UseCases' in source.read_text(encoding='utf-8-sig'):
+        errors.append(f'Services must not depend on UI command handlers: {source.name}')
+entry = (root / 'src/MCUGLauncher/Ui/app.js').read_text(encoding='utf-8-sig')
+for page in ('homePage', 'settingsPage', 'modDetailPage', 'versionManagePage'):
+    if f'function {page}(' in entry:
+        errors.append(f'Page renderer must stay outside app.js: {page}')
+if 'src="preview-data.js"' in (root / 'src/MCUGLauncher/Ui/index.html').read_text(encoding='utf-8-sig'):
+    errors.append('Preview fixtures must be loaded conditionally by bootstrap, not by the native index.')
+for folder in ('UseCases', 'Services'):
+    for source in (root / 'src/MCUGLauncher' / folder).glob('*.cs'):
+        non_system_seen = False
+        for line in source.read_text(encoding='utf-8-sig').splitlines():
+            if not line.startswith('using ') or line.startswith('using static '):
+                continue
+            if line.startswith('using System.'):
+                if non_system_seen:
+                    errors.append(f'Put System imports before project imports: {source.name}')
+            else:
+                non_system_seen = True
 if errors:
     print('\n'.join(errors), file=sys.stderr)
     sys.exit(1)

@@ -1,1 +1,14 @@
-{"name":"mcug-web-ui-checks","private":true,"version":"1.0.0","scripts":{"test":"node check.cjs"},"devDependencies":{"playwright":"1.62.1"}}
+{
+  "name": "mcug-web-ui-checks",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "test": "node check.cjs",
+    "format:check": "prettier --check \"../../src/MCUGLauncher/Ui/*.js\" check.cjs",
+    "format:write": "prettier --write \"../../src/MCUGLauncher/Ui/*.js\" check.cjs"
+  },
+  "devDependencies": {
+    "playwright": "1.62.1",
+    "prettier": "3.6.2"
+  }
+}
