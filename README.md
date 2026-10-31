@@ -1,163 +1,175 @@
-<p align="center"><img src="src/MCUGLauncher/Assets/MCUGLogo.png" width="112" alt="MCUG Launcher Logo"></p>
-<h1 align="center">MCUG Launcher</h1>
-<p align="center">面向 Windows 的 Minecraft Java 版启动器</p>
-<p align="center"><a href="https://github.com/Sconance/MCUGLauncher/releases/latest">下载最新版</a> · <a href="docs/USAGE.md">使用指南</a> · <a href="https://github.com/Sconance/MCUGLauncher/issues">反馈问题</a> · <a href="CHANGELOG.md">更新记录</a></p>
+# MCUG Launcher 0.22.3
 
-MCUG Launcher 提供游戏启动、分类下载、账号登录和实例内容管理，采用 MCUG 蓝白主题，支持浅深配色与本地背景。升级保留现有账号、配置和实例数据。
+Windows 上的 Minecraft Java 版启动器。0.22.3 重做了界面，并把版本管理、模组下载、服务器状态和社区内容串成一套完整体验。
 
-## 界面预览
+![主页](docs/images/app-home.png)
 
-![启动与版本列表](docs/images/home.png)
+## 0.22.3 更新重点
 
-![版本内容管理](docs/images/manager.png)
+- **新的蓝白界面**：主页去掉左侧栏，顶部「启动 / 下载 / 设置」直接切换页面；设置页和下载页保留各自的页内导航。
+- **版本选择面板**：点击「启动游戏」右侧的 `>`，游戏目录从右侧展开，可在「原版游戏 / FABRIC 版本」中直接选版本启动。
+- **版本内容管理**：横向分类标签，模组表格支持更新、禁止更新、禁用、启动、删除；可切换当前实例。
+- **模组下载链路**：「下载 → 模组」列表进入模组详情，支持安装到实例，或下载到自定义目录。
+- **社区功能**：群公告、群友推荐、群友语录、正在开设的服务器。
+- **设置**：匿名模式、社区身份密钥、管理员认证、四类独立数据源、写入接口。
+- **公告配图**：管理员发布公告时可选择本地图片，随公告一起保存；配置写入接口后会一并提交。
+- **账号**：离线账号直接进入游戏；皮肤 / 披风入口位于账号头像。
 
-<details><summary>下载任务与整合包确认</summary>
+## 功能说明
 
-![下载任务](docs/images/download-tasks.png)
-![整合包导入](docs/images/pack-import.png)
+### 主页
 
-</details>
+- 账号卡：正版 / 离线 / MUA 三个入口。正版走系统浏览器 OAuth，MUA 走账号密码 + authlib-injector，离线账号直接本地启动。
+- 头像角标与悬停提示进入「皮肤与披风」面板。
+- 「启动游戏」读取最后一个实例；右侧两个方形按钮分别是「选择实例」和「版本内容管理」。
+- 右侧依次为：正在开设的服务器、群公告、群友推荐、群友语录。
+- 服务器状态由启动器直接通过 MC Server List Ping 获取，8 秒超时；失败保留上一次结果。
+- 公告 / 推荐 / 语录都支持加载、空、错误状态。
 
-<details><summary>Java 管理与个性化</summary>
+### 下载
 
-![Java 管理](docs/images/java.png)
-![个性化](docs/images/appearance.png)
+- 页内导航：群友推荐、原版游戏、模组、整合包、资源包、光影、数据包。
+- 群友推荐按服务器 / 材质包 / 光影切换。
+- 官方分类已接入在线目录：原版游戏读取 Mojang 版本清单；模组 / 整合包 / 资源包 / 光影 / 数据包从 Modrinth 搜索，并可按当前实例版本筛选。
+- 模组列表 → 模组详情：安装到实例，或下载到自定义目录。整合包仅下载 `.mrpack` 文件，不自动导入。
+- 搜索结果需要联网；内容说明来自 Modrinth，暂不提供中文翻译。
 
-</details>
+### 版本
 
-截图来自隔离测试环境，实例与账号信息仅用于演示。
+- 主页右侧「选择实例」打开实例面板，可直接启动任一组版本。
+- 「版本内容管理」展示模组表格；实例切换在页面右上角。
+- 「版本设置」展示概览、个性化、快捷方式、启动概览、高级管理；不包含 Mod 管理（已移到内容管理页）。
 
-## 功能
+### 设置
 
+- 启动设置：游戏根目录、Java 路径、最大内存、游戏窗口宽高；可保存、选择路径。
+- Java 管理：按本机 PATH、JAVA_HOME、常见安装目录查找 `java.exe`，列出路径后可选用；不会自动修改游戏版本。
+- 下载与网络：查看四类数据源、跳转数据源设置、打开游戏目录。
+- 界面与背景：固定蓝白主题；恢复默认窗口尺寸。
+- 社区：更多选项、管理员、数据源。
+- 服务器收藏：查看收藏服务器、重新 ping、管理或添加。
+- 存档保护：一键打包 `saves` 到本地备份目录，或打开存档文件夹。
+- 下载任务：说明当前版本不保留后台任务，并提供模组下载入口。
+- 任务与恢复：恢复窗口、重新加载界面、打开配置目录。
+- 运行日志：读取最近 400 行日志，打开日志目录。
+- 诊断与反馈：读取 .NET / WebView2 / 系统 / 路径信息并复制。
+- 关于与许可：版本、社区数据仓库、管理员文档入口。
+- 社区 → 更多选项：匿名模式、社区身份密钥。
+- 社区 → 管理员：未设置时首次输入即设置本机管理员密钥；之后必须输入同一密钥才能发布公告。
+- 社区 → 数据源：四类 URL 独立配置、逐项测试、保存、恢复默认、可选写入接口。
 
-| 方向       | 已有能力                                                |
-| ---------- | ------------------------------------------------------- |
-| 账号与启动 | 微软正版、离线角色、MUA 认证，头像与会话刷新            |
-| 游戏下载   | 原版分类、模组加载器安装相关流程                        |
-| 资源中心   | Modrinth 模组、整合包、资源包、光影、数据包，收藏与标签 |
-| 实例管理   | 多目录、隔离、分类、搜索、直接启动、启动参数与内容管理  |
-| 整合包     | Modrinth、MultiMC / Prism 导入，清单预检与可选内容导出  |
-| Java       | 常见位置扫描、指定目录与全盘搜索、手动指定、版本匹配    |
-| 下载任务   | 紧凑进度与速度、暂停继续、失败重试、任务恢复            |
-| 辅助工具   | 存档备份、截图预览、日志、崩溃线索与诊断导出            |
+## 数据源
 
-当前资源平台以 Modrinth 为主，CurseForge 在线服务未接入。蓝图入口浏览实例的 schematics 目录。社区、在线公告及新闻尚未实现。
+四类数据分别读取独立 JSON：
 
-## 下载与运行
+| 类型 | 示例文件 | 主要字段 |
+| --- | --- | --- |
+| 公告 | `community/announcements.json` | `id, title, body, tag, author, publishedAt, expiresAt, imageUrl?` |
+| 服务器 | `community/servers.json` | `id, name, address, description, version, mode, tags, icon` |
+| 推荐 | `community/recommendations.json` | `id, type(server/material/shader), name, author, description, tags, version, size, url` |
+| 语录 | `community/quotes.json` | `id, type(text/image), text, author, source, imageUrl?, created_at` |
 
-在 [Releases](https://github.com/Sconance/MCUGLauncher/releases/latest) 下载对应 EXE，直接运行。完整版文件名保持 Windows-x64.exe，内置 .NET 运行库；精简版文件名以 Windows-x64-Lite.exe 结尾，需要电脑安装 .NET 8 Desktop Runtime x64。游戏需匹配版本的 Java；内嵌微软授权页面需要 WebView2 Runtime。
+默认地址集中在 `Models/AppConfig.cs` 的 `DataSourceConfig`，当前指向 `waibibabu1239/MCUGL-storage`。首次使用的旧配置不会自动覆盖；如仍指向示例仓库，请在「设置 → 数据源」点「恢复默认」再保存。
 
-升级前关闭启动器，再替换 EXE，保留原有配置和游戏目录。删除版本前检查确认框，重要存档先备份。
+- 读取超时 8 秒；单个地址失败不会阻塞其他区块。
+- 管理员写入接口可选；未配置时公告只保存在本机，并显示「待发布」。
+- 公告配图以 data URL 保存/提交；如果写入接口有对象存储，建议在服务端转存并替换为图片 URL。
+- 管理员认证、删除边界与 GitHub 托管步骤见 [docs/admin-and-community.md](docs/admin-and-community.md)。
 
-## 源码与构建
+## 技术架构
 
-当前版本为 **0.22.2**，最终产品名确定为 **MCUG Launcher**。使用 Windows x64 与 .NET 8 SDK：
+```
+WPF .NET 8 宿主 (MainWindow / WebView2)
+        │  虚拟域名 app.local
+        ▼
+内嵌 HTML/CSS/JS (src/MCUGLauncher/Ui)
+        │  window.chrome.webview 消息桥
+        ▼
+C# 服务：版本扫描 / 启动 / 服务器 ping / Modrinth / 社区 JSON / 配置
+```
+
+选择 WebView2 的原因：0.22.3 的设计稿是一套完整的前端视觉系统，直接复用 HTML/CSS 能保证 1:1 还原，同时把 C# 服务与 UI 分离，后续换界面不需要动启动核心。
+
+### 目录
+
+```
+src/MCUGLauncher/            WPF 宿主、服务、桥接
+  Ui/                        已批准的界面资源
+  Services/                  配置、版本、ping、社区、模组
+  Models/AppConfig.cs        集中配置模型
+src/MCUGLauncher.Core/       启动核心（沿用 0.22.2）
+community/                   数据源示例 JSON
+docs/images/                 README 截图
+dist/full/                   完整版发布产物
+dist/lite/                   轻量版发布产物
+```
+
+## 运行要求
+
+- Windows 10 / 11 x64。
+- **WebView2 Runtime**（Windows 11 通常已内置；Windows 10 如缺失需安装 Evergreen Runtime）。
+- 完整版：无需安装 .NET。
+- 轻量版：需要 **.NET 8 Desktop Runtime x64**。
+
+| 版本 | 文件 |
+| --- | --- |
+| 完整版 | `dist/full/MCUGLauncher-0.22.3-Windows-x64.exe` |
+| 轻量版 | `dist/lite/MCUGLauncher-0.22.3-Windows-x64-Lite.exe` |
+
+## 构建
 
 ```powershell
-git clone https://github.com/Sconance/MCUGLauncher.git
-cd MCUGLauncher
-dotnet build src/MCUGLauncher/MCUGLauncher.csproj -c Release
-dotnet publish src/MCUGLauncher/MCUGLauncher.csproj -c Release -o artifacts/publish
+dotnet build MCUGLauncher.sln -c Release
 ```
 
-详见 [构建与目录说明](docs/BUILD.md)。历史版本源码仍保留在各 Release 的手动 Source.zip 附件中；旧标签未移动，旧版自动生成的 Source code 归档可能仅含原仓库文件。
+## 发布
 
-版本号只有一个来源（`Directory.Build.props` 的 `McugVersion`），发版、标签与检查规则见 [版本号控制](docs/VERSIONING.md)。0.22.0 已合并到 `main`；0.22.1 在同名分支实现并发布多实例运行、本地优先启动与设置页面优化：`Components/` 已按九个功能域重组，`MainWindow` 拆成窗口 shell、九个独立 XAML 页面与功能模块；合并步骤、验证结果与风险见 [合并到主分支前的说明](docs/MERGE_TO_MAIN.md)，发布说明与文件哈希见 [发布说明](docs/releases/README.md)，后续计划见 [重构路线图](TODO.md)，历史材料在 [历史归档](docs/archive/branch_refactor/README.md)，类型说明在 [类文档目录](docs/classes/README.md)。
+完整版（自包含单文件）：
 
-```text
-src/       主程序与核心逻辑（2 个项目）
-test/      功能、界面与集成检查（24 个项目）
-tools/     隔离界面预览（4 个）和源码格式工具
-scripts/   构建与检查脚本
-docs/      使用、构建、类文档（classes/）、历史归档（archive/）与截图
+```powershell
+dotnet publish src\MCUGLauncher\MCUGLauncher.csproj -c Release -r win-x64 `
+  --self-contained true -o dist\full
 ```
 
-## 反馈与贡献
+轻量版（依赖 .NET 8 Desktop Runtime）：
 
-请在 [Issues](https://github.com/Sconance/MCUGLauncher/issues) 提供软件版本、系统版本、复现步骤和脱敏日志。不要上传密码、Token、账号缓存或私人存档。参阅 [贡献说明](CONTRIBUTING.md)。
+```powershell
+dotnet publish src\MCUGLauncher\MCUGLauncher.csproj -c Release -r win-x64 `
+  --self-contained false -p:EnableCompressionInSingleFile=false -o dist\lite
+```
 
-## 近期更新
+> 轻量版不能启用单文件压缩，否则 .NET SDK 会报 `NETSDK1176`。
 
-### [0.22.2](https://github.com/Sconance/MCUGLauncher/releases/tag/v0.22.2)
+## 本地数据
 
-- 资源版本支持下拉选择和输入搜索；资源包与光影包隐藏加载器条件，修复搜索卡片收藏点击。
-- 详情右侧以互斥模式选择自定义下载或安装到实例，任务固定目标目录与兼容版本。
-- 实例副标题只展示游戏/加载器版本；分类标题整行可展开收起。
-- 下载任务可删除已结束记录或清空历史，保留下载文件。
-- 模组管理合并到版本内容管理，列表撑满剩余空间，旧入口跳转到统一页面。
-- 启动按钮内显示简短状态和进度动画；延续独立视图与明确依赖结构。
+- 配置：`%LOCALAPPDATA%\MCUGLauncher\config.json`
+- 界面缓存：`%LOCALAPPDATA%\MCUGLauncher\ui-0.22.3\`
+- WebView2 数据：`%LOCALAPPDATA%\MCUGLauncher\WebView2\`
+- 本地公告：`%LOCALAPPDATA%\MCUGLauncher\announcements.local.json`
+- 本地推荐：`%LOCALAPPDATA%\MCUGLauncher\recommendations.local.json`
+- 账号令牌：`%LOCALAPPDATA%\MCUGLauncher\auth\`
 
+首次启动会尝试从 0.22.2 的 `%LOCALAPPDATA%\BlockLaunch\settings.json` 导入游戏目录、玩家名、Java、内存、窗口尺寸和收藏服务器。
 
-### [0.22.1](https://github.com/Sconance/MCUGLauncher/releases/tag/v0.22.1)
+## 已知限制
 
-- “更多”工具并入设置侧栏，按启动环境、个性化、游戏工具、任务诊断和关于分类；功能与扩展接口保留。
+- 微软登录使用系统浏览器完成 OAuth；MUA 使用账号密码并注入 authlib。两项都需要真实账号和网络，当前环境未做真实账号联调；失败时会回到离线账号。
+- 皮肤 / 披风面板目前只有入口与预览，选择操作尚未接入皮肤站上传与外层渲染。
+- 资源包 / 光影 / 存档 / 截图 / 蓝图标签显示 0，尚未实现目录扫描。
+- 版本设置中的「修改版本名 / 补全文件」等按钮是界面占位，启动、打开文件夹、切换实例、版本内容管理已可用。
+- 群友推荐只有推荐列表；下载跳转依赖 JSON 中的 `url`。
+- 0.22.3 不含自动更新。
 
-- 不同独立实例可同时运行，分别查看本次日志和请求关闭；同一实例支持更换离线 ID 后多开，相同身份仍防重复启动。
-- 启动只等待本地恢复，在线版本在进入下载页后按需加载；新增请求合并、超时和重试状态。
-- 运行列表可点击并独立关闭游戏，关闭前二次确认；下载进度统一在右上角显示。
-- 设置工具拆成独立页面，通过明确依赖与操作回调组装，不再依赖标签位置、控件树或弹窗解包。
-- 继续沿用功能域、组合层和类型文档规范，账号协议与配置格式不变；[完整发布说明](docs/releases/0.22.1.md)。
+管理员认证、公告发布和 GitHub 数据托管见 [docs/admin-and-community.md](docs/admin-and-community.md)。
 
+## 变更记录
 
-### [0.22.0](https://github.com/Sconance/MCUGLauncher/releases/tag/v0.22.0)
+见 [CHANGELOG.md](CHANGELOG.md) 与 [docs/release-notes-0.22.3.md](docs/release-notes-0.22.3.md)。
 
-准备合并到 `main` 的结构与文档版本。`refactor` 分支已废弃，相关记录归档到 [docs/archive/branch_refactor/](docs/archive/branch_refactor/README.md)。
+## 许可
 
-- `Components/` 按 Accounts、Shell、Downloads、Resources、Instances、Launch、Experience、Bookmarks、Support 九个功能域重组；10 个控制器按职责改名（`Sketch`→`InstanceContent`、`Content`→`ResourceBrowser`、`Pack`→`Modpack`、`Stability`→`TaskRecovery` 等）。
-- 补齐 `src/MCUGLauncher` 全部 142 个顶层类型的类文档，归档到 [docs/classes/](docs/classes/README.md)，新增 `scripts/check-class-docs.py` 与 CI 检查。
-- 文档体系整理：refactor 时代的对照、迁移与合并记录移入 [历史归档](docs/archive/branch_refactor/README.md)；新增 [合并到主分支前的说明](docs/MERGE_TO_MAIN.md)。
-- 记录前后端分界评估结论与后续项，写入 [重构路线图](TODO.md)。
-
-### [0.21.0]
-
-- warning 由于test的更新，refactor分支废弃，本版本不发布，仅用于声明连续性
-`test` 主干与 `refactor` 全量整合后的版本。结构以 `test` 的原生窗口 shell、九个独立 XAML 页面与组合根为准；`refactor` 的文档规则、版本控制与 0.20.1 / 0.20.2 功能内容全部并入，`refactor` 不再单独递增版本号。
-
-- 合并 `refactor`（`db0ab6a`）：86 个 `MainWindow` partial 与 51 篇逐类文档按结构退役，历史内容保留在 `refactor` 分支，迁移去向见 [refactor 分支整合记录](docs/archive/branch_refactor/REFACTOR_INTEGRATION.md)。
-- 版本号改为单一来源 `Directory.Build.props` 的 `McugVersion`，运行期统一读取 `ProductInfo.Version`。
-- 修复诊断信息 `0.20.0`、导航区 `0.15.2`、关于区 `0.20.2` 与两处 User-Agent 的写死版本。
-- 新增 `scripts/check-version.py` 与 CI 版本校验，发版标签、CHANGELOG、README 与程序集元数据必须一致。
-- 新增 [版本号控制](docs/VERSIONING.md)、[refactor 分支整合记录](docs/archive/branch_refactor/REFACTOR_INTEGRATION.md)、[重构路线图](TODO.md) 与 [develop 与 refactor 功能对照](docs/archive/branch_refactor/COMPARE_DEVELOP_REFACTOR.md)，把整合与拆分检查要点沉淀为长期规则。
-- 保留 `test` 的 Esc 关闭页内选择器、嵌套改名后实例列表与首页名称同步修复
-
-### [0.20.2](https://github.com/Sconance/MCUGLauncher/releases/tag/v0.20.2)
-
-- 按蓝白效果图完善多列资源卡片、心形收藏和详情布局。
-- 增加仅显示收藏、资源排序以及卡片/列表切换。
-- 为顶部、下载、设置、更多、主页、资源详情、版本设置和实例分类提供统一菜单注册接口。
-- 开发者可参考 [菜单扩展说明](docs/MENU_EXTENSIONS.md) 增加栏目和图片图标。
-
-### [0.20.1](https://github.com/Sconance/MCUGLauncher/releases/tag/v0.20.1)
-
-- 下载分类增加统一图标区域，并为替换图片保留配置接口；资源列表改为随窗口宽度变化的多列卡片。
-- 资源列表和页内详情分离，提供介绍、版本和依赖切换，展示实际项目截图及正文预览。
-- 加载器按横向配置行排列，可选择游戏与加载器版本；保留品牌配色和透明背景 MCUG Logo。
-
-### [0.20.0](https://github.com/Sconance/MCUGLauncher/releases/tag/v0.20.0)
-
-源码可读性整理：统一格式，拆分账号面板与下载任务职责，加入开发导览和格式检查。
-
-### [0.19.2](https://github.com/Sconance/MCUGLauncher/releases/tag/v0.19.2)
-
-- 拖入文件显示导入提示；整合包先确认名称和目标目录，其他资源导入管理页当前实例。
-- 顶栏下载进度、任务栏进度与内嵌下载列表，支持暂停、继续、取消和失败重试。
-- 下载期间保留账号切换和版本浏览；认证操作先提示暂停下载，安装与启动仍保持互斥。
-
-### [0.19.1](https://github.com/Sconance/MCUGLauncher/releases/tag/v0.19.1)
-
-- 启动页移除 Java 筛选与搜索图标，新增搜索占位提示。
-- 大启动按钮搭配纵向展开、设置按钮。
-- 版本内容管理增加目录切换，标题整合到顶栏，列表和滚动条更紧凑。
-- 强化导入区域分隔，修复内嵌页面切换深色主题时的背景。
-
-### [0.19.0](https://github.com/Sconance/MCUGLauncher/releases/tag/v0.19.0)
-
-- 最终名称确定为 MCUG Launcher，统一界面、程序元数据、仓库与文档。
-- 源码项目目录和构建入口同步更名，保留现有账号、配置与实例兼容。
+本项目未附带新的开源许可证；发布前请沿用原仓库的许可策略。
 
 
-[完整更新记录](CHANGELOG.md) · [全部历史版本](https://github.com/Sconance/MCUGLauncher/releases)
 
-MCUG Launcher 为独立项目，非 Mojang 或 Microsoft 官方产品。第三方组件见 [依赖清单](docs/DEPENDENCIES.md) 与程序内声明。项目整体许可证尚未指定，不代表自动授予任意使用或再分发许可。
 
-开发者可从 [开发导览](docs/DEVELOPMENT.md) 查看功能入口、模块边界与编码约定。

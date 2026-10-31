@@ -1,0 +1,179 @@
+﻿using System.Text.Json;
+using System.Text.RegularExpressions;
+using MCUGLauncher.Models;
+
+namespace MCUGLauncher.Services;
+
+public sealed class VersionCatalog
+{
+    public IReadOnlyList<VersionGroup> Groups { get; init; } = [];
+    public IReadOnlyList<InstanceInfo> Instances { get; init; } = [];
+    public string Selected { get; init; } = "";
+    public string Root { get; init; } = "";
+
+    public static VersionCatalog Load(string root, string selected)
+    {
+        var groups = new List<VersionGroup>();
+        var instances = new List<InstanceInfo>();
+        var versionsDir = Path.Combine(root, "versions");
+        var vanilla = new List<string[]>();
+        var loaders = new Dictionary<string, List<string[]>>(StringComparer.OrdinalIgnoreCase);
+
+        if (Directory.Exists(versionsDir))
+        {
+            foreach (var dir in Directory.EnumerateDirectories(versionsDir).OrderByDescending(Path.GetFileName))
+            {
+                var name = Path.GetFileName(dir);
+                var jsonPath = Path.Combine(dir, name + ".json");
+                if (!File.Exists(jsonPath))
+                    continue;
+
+                var detail = ReadDetails(root, name);
+                var loader = detail.Loader;
+                var meta = string.IsNullOrWhiteSpace(detail.Minecraft)
+                    ? loader
+                    : $"{detail.Minecraft} · {loader.ToLowerInvariant()}";
+                var row = new[] { name, meta };
+                if (loader == "原版")
+                    vanilla.Add(row);
+                else
+                {
+                    if (!loaders.TryGetValue(loader, out var list))
+                        loaders[loader] = list = [];
+                    list.Add(row);
+                }
+
+                var mods = CountMods(root, name);
+                instances.Add(new InstanceInfo(name, loader, mods, 0));
+            }
+        }
+
+        if (vanilla.Count > 0)
+            groups.Add(new VersionGroup("原版游戏", vanilla.Count, vanilla));
+        foreach (var pair in loaders.OrderBy(pair => pair.Key))
+            groups.Add(new VersionGroup(pair.Key + " 版本", pair.Value.Count, pair.Value));
+
+        if (instances.Count == 0)
+            instances.Add(new InstanceInfo("未找到版本", "请安装版本", 0, 0));
+
+        var current = instances.FirstOrDefault(i => i.Name.Equals(selected, StringComparison.OrdinalIgnoreCase))?.Name
+            ?? instances[0].Name;
+        return new VersionCatalog { Groups = groups, Instances = instances, Selected = current, Root = root };
+    }
+
+    public static VersionDetails ReadDetails(string root, string name)
+    {
+        var file = Path.Combine(root, "versions", name, name + ".json");
+        if (!File.Exists(file))
+            return new VersionDetails(name, "", "原版", "", false);
+
+        try
+        {
+            using var doc = JsonDocument.Parse(File.ReadAllText(file));
+            var json = doc.RootElement;
+            var id = json.TryGetProperty("id", out var idValue) ? idValue.GetString() ?? name : name;
+            var inherits = json.TryGetProperty("inheritsFrom", out var parentValue) ? parentValue.GetString() ?? "" : "";
+            var type = json.TryGetProperty("type", out var typeValue) ? typeValue.GetString() ?? "" : "";
+            var minecraft = "";
+            var probe = name;
+            for (var depth = 0; depth < 8 && probe.Length > 0; depth++)
+            {
+                var probeFile = Path.Combine(root, "versions", probe, probe + ".json");
+                if (!File.Exists(probeFile))
+                    break;
+                using var probeDoc = JsonDocument.Parse(File.ReadAllText(probeFile));
+                if (probeDoc.RootElement.TryGetProperty("inheritsFrom", out var next))
+                {
+                    probe = next.GetString() ?? "";
+                    continue;
+                }
+
+                if (probeDoc.RootElement.TryGetProperty("id", out var rootId))
+                    minecraft = rootId.GetString() ?? "";
+                break;
+            }
+
+            if (minecraft.Length == 0)
+                minecraft = inherits.Length > 0 ? inherits : id;
+            var loader = DetectLoader(name + " " + inherits + " " + id);
+            var java = json.TryGetProperty("javaVersion", out var javaVersion) && javaVersion.TryGetProperty("majorVersion", out var major)
+                ? major.GetInt32().ToString()
+                : "";
+            return new VersionDetails(name, minecraft, loader, java, true);
+        }
+        catch (JsonException)
+        {
+            return new VersionDetails(name, "", "原版", "", false);
+        }
+    }
+
+    public static IReadOnlyList<ModInfo> ReadMods(string root, string instance)
+    {
+        var dir = Path.Combine(root, "versions", instance, "mods");
+        if (!Directory.Exists(dir))
+            return [];
+        var result = new List<ModInfo>();
+        foreach (var file in Directory.EnumerateFiles(dir).Where(IsModFile).OrderBy(Path.GetFileName))
+        {
+            var name = Path.GetFileName(file);
+            var disabled = name.EndsWith(".disabled", StringComparison.OrdinalIgnoreCase);
+            var clean = disabled ? name[..^".disabled".Length] : name;
+            var version = Regex.Match(clean, @"(?<v>\d+(?:\.\d+){1,3}(?:[-+][\w.]+)?)").Groups["v"].Value;
+            var id = clean.Replace(".jar", "", StringComparison.OrdinalIgnoreCase)
+                .Replace("-fabric", "", StringComparison.OrdinalIgnoreCase)
+                .Replace("-forge", "", StringComparison.OrdinalIgnoreCase);
+            result.Add(new ModInfo(
+                id,
+                clean.Replace(".jar", "", StringComparison.OrdinalIgnoreCase),
+                clean,
+                version,
+                !disabled,
+                file,
+                new FileInfo(file).Length,
+                "Fabric"));
+        }
+        return result;
+    }
+
+    public static void SetEnabled(ModInfo mod, bool enabled)
+    {
+        var target = enabled
+            ? mod.Path.EndsWith(".disabled", StringComparison.OrdinalIgnoreCase)
+                ? mod.Path[..^".disabled".Length]
+                : mod.Path
+            : mod.Path.EndsWith(".disabled", StringComparison.OrdinalIgnoreCase)
+                ? mod.Path
+                : mod.Path + ".disabled";
+        if (!target.Equals(mod.Path, StringComparison.OrdinalIgnoreCase))
+            File.Move(mod.Path, target);
+    }
+
+    public static void Delete(ModInfo mod) => File.Delete(mod.Path);
+
+    public static string InstanceDirectory(string root, string instance) =>
+        Path.Combine(root, "versions", instance);
+
+    static int CountMods(string root, string instance)
+    {
+        var dir = Path.Combine(root, "versions", instance, "mods");
+        return Directory.Exists(dir) ? Directory.EnumerateFiles(dir).Count(IsModFile) : 0;
+    }
+
+    static bool IsModFile(string file) =>
+        file.EndsWith(".jar", StringComparison.OrdinalIgnoreCase) ||
+        file.EndsWith(".jar.disabled", StringComparison.OrdinalIgnoreCase);
+
+    static string DetectLoader(string value)
+    {
+        var text = value.ToLowerInvariant();
+        if (text.Contains("fabric")) return "Fabric";
+        if (text.Contains("neoforge")) return "NeoForge";
+        if (text.Contains("forge")) return "Forge";
+        if (text.Contains("quilt")) return "Quilt";
+        if (text.Contains("optifine")) return "OptiFine";
+        return "原版";
+    }
+}
+
+public sealed record VersionDetails(string Name, string Minecraft, string Loader, string Java, bool Complete);
+

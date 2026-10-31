@@ -1,29 +1,40 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
-    <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>MCUGLauncher</AssemblyName>
-    <RootNamespace>BlockLaunch</RootNamespace>
+    <RootNamespace>MCUGLauncher</RootNamespace>
     <Product>MCUG Launcher</Product>
     <Title>MCUG Launcher</Title>
+    <ApplicationIcon>Assets/MCUGLauncher.ico</ApplicationIcon>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SatelliteResourceLanguages>zh-Hans</SatelliteResourceLanguages>
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>true</SelfContained>
-    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <PublishTrimmed>false</PublishTrimmed>
     <DebugType>embedded</DebugType>
-    <ApplicationIcon>Assets/MCUGLauncher.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
-    <Resource Include="Assets/MCUGLogo.png" />
     <ProjectReference Include="../MCUGLauncher.Core/MCUGLauncher.Core.csproj" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.1823.32" />
     <PackageReference Include="CmlLib.Core.Auth.Microsoft" Version="3.3.0" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Resources/Notices.txt" LogicalName="BlockLaunch.Resources.Notices.txt" />
+    <EmbeddedResource Include="Ui/index.html" LogicalName="MCUGLauncher.Ui.index.html" />
+    <EmbeddedResource Include="Ui/styles.css" LogicalName="MCUGLauncher.Ui.styles.css" />
+    <EmbeddedResource Include="Ui/revision.css" LogicalName="MCUGLauncher.Ui.revision.css" />
+    <EmbeddedResource Include="Ui/app.js" LogicalName="MCUGLauncher.Ui.app.js" />
+    <EmbeddedResource Include="Ui/host.js" LogicalName="MCUGLauncher.Ui.host.js" />
+    <EmbeddedResource Include="Ui/assets/logo.png" LogicalName="MCUGLauncher.Ui.assets.logo.png" />
+    <EmbeddedResource Include="Assets/MCUGLogo.png" LogicalName="Assets.MCUGLogo.png" />
   </ItemGroup>
 </Project>
+
+
+
