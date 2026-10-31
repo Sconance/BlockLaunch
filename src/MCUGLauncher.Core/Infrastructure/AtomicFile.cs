@@ -2,6 +2,9 @@ using System.Text.Json;
 
 namespace BlockLaunch;
 
+/// <summary>
+/// 提供 Atomic文件 相关功能。
+/// </summary>
 public static class AtomicFile
 {
     public static void WriteJson<T>(string file, T value)

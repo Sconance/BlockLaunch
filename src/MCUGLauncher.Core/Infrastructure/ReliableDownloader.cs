@@ -7,8 +7,14 @@ namespace BlockLaunch;
 /// <summary>Hash-bound durable partial files. A failed download never replaces a valid target.</summary>
 public static class ReliableDownloader
 {
+    /// <summary>
+    /// 执行 Partial路径。
+    /// </summary>
     public static string PartialPath(string target, string hash) => Path.Combine(Path.GetDirectoryName(Path.GetFullPath(target))!, ".blocklaunch-" + Convert.ToHexString(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(Path.GetFullPath(target) + "\n" + hash.ToLowerInvariant()))).ToLowerInvariant() + ".part");
 
+    /// <summary>
+    /// 执行 下载。
+    /// </summary>
     public static async Task Download(HttpClient http, Uri uri, string target, string hash, bool sha1 = false, long? size = null, Action<string>? progress = null, CancellationToken token = default)
     {
         try
