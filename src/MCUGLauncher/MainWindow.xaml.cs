@@ -11,6 +11,7 @@ using System.Windows.Interop;
 using System.Windows.Threading;
 using CmlLib.Core.Auth;
 using BlockLaunch;
+using MCUGLauncher.Authentication;
 using MCUGLauncher.Models;
 using MCUGLauncher.Services;
 using MCUGLauncher.Ui;
@@ -26,9 +27,7 @@ public partial class MainWindow : Window
     readonly HttpClient _http = new() { Timeout = TimeSpan.FromSeconds(30) };
     readonly WindowChromeController _chrome;
     readonly UiBridge _bridge;
-    MicrosoftAccountService? _microsoft;
-    MuaAccountService? _mua;
-    MSession? _onlineSession;
+    readonly AccountSession _accounts;
     AppConfig _config;
     bool _ready;
     string _uiDirectory = "";
@@ -39,26 +38,8 @@ public partial class MainWindow : Window
         _chrome = new WindowChromeController(this);
         _bridge = new UiBridge(Browser, Dispatcher);
         _config = _store.Load();
-        var authDirectory = Path.Combine(_store.DataDirectory, "auth");
-        try
-        {
-            _microsoft = new MicrosoftAccountService(authDirectory, _http);
-            _mua = new MuaAccountService(authDirectory, _http);
-            if (_config.AccountType == "mua")
-            {
-                var saved = _mua.Read();
-                if (saved != null)
-                {
-                    _onlineSession = MuaAccountService.Session(saved);
-                    _config.Player = saved.Profile.Name;
-                }
-            }
-        }
-        catch
-        {
-            // A damaged account cache must never prevent the launcher from opening.
-            _config.AccountType = "offline";
-        }
+        _accounts = new AccountSession(_store, _config, _bridge, _http);
+        _accounts.Changed += SendState;
         Loaded += OnLoaded;
     }
 
@@ -129,7 +110,7 @@ public partial class MainWindow : Window
                     _ready = true;
                     SendState();
                     _ = SendCommunityAsync();
-                    _ = RestoreMicrosoftAsync();
+                    _ = _accounts.RestoreMicrosoftAsync();
                     break;
                 case "requestState":
                     SendState();
@@ -216,16 +197,13 @@ public partial class MainWindow : Window
                     ResetWindow();
                     break;
                 case "loginMicrosoft":
-                    await LoginMicrosoftAsync();
+                    await _accounts.LoginMicrosoftAsync();
                     break;
                 case "loginMua":
-                    await LoginMuaAsync(UiBridge.ReadString(root, "account"), UiBridge.ReadString(root, "password"));
+                    await _accounts.LoginMuaAsync(UiBridge.ReadString(root, "account"), UiBridge.ReadString(root, "password"));
                     break;
                 case "logoutAccount":
-                    _onlineSession = null;
-                    _config.AccountType = "offline";
-                    _store.Save(_config);
-                    SendState();
+                    _accounts.Logout();
                     break;
                 case "testSource":
                     await TestSourceAsync(UiBridge.ReadString(root, "name"), UiBridge.ReadString(root, "url"));
@@ -349,126 +327,6 @@ public partial class MainWindow : Window
             });
     }
 
-    async Task LoginMicrosoftAsync()
-    {
-        if (_microsoft == null)
-        {
-            _bridge.Send(new
-            {
-                type = "authResult",
-                ok = false,
-                message = "登录组件未就绪。"
-            });
-            return;
-        }
-        _bridge.Send(new
-        {
-            type = "authResult",
-            pending = true,
-            message = "已打开微软登录页，请完成授权…"
-        });
-        try
-        {
-            var session = await _microsoft.Authenticate(true, CancellationToken.None);
-            _onlineSession = session;
-            _config.AccountType = "microsoft";
-            _config.Player = session.Username ?? _config.Player;
-            _store.Save(_config);
-            _bridge.Send(new
-            {
-                type = "authResult",
-                ok = true,
-                message = $"已登录正版账号 {session.Username}"
-            });
-            SendState();
-        }
-        catch (Exception)
-        {
-            _bridge.Send(new
-            {
-                type = "authResult",
-                ok = false,
-                message = "微软登录未完成。请检查网络后重试；已保存的账号不会被覆盖。"
-            });
-        }
-    }
-
-    async Task RestoreMicrosoftAsync()
-    {
-        if (_config.AccountType != "microsoft" || _microsoft == null)
-            return;
-        try
-        {
-            var session = await _microsoft.Authenticate(false, CancellationToken.None);
-            _onlineSession = session;
-            _config.Player = session.Username ?? _config.Player;
-            _store.Save(_config);
-            SendState();
-        }
-        catch
-        {
-            _onlineSession = null;
-            _config.AccountType = "offline";
-            _store.Save(_config);
-            SendState();
-        }
-    }
-
-    async Task LoginMuaAsync(string account, string password)
-    {
-        if (_mua == null)
-        {
-            _bridge.Send(new
-            {
-                type = "authResult",
-                ok = false,
-                message = "登录组件未就绪。"
-            });
-            return;
-        }
-        if (string.IsNullOrWhiteSpace(account) || string.IsNullOrEmpty(password))
-        {
-            _bridge.Send(new
-            {
-                type = "authResult",
-                ok = false,
-                message = "请填写 MUA 账号和密码。"
-            });
-            return;
-        }
-        _bridge.Send(new
-        {
-            type = "authResult",
-            pending = true,
-            message = "正在登录 MUA…"
-        });
-        try
-        {
-            var credential = await _mua.Login(account.Trim(), password,
-                profiles => Task.FromResult<MuaProfile?>(profiles.FirstOrDefault()), CancellationToken.None);
-            _onlineSession = MuaAccountService.Session(credential);
-            _config.AccountType = "mua";
-            _config.Player = credential.Profile.Name;
-            _store.Save(_config);
-            _bridge.Send(new
-            {
-                type = "authResult",
-                ok = true,
-                message = $"已登录 MUA 账号 {credential.Profile.Name}"
-            });
-            SendState();
-        }
-        catch (Exception)
-        {
-            _bridge.Send(new
-            {
-                type = "authResult",
-                ok = false,
-                message = "MUA 登录失败。请检查账号、密码和网络后重试。"
-            });
-        }
-    }
-
     async Task LaunchAsync(string version)
     {
         if (string.IsNullOrWhiteSpace(version))
@@ -498,7 +356,7 @@ public partial class MainWindow : Window
 
         try
         {
-            var session = _onlineSession ?? new MSession
+            var session = _accounts.Session ?? new MSession
             {
                 Username = _config.Player,
                 UUID = OfflineUuid(_config.Player),
@@ -507,9 +365,9 @@ public partial class MainWindow : Window
                 UserType = "legacy"
             };
             BlockLaunch.AuthlibLaunch? external = null;
-            if (_config.AccountType == "mua" && _onlineSession != null && _mua != null)
+            if (_config.AccountType == "mua" && _accounts.Session != null && _accounts.Mua != null)
             {
-                var metadata = await _mua.Metadata(CancellationToken.None);
+                var metadata = await _accounts.Mua.Metadata(CancellationToken.None);
                 var jar = await BlockLaunch.AuthlibLaunch.Prepare(
                     Path.Combine(_store.DataDirectory, "authlib-injector"), _http, CancellationToken.None);
                 external = new BlockLaunch.AuthlibLaunch(jar, metadata.Json);
