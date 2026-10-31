@@ -6,10 +6,12 @@ namespace MCUGLauncher.Services;
 public sealed class ConfigStore
 {
     readonly string _file;
+    readonly bool dataDirectoryIsolated;
 
-    public ConfigStore()
+    public ConfigStore(string? dataDirectory = null)
     {
-        DataDirectory = Path.Combine(
+        dataDirectoryIsolated = dataDirectory != null;
+        DataDirectory = dataDirectory ?? Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "MCUGLauncher");
         System.IO.Directory.CreateDirectory(DataDirectory);
@@ -38,7 +40,7 @@ public sealed class ConfigStore
         }
         else
         {
-            config = ImportLegacy() ?? new AppConfig();
+            config = dataDirectoryIsolated ? new AppConfig() : ImportLegacy() ?? new AppConfig();
         }
 
         if (string.IsNullOrWhiteSpace(config.Root) || !Directory.Exists(config.Root))
