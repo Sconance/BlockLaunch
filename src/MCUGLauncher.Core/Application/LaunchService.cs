@@ -5,12 +5,24 @@ using CmlLib.Core.ProcessBuilder;
 
 namespace BlockLaunch;
 
+/// <summary>
+/// 表示 启动Request 数据。
+/// </summary>
 public record LaunchRequest(string Root, string InstanceDirectory, string Profile, string Java, int Ram, int Width, int Height, MSession Session, LaunchSettings? Settings = null, AuthlibLaunch? ExternalAuthentication = null);
 
+/// <summary>
+/// 表示 GameExit 数据。
+/// </summary>
 public record GameExit(int Code, bool Requested);
 
+/// <summary>
+/// 提供 启动Service 相关功能。
+/// </summary>
 public static class LaunchService
 {
+    /// <summary>
+    /// 构建。
+    /// </summary>
     public static async Task<Process> Build(LaunchRequest request, CancellationToken token, HttpClient? http = null)
     {
         var shared = new MinecraftPath(request.Root);
@@ -86,6 +98,9 @@ public static class LaunchService
     }
 }
 
+/// <summary>
+/// 提供 Game会话 相关功能。
+/// </summary>
 public sealed class GameSession(Process process, string outputFile, Action<string> output, IEnumerable<string> secrets)
 {
     [System.Runtime.InteropServices.DllImport("user32.dll", EntryPoint = "PostMessageW", SetLastError = true)]
@@ -101,8 +116,14 @@ public sealed class GameSession(Process process, string outputFile, Action<strin
         get;
         private set;
     }
+    /// <summary>
+    /// 获取或设置 Completion。
+    /// </summary>
     public Task<GameExit> Completion { get; private set; } = Task.FromResult(new GameExit(0, false));
 
+    /// <summary>
+    /// 启动。
+    /// </summary>
     public void Start()
     {
         Directory.CreateDirectory(Path.GetDirectoryName(outputFile)!);
@@ -173,6 +194,9 @@ public sealed class GameSession(Process process, string outputFile, Action<strin
         return new(process.ExitCode, StopRequested);
     }
 
+    /// <summary>
+    /// 执行 RequestStop。
+    /// </summary>
     public bool RequestStop()
     {
         process.Refresh();

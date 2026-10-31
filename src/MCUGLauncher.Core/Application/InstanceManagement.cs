@@ -3,10 +3,19 @@ using System.Text.Json;
 
 namespace BlockLaunch;
 
+/// <summary>
+/// 表示 ExportOptions 数据。
+/// </summary>
 public record ExportOptions(bool Mods, bool Servers, bool Shaders, bool Resources, bool Saves);
 
+/// <summary>
+/// 提供 实例Management 相关功能。
+/// </summary>
 public static class InstanceManagement
 {
+    /// <summary>
+    /// 导出。
+    /// </summary>
     public static async Task Export(string directory, string target, string name, PackRequirements requirements, ExportOptions options, CancellationToken token)
     {
         var source = Path.GetFullPath(directory).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
@@ -95,6 +104,9 @@ public static class InstanceManagement
         }
     }
 
+    /// <summary>
+    /// 移除。
+    /// </summary>
     public static string Remove(string root, string key)
     {
         ContentService.SafeFile(key);

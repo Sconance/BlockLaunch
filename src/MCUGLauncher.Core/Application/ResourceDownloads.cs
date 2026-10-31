@@ -2,8 +2,14 @@ using System.Security.Cryptography;
 
 namespace BlockLaunch;
 
+/// <summary>
+/// 提供 ResourceDownloads 相关功能。
+/// </summary>
 public static class ResourceDownloads
 {
+    /// <summary>
+    /// 执行 路径For。
+    /// </summary>
     public static string PathFor(string directory, string kind, ContentVersion version)
     {
         var folder = kind switch
@@ -31,6 +37,9 @@ public static class ResourceDownloads
         return Path.Combine(Path.GetFullPath(directory), folder, version.ProjectId, version.Id, file.Filename);
     }
 
+    /// <summary>
+    /// 执行 下载。
+    /// </summary>
     public static async Task<string> Download(HttpClient http, string directory, string kind, ContentVersion version, Action<string>? progress = null, CancellationToken token = default)
     {
         token.ThrowIfCancellationRequested();

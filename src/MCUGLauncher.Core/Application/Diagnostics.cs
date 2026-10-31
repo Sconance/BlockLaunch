@@ -5,16 +5,34 @@ using System.Text.RegularExpressions;
 
 namespace BlockLaunch;
 
+/// <summary>
+/// 表示 DiagnosticContext 数据。
+/// </summary>
 public record DiagnosticContext(string Directory, string Profile, string ProcessLog = "", DateTime? StartedUtc = null, GameExit? Exit = null, string[]? Secrets = null);
 
+/// <summary>
+/// 表示 DiagnosticSource 数据。
+/// </summary>
 public record DiagnosticSource(string Name, string Text);
 
+/// <summary>
+/// 表示 DiagnosticFinding 数据。
+/// </summary>
 public record DiagnosticFinding(string Title, string Advice, string Evidence, string Source);
 
+/// <summary>
+/// 表示 DiagnosticSnapshot 数据。
+/// </summary>
 public record DiagnosticSnapshot(DateTime CreatedUtc, string Summary, IReadOnlyList<DiagnosticFinding> Findings, IReadOnlyList<DiagnosticSource> Logs, string Mods, string Environment, IReadOnlyList<string> Notices);
 
+/// <summary>
+/// 表示 FeedbackOptions 数据。
+/// </summary>
 public record FeedbackOptions(bool Logs = true, bool Mods = true, bool Environment = true);
 
+/// <summary>
+/// 表示 FeedbackDocument 数据。
+/// </summary>
 public record FeedbackDocument(string Name, string Text);
 
 /// <summary>Reads a bounded, explicit allow-list. No account/config/save files are inspected.</summary>
@@ -25,6 +43,9 @@ public static class Diagnostics
 
     static string Replace(string text, string pattern, string replacement) => Regex.Replace(text, pattern, replacement, RegexOptions.IgnoreCase, RegexLimit);
 
+    /// <summary>
+    /// 执行 Sanitize。
+    /// </summary>
     public static string Sanitize(string text, IEnumerable<string>? secrets = null)
     {
         text = Replace(text, @"\bBearer\s+[A-Za-z0-9._~+/=-]+", "Bearer [已隐藏]");
@@ -48,6 +69,9 @@ public static class Diagnostics
             throw new IOException("不读取链接文件。");
     }
 
+    /// <summary>
+    /// 执行 Capture。
+    /// </summary>
     public static DiagnosticSnapshot Capture(DiagnosticContext context, CancellationToken token = default)
     {
         var root = Path.GetFullPath(context.Directory);
@@ -177,6 +201,9 @@ public static class Diagnostics
         return new(DateTime.UtcNow, summary, findings, logs, string.Join('\n', mods.Order(StringComparer.OrdinalIgnoreCase)), environment, notices);
     }
 
+    /// <summary>
+    /// 执行 Analyze。
+    /// </summary>
     public static List<DiagnosticFinding> Analyze(IEnumerable<DiagnosticSource> sources)
     {
         var rules = new (string Pattern, string Title, string Advice)[] {
@@ -205,6 +232,9 @@ public static class Diagnostics
         return result;
     }
 
+    /// <summary>
+    /// 执行 Preview。
+    /// </summary>
     public static IReadOnlyList<FeedbackDocument> Preview(DiagnosticSnapshot snapshot, FeedbackOptions options)
     {
         var findings = options.Logs ? string.Join("\n\n", snapshot.Findings.Select(f => $"{f.Title}\n{f.Advice}\n{f.Source}: {f.Evidence}")) : "未选日志，已省略诊断证据。";
@@ -223,6 +253,9 @@ public static class Diagnostics
         return documents;
     }
 
+    /// <summary>
+    /// 导出。
+    /// </summary>
     public static async Task Export(IReadOnlyList<FeedbackDocument> documents, string target, CancellationToken token = default)
     {
         if (documents.Count > 16 || documents.Sum(d => (long)Encoding.UTF8.GetByteCount(d.Text)) > 16 * 1024 * 1024)

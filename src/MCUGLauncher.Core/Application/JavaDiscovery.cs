@@ -4,10 +4,16 @@ using System.Text.RegularExpressions;
 
 namespace BlockLaunch;
 
+/// <summary>
+/// 提供 JavaDiscovery 相关功能。
+/// </summary>
 public static partial class JavaDiscovery
 {
     static readonly Dictionary<int, string?> Cache = new();
 
+    /// <summary>
+    /// 执行 RequiredMajor。
+    /// </summary>
     public static int RequiredMajor(string root, string profile)
     {
         var seen = new HashSet<string>();
@@ -37,6 +43,9 @@ public static partial class JavaDiscovery
         return 0;
     }
 
+    /// <summary>
+    /// 查找Compatible。
+    /// </summary>
     public static async Task<string?> FindCompatible(string root, string profile, CancellationToken token)
     {
         var required = RequiredMajor(root, profile);
@@ -45,6 +54,9 @@ public static partial class JavaDiscovery
         return (await Scan(root, Array.Empty<string>(), token)).FirstOrDefault(j => j.Major == required && j.Error.Length == 0)?.Path;
     }
 
+    /// <summary>
+    /// 查找Major。
+    /// </summary>
     public static async Task<string?> FindMajor(int required, CancellationToken token)
     {
         if (required == 0)
@@ -63,6 +75,9 @@ public static partial class JavaDiscovery
         return null;
     }
 
+    /// <summary>
+    /// 执行 ProbeMajor。
+    /// </summary>
     public static async Task<int> ProbeMajor(string java, CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
