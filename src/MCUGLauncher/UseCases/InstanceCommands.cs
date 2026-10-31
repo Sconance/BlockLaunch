@@ -1,8 +1,6 @@
-using MCUGLauncher.Models;
-using BlockLaunch;
 using System.Diagnostics;
+using MCUGLauncher.Models;
 using MCUGLauncher.Services;
-using static MCUGLauncher.UseCases.ProtocolValues;
 
 namespace MCUGLauncher.UseCases;
 
@@ -41,47 +39,6 @@ internal sealed class InstanceCommands(LauncherContext context)
             return;
         VersionCatalog.Delete(mod);
         context.RefreshState();
-    }
-
-    public void DeleteVersion(string version)
-    {
-        var source = InstancePath(context.Config.Root, version);
-        if (context.Games.UsesDirectory(VersionCatalog.InstanceDirectory(context.Config.Root, version)))
-            throw new IOException("请先关闭该实例的游戏再删除。");
-        if (!Directory.Exists(source))
-        {
-            context.Send(new
-            {
-                type = "toast",
-                message = "版本目录不存在。"
-            });
-            return;
-        }
-        try
-        {
-            var trash = Path.Combine(context.Store.DataDirectory, "trash");
-            Directory.CreateDirectory(trash);
-            var target = Path.Combine(trash, $"{version}-{DateTime.Now:yyyyMMdd-HHmmss}");
-            Directory.Move(source, target);
-            context.Log($"Version moved to trash: {version} -> {target}");
-            if (context.Config.LastVersion.Equals(version, StringComparison.OrdinalIgnoreCase))
-                context.Config.LastVersion = "";
-            context.Store.Save(context.Config);
-            context.Send(new
-            {
-                type = "toast",
-                message = $"版本已移到回收目录：{target}"
-            });
-            context.RefreshState();
-        }
-        catch (Exception ex)
-        {
-            context.Send(new
-            {
-                type = "toast",
-                message = "删除版本失败：" + ex.Message
-            });
-        }
     }
 
     public ModInfo? FindMod(string file)

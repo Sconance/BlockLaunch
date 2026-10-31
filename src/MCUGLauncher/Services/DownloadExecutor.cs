@@ -1,14 +1,30 @@
-using BlockLaunch;
 using System.Security.Cryptography;
+using BlockLaunch;
 
 namespace MCUGLauncher.Services;
 
 // Uses the existing Core installers, dependency resolver and verified downloader.
-internal sealed class DownloadExecutor(HttpClient http, Func<string, bool>? inUse = null)
+internal sealed class DownloadExecutor(HttpClient http, Func<string, bool>? inUse = null, Func<string, bool>? preparingRoot = null)
 {
     public async Task ExecuteAsync(OperationRecord record, OperationContext task)
     {
         var request = record.Download ?? throw new IOException("任务缺少下载信息。");
+        if (request.Instance != null)
+        {
+            await new InstanceOperationExecutor(inUse).ExecuteAsync(record, task);
+            return;
+        }
+        if (request.Kind == "update")
+        {
+            if (inUse?.Invoke(record.Target) == true)
+                throw new IOException("请先关闭该实例的游戏再更新。");
+            await new ContentService(http, task.Token).Install(
+                request.PreparedPlan ?? throw new IOException("缺少更新预览。"), record.Target,
+                message => task.Report(message), request.ContentFingerprint ?? throw new IOException("缺少内容指纹。"));
+            return;
+        }
+        if (request.Kind is "game" or "pack" && preparingRoot?.Invoke(record.Root) == true)
+            throw new IOException("此游戏目录有会话正在准备启动，请稍后重试安装。");
         if (request.Kind == "game")
         {
             if (inUse?.Invoke(VersionCatalog.InstanceDirectory(record.Root, request.Version)) == true)

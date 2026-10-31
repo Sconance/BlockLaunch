@@ -1,6 +1,6 @@
-using BlockLaunch;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using BlockLaunch;
 using MCUGLauncher.Models;
 
 namespace MCUGLauncher.Services;
@@ -45,7 +45,7 @@ public sealed class VersionCatalog
                 }
 
                 var mods = CountMods(root, name);
-                instances.Add(new InstanceInfo(name, loader, mods, 0));
+                instances.Add(new InstanceInfo(name, loader, mods, 0) { DisplayName = DisplayName(root, name), Minecraft = detail.Minecraft });
             }
         }
 
@@ -60,6 +60,18 @@ public sealed class VersionCatalog
         var current = instances.FirstOrDefault(i => i.Name.Equals(selected, StringComparison.OrdinalIgnoreCase))?.Name
             ?? instances[0].Name;
         return new VersionCatalog { Groups = groups, Instances = instances, Selected = current, Root = root };
+    }
+
+    static string DisplayName(string root, string key)
+    {
+        var file = Path.Combine(new InstanceCatalog(root).MetadataDirectory(key), ".blocklaunch-instance.json");
+        if (!File.Exists(file))
+            return key;
+        try
+        {
+            return AtomicFile.ReadJson<InstanceDescriptor>(file).DisplayName;
+        }
+        catch (Exception ex) when (ex is IOException or JsonException) { return key; }
     }
 
     public static VersionDetails ReadDetails(string root, string name)

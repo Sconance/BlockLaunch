@@ -66,8 +66,13 @@ public sealed class InstanceCatalog(string root)
         if (new[] {
             "mods",
             "saves",
-            "config"
-        }.Any(d => Directory.Exists(Path.Combine(legacyDirectory, d))))
+            "config",
+            "resourcepacks",
+            "shaderpacks",
+            "screenshots",
+            "options.txt",
+            "servers.dat"
+        }.Any(d => Directory.Exists(Path.Combine(legacyDirectory, d)) || File.Exists(Path.Combine(legacyDirectory, d))))
             record.DataDirectory = Path.GetFullPath(legacyDirectory);
         var legacy = Path.Combine(directory, ".blocklaunch-pack.json");
         if (File.Exists(legacy))

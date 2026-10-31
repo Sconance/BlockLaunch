@@ -1,13 +1,13 @@
-using MCUGLauncher.Services;
-using System.Text.Json;
+using System.Diagnostics;
 using BlockLaunch;
 using CmlLib.Core.Auth;
+using MCUGLauncher.Services;
 using static MCUGLauncher.UseCases.ProtocolValues;
 
 namespace MCUGLauncher.UseCases;
 
-// Handles game use cases; no WPF controls or browser access.
-internal sealed class GameCommands(LauncherContext context)
+internal sealed class GameCommands(LauncherContext context,
+    Func<LaunchRequest, CancellationToken, Task<Process>>? buildProcess = null)
 {
     bool preparing;
 
@@ -15,115 +15,72 @@ internal sealed class GameCommands(LauncherContext context)
     {
         if (preparing)
         {
-            context.Send(new
-            {
-                type = "launchResult",
-                ok = false,
-                message = "游戏正在准备启动，请稍候。"
-            });
+            Result(false, "游戏正在准备启动，请稍候。");
             return;
         }
         preparing = true;
+        string? reservedDirectory = null;
         try
         {
-            await LaunchCoreAsync(version);
-        }
-        finally { preparing = false; }
-    }
-
-    async Task LaunchCoreAsync(string version)
-    {
-        if (string.IsNullOrWhiteSpace(version))
-            version = context.Config.LastVersion;
-        if (string.IsNullOrWhiteSpace(version))
-        {
-            context.Send(new
+            var key = string.IsNullOrWhiteSpace(version) ? context.Config.LastVersion : version;
+            if (string.IsNullOrWhiteSpace(key))
+                throw new IOException("还没有可启动的版本。");
+            var player = context.Config.Player;
+            var mode = context.Config.AccountType;
+            var online = context.OnlineSession;
+            if (mode != "offline" && online == null)
+                throw new IOException("在线账号尚未验证完成，请完成登录后再启动。");
+            var instance = InstanceSnapshot.Capture(context.Config, key);
+            context.Tasks.RequireLaunchAvailable(instance.Root, key, instance.Directory);
+            context.Games.RequireAvailable(instance.Directory, player, mode == "offline");
+            context.MarkPreparing(instance.Root, instance.Directory);
+            reservedDirectory = instance.Directory;
+            var session = mode == "offline" ? new MSession
             {
-                type = "launchResult",
-                ok = false,
-                message = "还没有可启动的版本。"
-            });
-            return;
-        }
-
-        InstancePath(context.Config.Root, version);
-        var instanceDir = VersionCatalog.InstanceDirectory(context.Config.Root, version);
-        if (!Directory.Exists(instanceDir))
-        {
-            context.Send(new
-            {
-                type = "launchResult",
-                ok = false,
-                message = "版本目录不存在：" + version
-            });
-            return;
-        }
-
-        try
-        {
-            if (context.Config.AccountType != "offline" && context.OnlineSession == null)
-                throw new InvalidOperationException("在线账号尚未验证完成，请完成登录后再启动。");
-            var session = (context.Config.AccountType == "offline" ? null : context.OnlineSession) ?? new MSession
-            {
-                Username = context.Config.Player,
-                UUID = OfflineUuid(context.Config.Player),
+                Username = player,
+                UUID = OfflineUuid(player),
                 AccessToken = "0",
                 ClientToken = Guid.NewGuid().ToString("N"),
                 UserType = "legacy"
-            };
-            BlockLaunch.AuthlibLaunch? external = null;
-            if (context.Config.AccountType == "mua" && context.OnlineSession != null && context.Mua != null)
+            } : online!;
+            AuthlibLaunch? external = null;
+            if (mode == "mua" && context.Mua != null)
             {
                 var metadata = await context.Mua.Metadata(context.Token);
-                var jar = await BlockLaunch.AuthlibLaunch.Prepare(
-                    Path.Combine(context.Store.DataDirectory, "authlib-injector"), context.Http, context.Token);
-                external = new BlockLaunch.AuthlibLaunch(jar, metadata.Json);
+                var jar = await AuthlibLaunch.Prepare(Path.Combine(context.Store.DataDirectory, "authlib-injector"), context.Http, context.Token);
+                external = new AuthlibLaunch(jar, metadata.Json);
             }
-            var settings = JsonSerializer.Deserialize<LaunchSettings>(JsonSerializer.Serialize(context.Config.LegacyPreferences.Launch))!;
-            settings.AutoMemory = false;
-            settings.RamMb = context.Config.Ram;
-            settings.Java = context.Config.Java;
-            settings.Width = context.Config.Width;
-            settings.Height = context.Config.Height;
+            var settings = instance.Settings;
             settings.VersionInfo = "MCUGLauncher";
-            var process = await BlockLaunch.LaunchService.Build(
-                new BlockLaunch.LaunchRequest(
-                    context.Config.Root,
-                    instanceDir,
-                    version,
-                    context.Config.Java,
-                    context.Config.Ram,
-                    context.Config.Width,
-                    context.Config.Height,
-                    session,
-                    settings,
-                    external),
-                context.Token);
-            var game = context.Games.Start(context.Config.Root, instanceDir, version,
-                Path.Combine(context.Store.DataDirectory, "game-logs"), process, context.Log, new[] { session.AccessToken ?? "" },
-                context.Config.Player, context.Config.AccountType == "offline");
+            var request = new LaunchRequest(instance.Root, instance.Directory, key, settings.Java, settings.RamMb,
+                settings.Width, settings.Height, session, settings, external);
+            var process = buildProcess == null ? await LaunchService.Build(request, context.Token, context.Http)
+                : await buildProcess(request, context.Token);
+            context.Token.ThrowIfCancellationRequested();
+            var game = context.Games.Start(instance.Root, instance.Directory, key,
+                Path.Combine(context.Store.DataDirectory, "game-logs"), process, context.Log,
+                new[] { session.AccessToken ?? "" }, player, mode == "offline");
             context.SendGames();
             _ = ObserveAsync(game);
-            context.Config.LastVersion = version;
-            context.Config.LastInstance = version;
-            context.Store.Save(context.Config);
-            context.Send(new
+            if (Path.GetFullPath(context.Config.Root).Equals(instance.Root, StringComparison.OrdinalIgnoreCase))
             {
-                type = "launchResult",
-                ok = true,
-                message = "已启动 " + version
-            });
+                context.Config.LastVersion = key;
+                context.Config.LastInstance = key;
+                context.Store.Save(context.Config);
+            }
+            Result(true, "已启动 " + key);
         }
-        catch (Exception ex)
+        catch (Exception ex) { Result(false, ex.Message); }
+        finally
         {
-            context.Send(new
-            {
-                type = "launchResult",
-                ok = false,
-                message = ex.Message
-            });
+            if (reservedDirectory != null)
+                context.ReleasePreparing(reservedDirectory);
+            preparing = false;
         }
     }
+
+    void Result(bool ok, string message) => context.Send(new { type = "launchResult", ok, message });
+
     async Task ObserveAsync(RunningGame game)
     {
         try
@@ -141,5 +98,4 @@ internal sealed class GameCommands(LauncherContext context)
         if (!game.Session.RequestStop())
             throw new IOException("关闭请求未成功，请稍后重试。");
     }
-
 }

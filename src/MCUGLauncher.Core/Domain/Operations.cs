@@ -18,8 +18,28 @@ public enum OperationState
     Paused
 }
 
+// Optional instance maintenance payload; older queue records remain compatible.
+public sealed class InstanceOperationRequest
+{
+    public string Key { get; set; } = "";
+    public string Directory { get; set; } = "";
+    public string Name { get; set; } = "";
+    public PackRequirements Requirements { get; set; } = new("", "vanilla", "");
+    public LaunchSettings Settings { get; set; } = new();
+    public CloneOptions Clone { get; set; } = new();
+    public ExportOptions Export { get; set; } = new(true, true, true, true, false);
+    public UninstallPlan? Uninstall
+    {
+        get; set;
+    }
+}
+
 public sealed class DownloadRequest
 {
+    public InstanceOperationRequest? Instance
+    {
+        get; set;
+    }
     public string Kind { get; set; } = "game";
     public string Version { get; set; } = "";
     public string Loader { get; set; } = "vanilla";

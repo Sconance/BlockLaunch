@@ -1,5 +1,5 @@
-using BlockLaunch;
 using System.Text.Json;
+using BlockLaunch;
 using MCUGLauncher.Models;
 using MCUGLauncher.Services;
 using static MCUGLauncher.UseCases.ProtocolValues;
@@ -9,8 +9,12 @@ namespace MCUGLauncher.UseCases;
 internal sealed class LauncherApplication : IDisposable
 {
     readonly LauncherContext context;
+    readonly Action<Action> dispatch;
     Task? startup;
     readonly IDesktopHost desktop;
+    readonly InstanceMaintenanceCommands maintenanceCommands;
+    readonly UninstallCommands uninstallCommands;
+    readonly ContentUpdateCommands updateCommands;
     readonly SaveCommands saveCommands;
     readonly BookmarkCommands bookmarkCommands;
     readonly InstallationCommands installationCommands;
@@ -23,11 +27,15 @@ internal sealed class LauncherApplication : IDisposable
     readonly CommunityCommands communityCommands;
 
     public AppConfig Config => context.Config;
-    public LauncherApplication(Action<object> send, IDesktopHost desktop, ConfigStore? store = null)
+    public LauncherApplication(Action<object> send, IDesktopHost desktop, ConfigStore? store = null, Action<Action>? dispatch = null)
     {
         this.desktop = desktop;
+        this.dispatch = dispatch ?? (action => action());
         context = new LauncherContext(send, store);
         context.RefreshState = SendState;
+        maintenanceCommands = new InstanceMaintenanceCommands(context);
+        uninstallCommands = new UninstallCommands(context);
+        updateCommands = new ContentUpdateCommands(context);
         saveCommands = new SaveCommands(context);
         bookmarkCommands = new BookmarkCommands(context);
         installationCommands = new InstallationCommands(context);
@@ -68,6 +76,32 @@ internal sealed class LauncherApplication : IDisposable
                     context.Tasks.Start();
                     await (startup ??= Task.WhenAll(communityCommands.SendCommunityAsync(), accountCommands.RestoreMicrosoftAsync()));
                     break;
+                case "cloneInstance":
+                    maintenanceCommands.Clone(root);
+                    break;
+                case "exportInstance":
+                    maintenanceCommands.Export(root);
+                    break;
+                case "pickSaveFile":
+                    desktop.PickSaveFile(ReadString(root, "target"));
+                    break;
+                case "previewUninstall":
+                    await uninstallCommands.PreviewAsync(ReadString(root, "version"));
+                    break;
+                case "applyUninstall":
+                    var uninstallToken = ReadString(root, "token");
+                    if (desktop.ConfirmUninstall(uninstallCommands.Name(uninstallToken)))
+                        uninstallCommands.Apply(uninstallToken);
+                    break;
+                case "checkContentUpdates":
+                    await updateCommands.CheckAsync(ReadString(root, "version"));
+                    break;
+                case "previewContentUpdates":
+                    await updateCommands.PreviewAsync(root);
+                    break;
+                case "applyContentUpdates":
+                    updateCommands.Apply(ReadString(root, "token"));
+                    break;
                 case "listSaveBackups":
                     saveCommands.List();
                     break;
@@ -97,7 +131,12 @@ internal sealed class LauncherApplication : IDisposable
                     context.SendTasks();
                     break;
                 case "taskAction":
-                    context.Tasks.Change(ReadString(root, "id"), ReadString(root, "action"));
+                    var taskId = ReadString(root, "id");
+                    var taskAction = ReadString(root, "action");
+                    var pending = context.Tasks.History().FirstOrDefault(t => t.Id == taskId);
+                    if (taskAction == "resume" && pending?.Download?.Kind == "uninstall" && !desktop.ConfirmUninstall(pending.Name))
+                        break;
+                    context.Tasks.Change(taskId, taskAction);
                     break;
                 case "requestState":
                     context.RefreshState();
@@ -141,7 +180,7 @@ internal sealed class LauncherApplication : IDisposable
                     instanceCommands.DeleteMod(ReadString(root, "file"));
                     break;
                 case "deleteVersion":
-                    instanceCommands.DeleteVersion(ReadString(root, "version"));
+                    await uninstallCommands.PreviewAsync(ReadString(root, "version"));
                     break;
                 case "searchContent":
                     context.Log("searchContent " + ReadString(root, "category") + " " + ReadString(root, "query"));
@@ -225,70 +264,23 @@ internal sealed class LauncherApplication : IDisposable
         }
     }
 
-    public void SendState()
+    // Background completion refreshes are composed on the same thread as configuration edits.
+    public void SendState() => dispatch(() =>
     {
-        var catalog = VersionCatalog.Load(context.Config.Root, context.Config.LastInstance);
-        context.Config.LastInstance = catalog.Selected;
-        if (string.IsNullOrWhiteSpace(context.Config.LastVersion) ||
-            !catalog.Instances.Any(item => item.Name.Equals(context.Config.LastVersion, StringComparison.OrdinalIgnoreCase)))
-            context.Config.LastVersion = catalog.Selected;
-
-        var mods = VersionCatalog.ReadMods(context.Config.Root, catalog.Selected);
-        var state = new
+        try
         {
-            type = "state",
-            appVersion = ProductInfo.Version,
-            player = context.Config.Player,
-            accountType = context.Config.AccountType,
-            accountLabel = context.Config.AccountType switch
+            context.Send(LauncherStateBuilder.Build(context.Config, bookmarkCommands.Snapshot()));
+        }
+        catch (Exception ex)
+        {
+            context.Log(ex.ToString());
+            context.Send(new
             {
-                "microsoft" => "正版账号 · 在线验证",
-                "mua" => "MUA 账号 · 外置登录",
-                _ => "离线账号 · 本地启动"
-            },
-            root = context.Config.Root,
-            java = context.Config.Java,
-            width = context.Config.Width,
-            height = context.Config.Height,
-            selectedVersion = context.Config.LastVersion,
-            selectedInstance = catalog.Selected,
-            ram = context.Config.Ram,
-            anonymous = context.Config.Anonymous,
-            communityKey = !string.IsNullOrWhiteSpace(context.Config.CommunityKey),
-            adminKey = !string.IsNullOrWhiteSpace(context.Config.AdminKey),
-            skinStation = context.Config.SkinStation,
-            cape = context.Config.Cape,
-            versionGroups = catalog.Groups,
-            instances = catalog.Instances,
-            mods = mods.Select(mod => new
-            {
-                id = mod.Id,
-                name = mod.Name,
-                author = "本地模组",
-                desc = mod.File,
-                tags = new[] { "本地" },
-                size = FormatSize(mod.Size),
-                downloads = "",
-                v = string.IsNullOrWhiteSpace(mod.Version) ? "—" : mod.Version,
-                color = mod.Enabled ? "green" : "slate",
-                ic = "box",
-                file = mod.File,
-                path = mod.Path,
-                enabled = mod.Enabled,
-                update = ""
-            }),
-            favorites = bookmarkCommands.Snapshot(),
-            servers = context.Config.Servers,
-            dataSources = new
-            {
-                announcements = context.Config.DataSources.Announcements,
-                servers = context.Config.DataSources.Servers,
-                recommendations = context.Config.DataSources.Recommendations,
-                quotes = context.Config.DataSources.Quotes
-            },
-            writeEndpoint = context.Config.WriteEndpoint
-        };
-        context.Send(state);
-    }
+                type = "error",
+                message = ex.Message
+            });
+        }
+    });
+
     public void Dispose() => context.Dispose();
 }

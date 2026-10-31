@@ -1,11 +1,11 @@
-using System.Net.Http;
 using System.IO;
+using System.Net.Http;
 using System.Net;
-using System.Text;
 using System.Text.Json;
-using MCUGLauncher;
+using System.Text;
 using MCUGLauncher.Services;
 using MCUGLauncher.UseCases;
+using MCUGLauncher;
 
 var fixture = Path.Combine(Path.GetTempPath(), "mcug-web-check-" + Guid.NewGuid().ToString("N"));
 Directory.CreateDirectory(fixture);
@@ -47,7 +47,7 @@ File.WriteAllText(Path.Combine(modDir, "fixture.jar"), "fixture");
 await Request("""{"type":"toggleMod","file":"fixture.jar","enabled":false}""");
 Check(File.Exists(Path.Combine(modDir, "fixture.jar.disabled")), "mod toggle routes to selected instance");
 await Request("""{"type":"launch","version":".."}""");
-Check(Has("error"), "instance traversal rejected");
+Check(Has("launchResult") && !messages.Last().GetProperty("ok").GetBoolean(), "instance traversal rejected with launch failure response");
 application.Config.AccountType = "microsoft";
 await Request("""{"type":"launch","version":"custom-fabric"}""");
 Check(Has("launchResult") && messages.Last().GetProperty("ok").GetBoolean() == false, "unverified online account cannot fall back to offline launch");
@@ -86,11 +86,16 @@ application.RememberWindow(1400, 900, true);
 Check(store.Load().WindowWidth == 1400 && store.Load().WindowMaximized, "window dimensions persist through application boundary");
 await ResourceScenarios.Run(fixture);
 await QueueScenarios.Run(fixture);
+await MaintenanceScenarios.Run(fixture);
 Console.WriteLine("ALL_WEB_BRIDGE_CHECKS_PASSED (isolated fixtures; no live account or gameplay)");
 
 sealed class FakeDesktop : IDesktopHost
 {
     public bool ConfirmStopGame() => false;
+    public bool ConfirmUninstall(string name) => false;
+    public void PickSaveFile(string target)
+    {
+    }
     public string LastAction = "";
     public void Window(string action) => LastAction = action;
     public void Drag()

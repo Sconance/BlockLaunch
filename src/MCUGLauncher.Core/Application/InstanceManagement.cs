@@ -7,7 +7,7 @@ public record ExportOptions(bool Mods, bool Servers, bool Shaders, bool Resource
 
 public static class InstanceManagement
 {
-    public static async Task Export(string directory, string target, string name, PackRequirements requirements, ExportOptions options, CancellationToken token)
+    public static async Task Export(string directory, string target, string name, PackRequirements requirements, ExportOptions options, CancellationToken token, bool overwrite = true)
     {
         var source = Path.GetFullPath(directory).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
         target = Path.GetFullPath(target);
@@ -86,7 +86,7 @@ public static class InstanceManagement
 
             token.ThrowIfCancellationRequested();
             using var guard = OperationExecution.BeginCommit();
-            File.Move(temp, target, true);
+            File.Move(temp, target, overwrite);
         }
         finally
         {

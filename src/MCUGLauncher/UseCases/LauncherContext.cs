@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using BlockLaunch;
 using CmlLib.Core.Auth;
 using MCUGLauncher.Models;
@@ -8,6 +9,12 @@ namespace MCUGLauncher.UseCases;
 internal sealed class LauncherContext : IDisposable
 {
     readonly CancellationTokenSource lifetime = new();
+    readonly ConcurrentDictionary<string, string> preparing = new(StringComparer.OrdinalIgnoreCase);
+    static string Full(string path) => Path.TrimEndingDirectorySeparator(Path.GetFullPath(path));
+    public void MarkPreparing(string root, string directory) => preparing[Full(directory)] = Full(root);
+    public void ReleasePreparing(string directory) => preparing.TryRemove(Full(directory), out _);
+    public bool IsInstanceInUse(string directory) => preparing.ContainsKey(Full(directory)) || Games.UsesDirectory(directory);
+    public bool IsRootPreparing(string root) => preparing.Values.Any(value => value.Equals(Full(root), StringComparison.OrdinalIgnoreCase));
     public CancellationToken Token => lifetime.Token;
     public ConfigStore Store
     {
@@ -60,7 +67,7 @@ internal sealed class LauncherContext : IDisposable
         Config = Store.Load();
         Http = NetworkPolicyHandler.Create(Config.LegacyPreferences.Network);
         Community = new CommunityService(Http);
-        var executor = new DownloadExecutor(Http, Games.UsesDirectory);
+        var executor = new DownloadExecutor(Http, IsInstanceInUse, IsRootPreparing);
         Tasks = new LauncherTaskQueue(Path.Combine(Store.DataDirectory, "operations"),
             async (record, task) => { await executor.ExecuteAsync(record, task); RefreshState(); }, SendTasks, Log);
         var authDirectory = Path.Combine(Store.DataDirectory, "auth");

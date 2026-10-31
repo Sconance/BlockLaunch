@@ -1,6 +1,5 @@
-using BlockLaunch;
-using System.Text.Json;
 using System.Security.Cryptography;
+using System.Text.Json;
 using System.Text;
 
 namespace MCUGLauncher.UseCases;
@@ -16,10 +15,10 @@ internal static class ProtocolValues
         {
             var expected = field.Name switch
             {
-                "enabled" or "anonymous" => JsonValueKind.True,
+                "enabled" or "anonymous" or "saves" or "servers" => JsonValueKind.True,
                 "ram" or "width" or "height" => JsonValueKind.Number,
                 "dataSources" => JsonValueKind.Object,
-                "items" => JsonValueKind.Array,
+                "items" or "projects" => JsonValueKind.Array,
                 _ => JsonValueKind.Undefined
             };
             if (expected == JsonValueKind.True && field.Value.ValueKind is not (JsonValueKind.True or JsonValueKind.False)
@@ -51,12 +50,4 @@ internal static class ProtocolValues
         return Convert.ToHexString(hash).ToLowerInvariant();
     }
 
-    public static string FormatSize(long bytes)
-    {
-        if (bytes <= 0)
-            return "—";
-        if (bytes < 1024 * 1024)
-            return $"{bytes / 1024.0:0.#} KB";
-        return $"{bytes / 1024.0 / 1024.0:0.#} MB";
-    }
 }

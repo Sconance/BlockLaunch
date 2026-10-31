@@ -20,7 +20,11 @@ public partial class MainWindow : Window, IDesktopHost
     public MainWindow()
     {
         InitializeComponent();
-        application = new LauncherApplication(Send, this);
+        application = new LauncherApplication(Send, this, dispatch: action =>
+        {
+            if (!closed)
+                Dispatcher.BeginInvoke(action);
+        });
         Width = Math.Clamp(application.Config.WindowWidth, 960, 7680);
         Height = Math.Clamp(application.Config.WindowHeight, 640, 4320);
         if (application.Config.WindowMaximized)
@@ -180,6 +184,22 @@ public partial class MainWindow : Window, IDesktopHost
                 type = "pickedPath",
                 target,
                 path = dialog.FolderName
+            });
+    }
+
+    public bool ConfirmUninstall(string name) => MessageBox.Show(this,
+        "确认执行「" + name + "」的卸载计划？列出的文件将永久删除，请先确认备份。", "确认卸载",
+        MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No) == MessageBoxResult.Yes;
+
+    public void PickSaveFile(string target)
+    {
+        var dialog = new SaveFileDialog { Title = "导出实例", Filter = "整合包 ZIP|*.zip", DefaultExt = ".zip", FileName = "instance-export.zip" };
+        if (dialog.ShowDialog(this) == true)
+            Send(new
+            {
+                type = "pickedPath",
+                target,
+                path = dialog.FileName
             });
     }
 

@@ -30,6 +30,9 @@ internal sealed class LauncherTaskQueue : IDisposable
         this.execute = execute;
         this.changed = changed;
         this.log = log;
+        // Destructive work never resumes automatically after a launcher restart.
+        foreach (var record in operations.History().Where(r => r.State == OperationState.Queued && r.Download?.Kind == "uninstall"))
+            operations.ChangePending(record.Id, OperationState.Paused);
         operations.Changed += OnChanged;
     }
 
@@ -99,6 +102,22 @@ internal sealed class LauncherTaskQueue : IDisposable
                 pumping = false;
             log(ex.ToString());
         }
+    }
+
+    public void RequireLaunchAvailable(string root, string key, string directory)
+    {
+        var record = operations.Current?.Record;
+        var request = record?.Download;
+        if (record == null || request == null)
+            return;
+        static bool Same(string left, string right) => Path.TrimEndingDirectorySeparator(Path.GetFullPath(left))
+            .Equals(Path.TrimEndingDirectorySeparator(Path.GetFullPath(right)), StringComparison.OrdinalIgnoreCase);
+        var installsGame = Same(record.Root, root) && request.Kind is "game" or "pack";
+        var maintainsInstance = request.Instance != null && (Same(request.Instance.Directory, directory)
+            || Same(record.Root, root) && request.Instance.Key == key);
+        var writesContent = request.Kind is "content" or "update" && Same(record.Target, directory);
+        if (installsGame || maintainsInstance || writesContent)
+            throw new IOException("目标实例或其游戏文件正在维护，请等待任务完成或暂停后再启动。");
     }
 
     public void Change(string id, string action)

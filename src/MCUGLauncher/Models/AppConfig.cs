@@ -49,7 +49,11 @@ public sealed class SavedServer
 
 public sealed record VersionGroup(string Label, int Count, IReadOnlyList<string[]> Versions);
 
-public sealed record InstanceInfo(string Name, string Loader, int Mods, int Updates);
+public sealed record InstanceInfo(string Name, string Loader, int Mods, int Updates)
+{
+    public string DisplayName { get; init; } = Name;
+    public string Minecraft { get; init; } = "";
+}
 
 public sealed record ModInfo(
     string Id,

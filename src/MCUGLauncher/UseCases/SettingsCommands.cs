@@ -1,6 +1,5 @@
-using BlockLaunch;
 using System.Text.Json;
-using System.IO.Compression;
+using BlockLaunch;
 using static MCUGLauncher.UseCases.ProtocolValues;
 
 namespace MCUGLauncher.UseCases;

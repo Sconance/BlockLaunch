@@ -49,6 +49,16 @@ internal static class QueueScenarios
             await Until(() => next.History().Single().State == OperationState.Completed);
         }
         Console.WriteLine("PASS persisted queued operation resumes in a fresh queue owner");
+        var destructive = Path.Combine(fixture, "uninstall-recovery");
+        new OperationCoordinator(destructive).Enqueue("uninstall", root, "fixture", new DownloadRequest { Kind = "uninstall" });
+        var executed = false;
+        using var guarded = new LauncherTaskQueue(destructive, (_, _) => { executed = true; return Task.CompletedTask; }, () => { }, _ => { });
+        guarded.Start();
+        await guarded.Completion;
+        if (executed || guarded.History().Single().State != OperationState.Paused)
+            throw new Exception("uninstall auto-resumed");
+        Console.WriteLine("PASS queued uninstall requires new confirmation after restart");
+
     }
     static async Task Until(Func<bool> done)
     {
