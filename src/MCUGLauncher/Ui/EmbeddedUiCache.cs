@@ -4,14 +4,22 @@ using BlockLaunch;
 namespace MCUGLauncher.Ui;
 
 /// <summary>
-/// 把编译进程序集的 Ui 资源解压到按版本隔离的本地缓存目录，
-/// 供 WebView2 通过虚拟主机映射读取。
+/// 内嵌 Ui 资源的解压缓存。
 /// </summary>
+/// <remarks>
+/// 依赖 <see cref="System.Reflection.Assembly"/> 清单资源、<c>ProductInfo.Version</c> 与 <c>%LOCALAPPDATA%</c>；可在任意线程调用，内部只做文件 IO。
+/// </remarks>
 static class EmbeddedUiCache
 {
     const string ResourcePrefix = "MCUGLauncher.Ui.";
 
-    /// <summary>解压资源并返回缓存目录；每次启动覆盖写入，保证资源与程序一致。</summary>
+    /// <summary>
+    /// 解压内嵌资源到按版本隔离的目录。
+    /// </summary>
+    /// <returns>解压后的缓存目录绝对路径</returns>
+    /// <remarks>
+    /// 目标为 %LOCALAPPDATA%/MCUGLauncher/ui-&lt;版本&gt;，每次启动覆盖写入，保证缓存与程序集一致；资源名中的点会还原为目录结构（assets/logo.png）。
+    /// </remarks>
     public static string Extract()
     {
         var target = Path.Combine(

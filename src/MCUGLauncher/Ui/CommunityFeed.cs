@@ -4,13 +4,19 @@ using MCUGLauncher.Services;
 namespace MCUGLauncher.Ui;
 
 /// <summary>
-/// 社区数据聚合：优先读取本地已保存的公告/推荐，其余从配置的数据源拉取后推给前端。
+/// 社区数据聚合。
 /// </summary>
+/// <remarks>
+/// 依赖 <see cref="CommunityService"/>、<see cref="ConfigStore"/>、<see cref="AppConfig"/> 与 <see cref="UiBridge"/>；网络请求异步执行，本地文件优先。
+/// </remarks>
 sealed class CommunityFeed(CommunityService service, ConfigStore store, AppConfig config, UiBridge bridge)
 {
     /// <summary>
-    /// 发送。
+    /// 读取并推送社区数据。
     /// </summary>
+    /// <remarks>
+    /// 先读本地 announcements/recommendations，缺失的再从配置的数据源拉取；全部为空时不发送消息。
+    /// </remarks>
     public async Task SendAsync()
     {
         var items = new Dictionary<string, string>();

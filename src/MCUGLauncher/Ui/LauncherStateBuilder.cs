@@ -4,13 +4,21 @@ using MCUGLauncher.Services;
 namespace MCUGLauncher.Ui;
 
 /// <summary>
-/// 组装界面状态快照：读取版本目录与本地模组，并把配置整理成前端使用的 camelCase 对象。
+/// 界面状态快照构建器。
 /// </summary>
+/// <remarks>
+/// 依赖 <see cref="AppConfig"/> 与 <see cref="VersionCatalog"/>；会顺带修正 LastInstance/LastVersion，因此不是纯函数，调用后应保存配置。
+/// </remarks>
 static class LauncherStateBuilder
 {
     /// <summary>
-    /// 构建。
+    /// 构建 state 消息体。
     /// </summary>
+    /// <param name="config">当前配置；会被修正 LastInstance/LastVersion</param>
+    /// <returns>可直接发送给前端的 state 对象</returns>
+    /// <remarks>
+    /// 扫描版本目录、读取本地模组并投影为前端字段；返回匿名对象，由 UiBridge 序列化。
+    /// </remarks>
     public static object Build(AppConfig config)
     {
         var catalog = VersionCatalog.Load(config.Root, config.LastInstance);

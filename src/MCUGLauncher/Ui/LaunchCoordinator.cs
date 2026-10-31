@@ -8,8 +8,11 @@ using MCUGLauncher.Services;
 namespace MCUGLauncher.Ui;
 
 /// <summary>
-/// 启动流程：校验版本目录、准备会话（离线 / MUA 外置登录）、构建启动参数并启动进程。
+/// 启动流程协调器。
 /// </summary>
+/// <remarks>
+/// 依赖 <see cref="ConfigStore"/>、<see cref="AppConfig"/>、<see cref="UiBridge"/>、<see cref="McugLauncher.Authentication.AccountSession"/>、<see cref="System.Net.Http.HttpClient"/>，以及 Core 的 LaunchService/AuthlibLaunch；MUA 账号会额外准备 authlib-injector。
+/// </remarks>
 sealed class LaunchCoordinator(
     ConfigStore store,
     AppConfig config,
@@ -18,8 +21,12 @@ sealed class LaunchCoordinator(
     HttpClient http)
 {
     /// <summary>
-    /// 执行 启动。
+    /// 校验并启动指定版本。
     /// </summary>
+    /// <param name="version">要启动的版本名；为空时使用 LastVersion</param>
+    /// <remarks>
+    /// 版本为空时使用 LastVersion；目录 versions/&lt;version&gt; 必须存在；成功后写入 LastVersion/LastInstance 并回推 launchResult，失败回推错误信息。
+    /// </remarks>
     public async Task LaunchAsync(string version)
     {
         if (string.IsNullOrWhiteSpace(version))

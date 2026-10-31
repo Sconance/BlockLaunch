@@ -6,9 +6,11 @@ using System.Windows.Threading;
 namespace MCUGLauncher.Ui;
 
 /// <summary>
-/// 无边框窗口的窗口行为：DWM 圆角、拖动、最小化/最大化/关闭与尺寸复位。
-/// 从 MainWindow 抽离，避免窗口 API 与 WebView2 消息分发混在同一个类里。
+/// 无边框窗口的窗口行为。
 /// </summary>
+/// <remarks>
+/// 依赖 WPF <see cref="System.Windows.Window"/>、<see cref="System.Windows.Interop.WindowInteropHelper"/> 与 <see cref="System.Windows.Threading.DispatcherTimer"/>；所有方法都必须在 UI 线程调用，拖动期间每 15ms 轮询一次鼠标左键状态。
+/// </remarks>
 sealed class WindowChromeController(Window window)
 {
     DispatcherTimer? _dragTimer;
@@ -16,7 +18,12 @@ sealed class WindowChromeController(Window window)
     Point32 _dragCursor;
     Rect32 _dragRect;
 
-    /// <summary>在窗口句柄创建后调用，让 Windows 11 绘制圆角外框。</summary>
+    /// <summary>
+    /// 初始化窗口外框。
+    /// </summary>
+    /// <remarks>
+    /// 通过 DwmSetWindowAttribute(33) 请求 Windows 11 圆角；旧系统忽略失败。
+    /// </remarks>
     public void Initialize()
     {
         var handle = new WindowInteropHelper(window).Handle;
@@ -24,7 +31,12 @@ sealed class WindowChromeController(Window window)
         DwmSetWindowAttribute(handle, 33, ref preference, sizeof(int));
     }
 
-    /// <summary>WebView2 占用了鼠标，因此用定时器跟踪光标位置来拖动窗口。</summary>
+    /// <summary>
+    /// 开始拖动窗口。
+    /// </summary>
+    /// <remarks>
+    /// 记录光标与窗口起点并启动 15ms 定时器；WebView2 占用鼠标，不能用 DragMove。
+    /// </remarks>
     public void BeginDrag()
     {
         _dragWindow = new WindowInteropHelper(window).Handle;
@@ -52,7 +64,13 @@ sealed class WindowChromeController(Window window)
             0, 0, 0x0001 | 0x0004 | 0x0010);
     }
 
-    /// <summary>处理界面标题栏发来的窗口命令。</summary>
+    /// <summary>
+    /// 处理标题栏窗口命令。
+    /// </summary>
+    /// <param name="action">minimize / close / maximize，其他值忽略</param>
+    /// <remarks>
+    /// 支持 minimize/close/maximize，未知动作忽略；最大化时再次调用恢复普通状态。
+    /// </remarks>
     public void Handle(string action)
     {
         switch (action)
@@ -71,7 +89,12 @@ sealed class WindowChromeController(Window window)
         }
     }
 
-    /// <summary>把窗口恢复到默认的 1200 × 780。</summary>
+    /// <summary>
+    /// 恢复默认窗口尺寸。
+    /// </summary>
+    /// <remarks>
+    /// 宽高 1200×780，并退出最大化/最小化。
+    /// </remarks>
     public void Reset()
     {
         window.Width = 1200;
