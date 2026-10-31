@@ -242,12 +242,21 @@ internal sealed class InstanceContentController
                     select.Padding = new Thickness(12, 7, 12, 7);
                     select.Template = (ControlTemplate)System.Windows.Markup.XamlReader.Parse("<ControlTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' TargetType='Button'><Border Background='{TemplateBinding Background}' CornerRadius='8' Padding='{TemplateBinding Padding}' BorderThickness='2,0,0,0' BorderBrush='{TemplateBinding BorderBrush}'><ContentPresenter HorizontalAlignment='Stretch' VerticalAlignment='Center'/></Border><ControlTemplate.Triggers><Trigger Property='IsMouseOver' Value='True'><Setter Property='Opacity' Value='0.8'/></Trigger></ControlTemplate.Triggers></ControlTemplate>");
                     select.BorderBrush = Brushes.Transparent;
-                    if (workspace.Controls.Versions.SelectedValue as string == item.Key)
-                        select.SetResourceReference(Control.BackgroundProperty, "ThemeSelectedBrush");
-                    if (workspace.Controls.Versions.SelectedValue as string == item.Key)
+                    var selected = workspace.Controls.Versions.SelectedValue as string == item.Key;
+                    select.Cursor = System.Windows.Input.Cursors.Hand;
+                    play.Cursor = System.Windows.Input.Cursors.Hand;
+                    settingsButton.Cursor = System.Windows.Input.Cursors.Hand;
+                    var instanceRow = new Border { Child = line, CornerRadius = new CornerRadius(8), Tag = "InstanceRow", DataContext = item };
+                    if (selected)
+                    {
+                        instanceRow.SetResourceReference(Border.BackgroundProperty, "InstanceSelectedBrush");
+                        select.Background = Brushes.Transparent;
+                        play.Background = Brushes.Transparent;
+                        settingsButton.Background = Brushes.Transparent;
                         select.SetResourceReference(Control.BorderBrushProperty, "AccentBrush");
+                    }
                     line.Children.Add(select);
-                    entries.Children.Add(line);
+                    entries.Children.Add(instanceRow);
                 }
 
                 var expander = new Expander { Style = InstanceGroupExpanderStyle.Create(), Header = group.Key + "（" + group.Count() + "）", IsExpanded = true, Content = entries, Padding = new Thickness(2), FontSize = 12 };

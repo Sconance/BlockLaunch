@@ -29,6 +29,8 @@ internal sealed class ExperienceThemeController
         Application.Current.Resources["ThemeInputBrush"] = dark ? new SolidColorBrush(Color.FromRgb(40, 48, 65)) : new SolidColorBrush(Color.FromRgb(246, 249, 251));
         Application.Current.Resources["ThemeTextBrush"] = dark ? text : new SolidColorBrush(Color.FromRgb(36, 59, 73));
         Application.Current.Resources["ThemeSelectedBrush"] = dark ? new SolidColorBrush(Color.FromRgb(48, 65, 95)) : new SolidColorBrush(Color.FromRgb(232, 242, 248));
+        Application.Current.Resources["InstanceGroupHoverBrush"] = new SolidColorBrush(dark ? Color.FromRgb(42, 55, 75) : Color.FromRgb(222, 234, 242));
+        Application.Current.Resources["InstanceSelectedBrush"] = new SolidColorBrush(dark ? Color.FromRgb(54, 86, 117) : Color.FromRgb(200, 224, 242));
         Application.Current.Resources["ThemeBorderBrush"] = dark ? new SolidColorBrush(Color.FromRgb(68, 79, 100)) : new SolidColorBrush(Color.FromRgb(214, 225, 232));
         bool Light(Brush? brush) => brush is SolidColorBrush b && b.Color.A > 0 && b.Color.R > 218 && b.Color.G > 218 && b.Color.B > 218;
         bool Dark(Brush? brush) => brush is SolidColorBrush b && b.Color.A > 0 && b.Color.R < 130 && b.Color.G < 130 && b.Color.B < 180;
@@ -45,6 +47,9 @@ internal sealed class ExperienceThemeController
             }
             else if (node is Border border)
             {
+                // These surfaces follow their own dynamic theme resources, including hover and selection.
+                if (border.Tag is "InstanceRow" or "InstanceGroupCard")
+                    continue;
                 var old = themeOriginals.GetValue(border, _ => new() { Background = border.Background });
                 border.Background = dark && Light(old.Background) ? surface : old.Background;
             }

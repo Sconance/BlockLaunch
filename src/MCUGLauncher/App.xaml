@@ -117,6 +117,8 @@
     <SolidColorBrush x:Key="ThemeInputBrush" Color="#F6F9FB" />
     <SolidColorBrush x:Key="ThemeTextBrush" Color="#243B49" />
     <SolidColorBrush x:Key="ThemeSelectedBrush" Color="#E8F2F8" />
+    <SolidColorBrush x:Key="InstanceGroupHoverBrush" Color="#DEEAF2" />
+    <SolidColorBrush x:Key="InstanceSelectedBrush" Color="#C8E0F2" />
     <SolidColorBrush x:Key="ThemeBorderBrush" Color="#D6E1E8" />
     <SolidColorBrush x:Key="AccentBrush" Color="#006DB8" />
     <Style TargetType="PasswordBox">

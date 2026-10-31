@@ -391,6 +391,10 @@ static class Program
             sketchSearch.Clear();
             Capture("v0180-sketch-home.png");
             Capture("v0181-home-expanded.png");
+            var groupCard = Walk(sketch).OfType<Border>().First(border => Equals(border.Tag, "InstanceGroupCard"));
+            groupCard.RaiseEvent(new MouseEventArgs(Mouse.PrimaryDevice, Environment.TickCount) { RoutedEvent = UIElement.MouseMoveEvent, Source = groupCard });
+            Capture("v0222-group-hover-selection.png");
+            groupCard.RaiseEvent(new MouseEventArgs(Mouse.PrimaryDevice, Environment.TickCount) { RoutedEvent = UIElement.MouseLeaveEvent, Source = groupCard });
             Call("ToggleSketchVersions");
             Check(((Border)Field("sketchVersions")).Visibility == Visibility.Collapsed && Equals(((Button)Field("sketchToggle")).Content, ">"), "toggle hides chooser and restores right arrow");
             Call("ToggleSketchVersions");
