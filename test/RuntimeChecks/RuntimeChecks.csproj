@@ -17,5 +17,6 @@
     <Compile Include="../../src/MCUGLauncher/Views/Shared/FeatureUiElements.cs" Link="Sessions/FeatureUiElements.cs" />
     <Compile Include="../../src/MCUGLauncher/Views/HomeLaunchButtonView.cs" Link="Views/HomeLaunchButtonView.cs" />
     <Compile Include="../../src/MCUGLauncher/Views/Shared/InstanceGroupExpanderStyle.cs" Link="Views/InstanceGroupExpanderStyle.cs" />
+    <Compile Include="../../src/MCUGLauncher/Views/Shared/InstanceGroupCardBehavior.cs" Link="Views/InstanceGroupCardBehavior.cs" />
   </ItemGroup>
 </Project>

@@ -84,6 +84,47 @@ internal static class Program
         Check(toggle.ActualWidth >= 390, "instance group header hit area spans the complete row");
         toggle.IsChecked = false;
         Check(!group.IsExpanded, "full-row group toggle updates expansion state");
+        var card = new System.Windows.Controls.Border
+        {
+            Child = group,
+            Padding = new Thickness(12),
+            BorderThickness = new Thickness(1),
+            BorderBrush = System.Windows.Media.Brushes.SlateGray,
+            Background = System.Windows.Media.Brushes.White
+        };
+        InstanceGroupCardBehavior.Attach(card, group);
+        card.Width = 400;
+        card.Height = 100;
+        card.HorizontalAlignment = HorizontalAlignment.Left;
+        card.VerticalAlignment = VerticalAlignment.Top;
+        var cardWindow = new Window { Content = card, Width = 440, Height = 160, ShowInTaskbar = false };
+        cardWindow.Show();
+        card.Measure(new Size(400, 100));
+        card.Arrange(new Rect(0, 0, 400, 100));
+        card.UpdateLayout();
+        void PressRelease(object source)
+        {
+            foreach (var routed in new[] { UIElement.PreviewMouseLeftButtonDownEvent, UIElement.PreviewMouseLeftButtonUpEvent })
+                card.RaiseEvent(new System.Windows.Input.MouseButtonEventArgs(System.Windows.Input.Mouse.PrimaryDevice,
+                    Environment.TickCount, System.Windows.Input.MouseButton.Left)
+                {
+                    RoutedEvent = routed,
+                    Source = source
+                });
+        }
+        foreach (var point in new[] { new Point(1, 50), new Point(399, 50), new Point(200, 1), new Point(200, 99) })
+        {
+            cardWindow.UpdateLayout();
+            card.UpdateLayout();
+            var hit = card.InputHitTest(point) ?? throw new Exception("Card border/padding has no hit target");
+            var expanded = group.IsExpanded;
+            PressRelease(hit);
+            Check(group.IsExpanded != expanded, "outer rectangle border/padding toggles group: " + point);
+        }
+        group.IsExpanded = true;
+        PressRelease(group.Content);
+        Check(group.IsExpanded, "instance content clicks do not collapse the group");
+        cardWindow.Close();
     }
 
     static Process Child(string label)

@@ -258,3 +258,4 @@
 - [ResourceInstallationController](Components/Resources/ResourceInstallationController.md)
 - [ResourceInstallSelection](Models/ResourceInstallSelection.md)
 - [ResourceVersionSelector](Views/Shared/ResourceVersionSelector.md)
+- [InstanceGroupCardBehavior](Views/Shared/InstanceGroupCardBehavior.md)
