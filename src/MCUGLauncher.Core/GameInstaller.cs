@@ -10,8 +10,14 @@ using CmlLib.Core.ProcessBuilder;
 
 namespace BlockLaunch;
 
+/// <summary>
+/// 提供 GameInstaller 相关功能。
+/// </summary>
 public sealed class GameInstaller(HttpClient http, string root, string java, Action<string>? progress = null, CancellationToken token = default, NetworkSettings? network = null)
 {
+    /// <summary>
+    /// 安装。
+    /// </summary>
     public async Task<string> Install(PackRequirements request)
     {
         token.ThrowIfCancellationRequested();
