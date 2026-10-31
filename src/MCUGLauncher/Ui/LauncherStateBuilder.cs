@@ -8,6 +8,9 @@ namespace MCUGLauncher.Ui;
 /// </summary>
 static class LauncherStateBuilder
 {
+    /// <summary>
+    /// 构建。
+    /// </summary>
     public static object Build(AppConfig config)
     {
         var catalog = VersionCatalog.Load(config.Root, config.LastInstance);

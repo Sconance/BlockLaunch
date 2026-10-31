@@ -17,6 +17,9 @@ sealed class LaunchCoordinator(
     AccountSession accounts,
     HttpClient http)
 {
+    /// <summary>
+    /// 执行 启动。
+    /// </summary>
     public async Task LaunchAsync(string version)
     {
         if (string.IsNullOrWhiteSpace(version))

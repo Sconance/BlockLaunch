@@ -8,6 +8,9 @@ namespace MCUGLauncher.Ui;
 /// </summary>
 sealed class CommunityFeed(CommunityService service, ConfigStore store, AppConfig config, UiBridge bridge)
 {
+    /// <summary>
+    /// 发送。
+    /// </summary>
     public async Task SendAsync()
     {
         var items = new Dictionary<string, string>();
